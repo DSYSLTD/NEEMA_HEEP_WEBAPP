@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@layer base {
+  a:not([class*="bg-"]) {
+    @apply text-[#C0991B] active:text-white transition-colors duration-200;
+  }
+  
+  ul.list-disc > li::marker,
+  ul > li[class*="list-disc"]::marker,
+  ul > li::marker {
+    color: #C0991B;
+  }
+}
+
+@theme {
+  --animate-scroll: scroll 40s linear infinite;
+
+  @keyframes scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+}

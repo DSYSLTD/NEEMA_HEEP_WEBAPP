@@ -1,0 +1,8 @@
+{
+  "name": "Remix Neema-Heep",
+  "description": "Imported from GitHub: DSYSLTD/Neema-Heep",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

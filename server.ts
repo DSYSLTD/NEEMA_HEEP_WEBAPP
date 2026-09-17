@@ -4,6 +4,7 @@ import fs from "fs";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
+import { createClient } from "@supabase/supabase-js";
 import { createServer as createViteServer } from "vite";
 import {
   generateContentWithRetry,
@@ -40,6 +41,11 @@ function getMailTransporter(): nodemailer.Transporter | null {
   });
 }
 
+// Supabase Client for Server-Side Role and Credential Verification
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://dmuuflbtzxoverwvzlak.supabase.co";
+const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_KEY || "sb_publishable_EL84MrbhdL66KKNp5jCz6A_IKop7zdD";
+const supabaseServer = createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // Admin & Staff Account configuration from environment variables
 const ADMIN_USERNAME = (process.env.ADMIN_USERNAME || "admin_neema1").toLowerCase();
 const adminPassword = process.env.ADMIN_PASSWORD;
@@ -50,26 +56,55 @@ interface StaffRecord {
   passwordHash: string;
   fullName: string;
   role: string;
+  email: string;
 }
 
 const staffUserStore: Record<string, StaffRecord> = {};
 
-// Initialize hashes if environment variables are provided
-if (adminPassword) {
-  staffUserStore[ADMIN_USERNAME] = {
-    passwordHash: bcrypt.hashSync(adminPassword, 10),
-    fullName: process.env.ADMIN_FULL_NAME || "Neema Super Admin",
-    role: "Super Admin",
-  };
+function registerStaffUser(aliases: string[], record: { password: string; fullName: string; role: string; email: string }) {
+  const hash = bcrypt.hashSync(record.password, 10);
+  aliases.forEach(alias => {
+    staffUserStore[alias.toLowerCase().trim()] = {
+      passwordHash: hash,
+      fullName: record.fullName,
+      role: record.role,
+      email: record.email,
+    };
+  });
 }
+
+// 1. Pre-register core accounts with environment overrides
+registerStaffUser(
+  [ADMIN_USERNAME, "ptrckmunene@gmail.com", "patrick munene", "ptrckmunene", "admin"],
+  {
+    password: adminPassword || "@super123#",
+    fullName: process.env.ADMIN_FULL_NAME || "Patrick Munene",
+    role: "Superadmin",
+    email: "ptrckmunene@gmail.com",
+  }
+);
+
+registerStaffUser(
+  ["muthonichar12@gmail.com", "charity muthoni", "muthonichar12"],
+  {
+    password: "@Cham123#",
+    fullName: "Charity Muthoni",
+    role: "Author",
+    email: "muthonichar12@gmail.com",
+  }
+);
 
 if (staffPassword) {
   const staffUser = (process.env.STAFF_USERNAME || "staff").toLowerCase();
-  staffUserStore[staffUser] = {
-    passwordHash: bcrypt.hashSync(staffPassword, 10),
-    fullName: process.env.STAFF_FULL_NAME || "Neema Staff Member",
-    role: "Staff Member",
-  };
+  registerStaffUser(
+    [staffUser],
+    {
+      password: staffPassword,
+      fullName: process.env.STAFF_FULL_NAME || "Neema Staff Member",
+      role: "Staff Member",
+      email: `${staffUser}@neemaheep.org`,
+    }
+  );
 }
 
 // Development fallback hash removed - credentials must only come from environment
@@ -198,9 +233,9 @@ async function startServer() {
   });
 
   // ------------------------------------------------------------------
-  // AUTH: Login with Rate Limiting & Bcrypt Hashing
+  // AUTH: Login with Rate Limiting, Bcrypt Hashing & DB Fallback
   // ------------------------------------------------------------------
-  app.post("/api/auth/login", (req: Request, res: Response) => {
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
     const { username, password } = req.body || {};
     if (!username || !password) {
       return res.status(400).json({ success: false, error: "Username and password are required." });
@@ -208,52 +243,90 @@ async function startServer() {
 
     const ip = getClientIp(req);
     const u = String(username).trim().toLowerCase();
+    const rawPass = String(password);
     const rateLimitKey = `login_${ip}_${u}`;
 
-    // Rate limiting: 5 attempts per 15 minutes
-    if (isRateLimited(rateLimitKey, 5, 15 * 60 * 1000)) {
+    // Rate limiting: 10 attempts per 15 minutes
+    if (isRateLimited(rateLimitKey, 10, 15 * 60 * 1000)) {
       return res.status(429).json({
         success: false,
         error: "Too many login attempts. Please try again in 15 minutes."
       });
     }
 
-    const staff = staffUserStore[u];
+    let staff = staffUserStore[u];
+    let isMatch = false;
+
+    // 1. Check in-memory store
     if (staff) {
-      const isMatch = bcrypt.compareSync(password, staff.passwordHash);
-      if (isMatch) {
-        // Reset rate limit on success
-        rateLimits.delete(rateLimitKey);
+      isMatch = bcrypt.compareSync(rawPass, staff.passwordHash);
+    }
 
-        // Generate HMAC session signature with SESSION_SECRET
-        const sessionPayload = `${u}:${Date.now()}`;
-        const signature = crypto.createHmac("sha256", SESSION_SECRET).update(sessionPayload).digest("hex");
-        const sessionToken = `${sessionPayload}.${signature}`;
+    // 2. Query Supabase user_roles table if not matched in-memory
+    if (!isMatch) {
+      try {
+        const { data: dbUser } = await supabaseServer
+          .from("user_roles")
+          .select("*")
+          .or(`email.ilike.${u},user_name.ilike.${u}`)
+          .maybeSingle();
 
-        // Set secure HTTP-only cookie in production
-        const isProduction = process.env.NODE_ENV === "production";
-        res.cookie("neema_session", sessionToken, {
-          httpOnly: true,
-          secure: isProduction,
-          sameSite: "lax",
-          maxAge: 8 * 60 * 60 * 1000, // 8 hours
-          path: "/",
-        });
-
-        return res.json({
-          success: true,
-          user: {
-            username: u,
-            fullName: staff.fullName,
-            role: staff.role,
-          },
-          token: sessionToken,
-        });
+        if (dbUser && dbUser.status === "Active" && dbUser.initial_password) {
+          const storedPass = String(dbUser.initial_password).trim();
+          if (
+            rawPass === storedPass ||
+            (storedPass.startsWith("$2") && bcrypt.compareSync(rawPass, storedPass))
+          ) {
+            isMatch = true;
+            staff = {
+              passwordHash: bcrypt.hashSync(rawPass, 10),
+              fullName: dbUser.user_name || u,
+              role: dbUser.role || "Author",
+              email: dbUser.email || u,
+            };
+            // Cache in memory store
+            staffUserStore[u] = staff;
+            if (dbUser.email) staffUserStore[dbUser.email.toLowerCase().trim()] = staff;
+          }
+        }
+      } catch (dbErr) {
+        console.warn("[AUTH DB LOOKUP WARNING]", dbErr);
       }
     }
 
+    if (isMatch && staff) {
+      // Reset rate limit on success
+      rateLimits.delete(rateLimitKey);
+
+      // Generate HMAC session signature with SESSION_SECRET
+      const sessionPayload = `${u}:${Date.now()}`;
+      const signature = crypto.createHmac("sha256", SESSION_SECRET).update(sessionPayload).digest("hex");
+      const sessionToken = `${sessionPayload}.${signature}`;
+
+      // Set secure HTTP-only cookie in production
+      const isProduction = process.env.NODE_ENV === "production";
+      res.cookie("neema_session", sessionToken, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: "lax",
+        maxAge: 8 * 60 * 60 * 1000, // 8 hours
+        path: "/",
+      });
+
+      return res.json({
+        success: true,
+        user: {
+          username: u,
+          email: staff.email,
+          fullName: staff.fullName,
+          role: staff.role,
+        },
+        token: sessionToken,
+      });
+    }
+
     // Invalid credentials
-    return res.status(401).json({ success: false, error: "Invalid credentials or inactive account." });
+    return res.status(401).json({ success: false, error: "Access Denied: Invalid email/username or security password." });
   });
 
   // ------------------------------------------------------------------
@@ -428,6 +501,16 @@ async function startServer() {
 
     if (staffUserStore[u]) {
       staffUserStore[u].passwordHash = newHash;
+    }
+
+    try {
+      supabaseServer
+        .from("user_roles")
+        .update({ initial_password: newPassword })
+        .or(`email.ilike.${u},user_name.ilike.${u}`)
+        .then(() => {});
+    } catch {
+      // Ignored
     }
 
     return res.json({

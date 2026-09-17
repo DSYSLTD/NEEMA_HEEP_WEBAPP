@@ -144,7 +144,7 @@ const INITIAL_USER_MAPPINGS: UserRoleMapping[] = [
     assignedDate: '2025-01-10',
     assignedBy: 'System Initializer',
     hasCustomOverrides: false,
-    initialPassword: '',
+    initialPassword: '@super123#',
     grantedRights: CMS_MODULES.flatMap(m => PERMISSION_ACTIONS.map(a => `${m.id}:${a}`))
   },
   {

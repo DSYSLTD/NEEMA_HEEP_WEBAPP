@@ -195,6 +195,14 @@ const mockAuthors: BlogAuthor[] = [
     email: 'ptrckmunene@gmail.com',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=70&w=200&auto=format&fit=crop',
     bio: 'Pioneer in Kenyan microfinance and rural economic development, leading Neema Heep expansion since 2010.',
+  },
+  {
+    id: 'auth_cm',
+    name: 'Charity Muthoni',
+    role: 'Author & Editorial Specialist',
+    email: 'muthonichar12@gmail.com',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=70&w=200&auto=format&fit=crop',
+    bio: 'Content strategist and community development specialist at Neema HEEP.',
   }
 ];
 
@@ -202,7 +210,8 @@ const mockComments: BlogComment[] = [];
 
 let blacklistedEmails: string[] = [];
 let mockUsers = [
-  { id: 'u1', name: 'Patrick Munene', email: 'ptrckmunene@gmail.com', role: 'Superadmin' }
+  { id: 'u1', name: 'Patrick Munene', email: 'ptrckmunene@gmail.com', role: 'Superadmin' },
+  { id: 'u2', name: 'Charity Muthoni', email: 'muthonichar12@gmail.com', role: 'Author' }
 ];
 
 let storedCategoriesList: BlogCategory[] = [];

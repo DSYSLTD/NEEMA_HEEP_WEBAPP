@@ -147,6 +147,23 @@ const INITIAL_USER_MAPPINGS: UserRoleMapping[] = [
     initialPassword: '',
     grantedRights: CMS_MODULES.flatMap(m => PERMISSION_ACTIONS.map(a => `${m.id}:${a}`))
   },
+  {
+    id: 'usr-2',
+    username: 'muthonichar12@gmail.com',
+    name: 'Charity Muthoni',
+    email: 'muthonichar12@gmail.com',
+    role: 'Author',
+    department: 'CMS Editorial',
+    status: 'Active',
+    assignedDate: '2026-09-17',
+    assignedBy: 'System Administrator',
+    hasCustomOverrides: false,
+    initialPassword: '@Cham123#',
+    grantedRights: [
+      'mod_articles:View', 'mod_articles:Create', 'mod_articles:Edit', 'mod_articles:Publish',
+      'mod_media:View', 'mod_media:Create', 'mod_media:Edit', 'mod_media:Publish'
+    ]
+  },
 ];
 
 const INITIAL_AUDIT_LOGS: RolesAuditLog[] = [

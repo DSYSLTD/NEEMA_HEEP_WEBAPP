@@ -50,6 +50,19 @@ export function useAuth() {
           };
         }
 
+        if (email === 'muthonichar12@gmail.com') {
+          return {
+            id: sessionUser.id || 'usr-charity',
+            email: 'muthonichar12@gmail.com',
+            displayName: 'Charity Muthoni',
+            userName: 'Charity Muthoni',
+            role: 'Author',
+            department: 'CMS Editorial',
+            status: 'Active',
+            provider: sessionUser.app_metadata?.provider || 'email'
+          };
+        }
+
         // Unapproved user!
         return null;
       }
@@ -168,6 +181,8 @@ export function useAuth() {
       let loginEmail = cleanIdentifier;
       if (cleanIdentifier === 'Patrick Munene' || cleanIdentifier === 'admin_neema1' || cleanIdentifier.toLowerCase() === 'ptrckmunene@gmail.com') {
         loginEmail = 'ptrckmunene@gmail.com';
+      } else if (cleanIdentifier === 'Charity Muthoni' || cleanIdentifier.toLowerCase() === 'muthonichar12@gmail.com' || cleanIdentifier.toLowerCase() === 'muthonichar12') {
+        loginEmail = 'muthonichar12@gmail.com';
       }
 
       // Try Supabase Auth first

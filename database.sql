@@ -21,6 +21,7 @@ ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS granted_rights JSONB DEFAULT '[]
 ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS department VARCHAR(255) DEFAULT 'CMS Editorial';
 ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS user_name VARCHAR(255);
 ALTER TABLE user_roles ADD COLUMN IF NOT EXISTS assigned_by VARCHAR(255) DEFAULT 'System';
+CREATE UNIQUE INDEX IF NOT EXISTS user_roles_email_idx ON user_roles (email);
 
 -- 2. USER PROFILES TABLE
 CREATE TABLE IF NOT EXISTS user_profiles (
@@ -58,6 +59,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 
 ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
 ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS initial_password VARCHAR(255);
+CREATE UNIQUE INDEX IF NOT EXISTS user_profiles_email_idx ON user_profiles (email);
 
 -- 3. CUSTOM ROLES TABLE
 CREATE TABLE IF NOT EXISTS custom_roles (
@@ -137,3 +139,71 @@ DO UPDATE SET
     status = EXCLUDED.status,
     initial_password = EXCLUDED.initial_password,
     job_title = EXCLUDED.job_title;
+
+-- 5. STAFF USER RECORD (CHARITY MUTHONI)
+INSERT INTO user_roles (
+    user_name,
+    email,
+    role,
+    department,
+    status,
+    initial_password,
+    granted_rights,
+    assigned_by
+)
+VALUES (
+    'Charity Muthoni',
+    'muthonichar12@gmail.com',
+    'Author',
+    'CMS Editorial',
+    'Active',
+    '@Cham123#',
+    '["mod_articles:View", "mod_articles:Create", "mod_articles:Edit", "mod_articles:Publish", "mod_media:View", "mod_media:Create", "mod_media:Edit", "mod_media:Publish"]'::jsonb,
+    'System Administrator'
+)
+ON CONFLICT (email)
+DO UPDATE SET
+    user_name = EXCLUDED.user_name,
+    role = EXCLUDED.role,
+    department = EXCLUDED.department,
+    status = EXCLUDED.status,
+    initial_password = EXCLUDED.initial_password,
+    granted_rights = EXCLUDED.granted_rights,
+    assigned_by = EXCLUDED.assigned_by;
+
+INSERT INTO user_profiles (
+    first_name,
+    last_name,
+    display_name,
+    username,
+    email,
+    role,
+    department,
+    status,
+    initial_password,
+    job_title
+)
+VALUES (
+    'Charity',
+    'Muthoni',
+    'Charity Muthoni',
+    'muthonichar12',
+    'muthonichar12@gmail.com',
+    'Author',
+    'CMS Editorial',
+    'Active',
+    '@Cham123#',
+    'Author - CMS Editorial'
+)
+ON CONFLICT (email)
+DO UPDATE SET
+    first_name = EXCLUDED.first_name,
+    last_name = EXCLUDED.last_name,
+    display_name = EXCLUDED.display_name,
+    username = EXCLUDED.username,
+    role = EXCLUDED.role,
+    department = EXCLUDED.department,
+    status = EXCLUDED.status,
+    initial_password = EXCLUDED.initial_password,
+    job_title = EXCLUDED.job_title;
+

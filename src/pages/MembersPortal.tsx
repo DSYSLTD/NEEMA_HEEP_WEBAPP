@@ -177,13 +177,13 @@ export default function MembersPortal() {
           </div>
           <h1 className="text-3xl md:text-4xl font-black text-[#074504] uppercase tracking-tighter">
             {viewMode === 'login' ? (
-              <>CMS Portal <span className="text-[#C0991B]">Login</span></>
+              <>Staff <span className="text-[#C0991B]">Login</span></>
             ) : (
               <>Forgot <span className="text-[#C0991B]">Password</span></>
             )}
           </h1>
           <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest mt-2 px-4 leading-relaxed text-center">
-            Enterprise CMS & Staff Portal Access • Neema HEEP
+            Enterprise Staff Portal Access • Neema HEEP
           </p>
         </div>
 

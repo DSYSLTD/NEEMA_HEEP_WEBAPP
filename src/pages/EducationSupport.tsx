@@ -41,26 +41,28 @@ export default function EducationSupport() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="inline-flex items-center gap-2 bg-[#C0991B]/20 backdrop-blur-md border border-[#C0991B]/30 px-6 py-2 rounded-full mb-8"
+            className="inline-flex items-center gap-3 justify-center mb-4"
           >
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#C0991B]">Arise & Shine Education Program</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+            <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">ARISE & SHINE EDUCATION PROGRAM</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
           </motion.div>
           
           <motion.h1 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 tracking-tighter uppercase leading-[0.9] text-white"
+            className="text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] uppercase text-white"
           >
-            Light Up <br/>
-            Their <span className="text-[#C0991B]">Future</span>.
+            LIGHT UP <br/>
+            THEIR <span className="text-[#C0991B]">FUTURE</span>
           </motion.h1>
           
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-xl md:text-2xl text-white/80 max-w-3xl mx-auto font-medium leading-relaxed mb-12"
+            className="text-lg text-white/80 max-w-2xl mx-auto mb-12 font-medium leading-relaxed"
           >
-            At Neema HEEP, our Arise & Shine Education Program offers hope and access to bright, underprivileged scholars by dedicatedly sponsoring junior secondary education from grade 10 to 12, paving their way to a brighter future.
+            At Neema HEEP, our Arise & Shine Education Program offers hope and access to bright, underprivileged scholars by dedicatedly sponsoring secondary education, paving their way to a brighter future.
           </motion.p>
 
           <div className="flex flex-wrap justify-center gap-4">

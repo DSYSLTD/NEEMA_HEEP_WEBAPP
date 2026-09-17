@@ -93,27 +93,28 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#599200]/30 backdrop-blur-md border border-[#599200]/40 text-white text-[10px] font-bold tracking-[0.2em] uppercase mb-8"
+                className="inline-flex items-center gap-3 mb-4"
               >
-                <span className="w-2 h-2 rounded-full bg-[#599200] animate-pulse" />
-                AMFI KENYA MEMBER · EST. 2010
+                <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+                <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">AMFI KENYA MEMBER · EST. 2010</span>
+                <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
               </motion.div>
 
               <motion.h1 
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
-                className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-[0.95] tracking-tight mb-8"
+                className="text-5xl lg:text-7xl font-extrabold text-white mb-6 tracking-tight leading-[1.1] uppercase"
               >
                 Your Trusted Partner <br />
-                in <span className="text-[#599200]">Financial Growth.</span>
+                in <span className="text-[#C0991B]">Financial Growth.</span>
               </motion.h1>
   
               <motion.p 
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-                className="text-xl md:text-2xl text-white/90 mb-12 max-w-2xl font-medium leading-relaxed"
+                className="text-lg text-white/80 max-w-2xl mb-12 font-medium leading-relaxed"
               >
                 From business financing to community empowerment groups, Neema HEEP is committed to helping communities prosper.
               </motion.p>

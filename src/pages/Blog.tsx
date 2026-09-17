@@ -71,15 +71,17 @@ export default function Blog() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Hero Header */}
-      <div className="bg-[#074504] text-white p-8 md:p-12 rounded-3xl space-y-4 shadow-xl relative overflow-hidden">
+      <div className="bg-[#074504] text-white p-8 md:p-14 rounded-3xl shadow-xl relative overflow-hidden text-center flex flex-col items-center">
         <div className="absolute top-0 right-0 w-80 h-80 bg-[#C0991B]/10 rounded-full blur-3xl pointer-events-none" />
-        <span className="text-xs font-black uppercase tracking-widest text-[#C0991B] bg-emerald-950/80 px-3.5 py-1.5 rounded-full border border-[#C0991B]/40 inline-block shadow-xs">
-          Insights & Financial Education
-        </span>
-        <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight uppercase leading-tight">
-          Neema Heep Journal
+        <div className="inline-flex items-center gap-3 justify-center mb-4">
+          <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+          <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">INSIGHTS & FINANCIAL EDUCATION</span>
+          <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+        </div>
+        <h1 className="text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] uppercase">
+          NEEMA HEEP <span className="text-[#C0991B]">JOURNAL</span>
         </h1>
-        <p className="text-[#C0991B] text-sm md:text-base max-w-2xl font-bold leading-relaxed">
+        <p className="text-lg text-white/80 max-w-2xl mx-auto mb-4 font-medium leading-relaxed">
           Expert analysis, financial literacy guides, micro-lending case studies, and stories of community transformation from Mount Kenya and beyond.
         </p>
       </div>

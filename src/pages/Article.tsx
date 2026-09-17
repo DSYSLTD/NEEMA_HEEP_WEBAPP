@@ -190,11 +190,11 @@ export default function Article() {
               <span className="flex items-center gap-1 text-white/90"><Eye className="w-3.5 h-3.5" /> {currentPost.views} views</span>
             </div>
 
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight mb-6 uppercase">
+            <h1 className="text-5xl lg:text-7xl font-extrabold text-white mb-6 tracking-tight leading-[1.1] uppercase">
               {currentPost.title}
             </h1>
 
-            <p className="text-base md:text-lg text-white/90 leading-relaxed font-medium max-w-2xl mx-auto mb-8">
+            <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8 font-medium leading-relaxed">
               {currentPost.excerpt}
             </p>
 

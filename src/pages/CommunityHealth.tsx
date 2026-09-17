@@ -44,27 +44,28 @@ export default function CommunityHealth() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-1.5 rounded-full mb-8"
+            className="inline-flex items-center gap-3 justify-center mb-4"
           >
-            <Activity className="w-4 h-4 text-[#C0991B]" />
-            <span className="text-xs font-bold uppercase tracking-widest text-[#C0991B]">Community Well-being</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+            <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">COMMUNITY WELL-BEING</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
           </motion.div>
           
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-8 tracking-tighter uppercase leading-[0.95]"
+            className="text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] uppercase"
           >
-            Healthy <span className="text-[#C0991B]">People</span>. <br/>
-            Prosperous <span className="text-[#C0991B]">Wealth</span>.
+            HEALTHY <span className="text-[#C0991B]">PEOPLE</span> <br/>
+            PROSPEROUS <span className="text-[#C0991B]">WEALTH</span>
           </motion.h1>
           
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto font-medium leading-relaxed"
+            className="text-lg text-white/80 max-w-2xl mx-auto mb-12 font-medium leading-relaxed"
           >
             A healthy community is the foundation of a prosperous economy. We integrate health initiatives deeply within our operations to ensure long-term well-being.
           </motion.p>

@@ -226,27 +226,28 @@ export default function Programs() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-1.5 rounded-full mb-8"
+            className="inline-flex items-center gap-3 justify-center mb-4"
           >
-            <Target className="w-4 h-4 text-[#C0991B]" />
-            <span className="text-xs font-bold uppercase tracking-widest text-[#C0991B]">Driven by Purpose & Sustainable Impact</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+            <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">DRIVEN BY PURPOSE & SUSTAINABLE IMPACT</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
           </motion.div>
           
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-8 tracking-tighter uppercase leading-[0.95]"
+            className="text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] uppercase"
           >
-            Our <span className="text-[#C0991B]">Programs</span> & <br/>
-            Product <span className="text-[#C0991B]">Partnerships</span>.
+            OUR <span className="text-[#C0991B]">PROGRAMS</span> & <br/>
+            PRODUCT <span className="text-[#C0991B]">PARTNERSHIPS</span>
           </motion.h1>
           
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto font-medium leading-relaxed"
+            className="text-lg text-white/80 max-w-2xl mx-auto mb-12 font-medium leading-relaxed"
           >
             Neema HEEP connects social impact programmes directly with tailored microfinance products. We build resilient livelihoods across agriculture, clean energy, WASH, and education.
           </motion.p>

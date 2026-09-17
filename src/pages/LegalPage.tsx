@@ -305,12 +305,17 @@ export default function LegalPage() {
   return (
     <main className="flex-grow bg-[#f8faf8]">
       {/* Header */}
-      <section className="bg-[#074504] text-white py-16 px-6 lg:px-12 text-center relative overflow-hidden">
+      <section className="bg-[#074504] text-white py-20 px-6 lg:px-12 text-center relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#599200] rounded-full blur-[150px] opacity-10 pointer-events-none" />
         <div className="w-16 h-16 bg-[#E8F5E9] rounded-full flex items-center justify-center mx-auto mb-6">
           {document.icon}
         </div>
-        <h1 className="text-4xl lg:text-5xl font-extrabold mb-4 relative z-10">{document.title}</h1>
+        <div className="inline-flex items-center gap-3 justify-center mb-4">
+          <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+          <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">LEGAL & COMPLIANCE</span>
+          <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+        </div>
+        <h1 className="text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] uppercase relative z-10">{document.title}</h1>
       </section>
 
       {/* Content */}

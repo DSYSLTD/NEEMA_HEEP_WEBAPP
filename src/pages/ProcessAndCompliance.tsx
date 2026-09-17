@@ -6,12 +6,17 @@ import SimpleProcess from '../components/SimpleProcess';
 export default function ProcessAndCompliance() {
   return (
     <main className="flex-grow flex flex-col items-center w-full bg-[#f8faf8] font-sans">
-      <section className="w-full bg-[#074504] text-white pt-32 pb-24 px-6 lg:px-12 relative overflow-hidden">
+      <section className="w-full bg-[#074504] text-white pt-24 pb-20 px-6 lg:px-12 relative overflow-hidden">
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight">
-            How We Work
+          <div className="inline-flex items-center gap-3 justify-center mb-4">
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+            <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">PROVEN PROCESS & STANDARDS</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+          </div>
+          <h1 className="text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] uppercase">
+            HOW WE <span className="text-[#C0991B]">WORK</span>
           </h1>
-          <p className="text-lg text-white/80 font-medium">
+          <p className="text-lg text-white/80 max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
             Transparency and compliance are the foundation of everything we do at Neema HEEP.
           </p>
         </div>

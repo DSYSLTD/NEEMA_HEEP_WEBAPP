@@ -87,49 +87,50 @@ export default function Beneficiaries() {
   return (
     <main className="flex-grow bg-[#f8faf8] pb-20 font-sans">
       {/* Hero Section */}
-      <section className="bg-[#074504] text-white py-14 px-6 lg:px-12 relative overflow-hidden">
+      <section className="bg-[#074504] text-white pt-10 pb-8 px-6 lg:px-12 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
            <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-[#C0991B] rounded-full blur-[150px]" />
         </div>
         
-        <div className="max-w-7xl mx-auto relative z-10 space-y-6">
-          <div className="max-w-3xl space-y-4">
-            <span className="bg-[#C0991B]/20 text-[#C0991B] text-[10px] font-black uppercase tracking-[0.25em] px-4 py-1.5 rounded-full border border-[#C0991B]/30 inline-block">
-              Arise & Shine Education Programme
-            </span>
-            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-tight">
-              Our <span className="text-[#C0991B]">Beneficiaries</span>
-            </h1>
-            
-            <p className="text-sm md:text-base text-white/80 font-medium max-w-2xl leading-relaxed">
-              Empowering bright and needy students across Embu County and beyond since 2011 through fully verified secondary school scholarships, holiday mentorship, and leadership coaching.
-            </p>
+        <div className="max-w-5xl mx-auto relative z-10 flex flex-col items-center text-center">
+          <div className="inline-flex items-center gap-3 justify-center mb-3">
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+            <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">ARISE & SHINE EDUCATION PROGRAMME</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+          </div>
 
-            <div className="pt-2 flex flex-wrap items-center gap-3">
-              <Link 
-                to="/sponsorship" 
-                className="bg-[#C0991B] hover:bg-[#a68212] text-[#074504] px-6 py-3.5 rounded-xl font-black uppercase text-xs tracking-wider shadow-lg transition-all flex items-center gap-2"
-              >
-                Apply For Sponsorship
-              </Link>
-              <Link 
-                to="/request-partnership" 
-                className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-6 py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider transition-all"
-              >
-                Sponsor a Scholar
-              </Link>
-              <Link 
-                to="/programs/education-support" 
-                className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-6 py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider transition-all flex items-center gap-1.5"
-              >
-                <ArrowLeft className="w-3.5 h-3.5 text-[#C0991B]" />
-                Program Overview
-              </Link>
-            </div>
+          <h1 className="text-5xl lg:text-7xl font-extrabold mb-4 tracking-tight leading-[1.1] uppercase">
+            OUR <span className="text-[#C0991B]">BENEFICIARIES</span>
+          </h1>
+          
+          <p className="text-lg text-white/80 max-w-2xl mx-auto mb-6 font-medium leading-relaxed">
+            Empowering bright and needy students across Embu County and beyond since 2011 through fully verified secondary school scholarships, holiday mentorship, and leadership coaching.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+            <Link 
+              to="/sponsorship" 
+              className="bg-[#C0991B] hover:bg-[#a68212] text-[#074504] px-6 py-3 rounded-xl font-black uppercase text-xs tracking-wider shadow-lg transition-all flex items-center gap-2"
+            >
+              Apply For Sponsorship
+            </Link>
+            <Link 
+              to="/request-partnership" 
+              className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-wider transition-all"
+            >
+              Sponsor a Scholar
+            </Link>
+            <Link 
+              to="/programs/education-support" 
+              className="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-wider transition-all flex items-center gap-1.5"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-[#C0991B]" />
+              Program Overview
+            </Link>
           </div>
 
           {/* Program Highlights Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-white/10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-white/10 w-full text-left">
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
               <div className="flex items-center gap-2 text-[#C0991B] mb-1">
                 <Users className="w-4 h-4" />

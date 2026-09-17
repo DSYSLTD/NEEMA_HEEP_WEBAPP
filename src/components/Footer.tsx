@@ -18,7 +18,7 @@ const programsMap = [
 ];
 
 const memberLinks = [
-  { label: "Portal Login (CMS)", path: "/portal" },
+  { label: "Staff Login", path: "/portal" },
   { label: "Check Loan Eligibility", path: "/pre-qualification" },
   { label: "Join Neema Heep", path: "/join" },
   { label: "Frequently Asked Questions", path: "/faq" },

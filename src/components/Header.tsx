@@ -62,7 +62,7 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Right Side: Portal Login & Loan Eligibility */}
+          {/* Right Side: Staff Login & Loan Eligibility */}
           <div className="flex items-center gap-3 text-[11px] sm:text-xs font-bold">
             <Link 
               to="/pre-qualification" 
@@ -77,7 +77,7 @@ export default function Header() {
               className="bg-emerald-950/80 hover:bg-[#C0991B] hover:text-[#074504] text-white px-2.5 py-1 rounded-md border border-[#C0991B]/40 transition-all flex items-center gap-1.5 shadow-2xs"
             >
               <UserCheck className="w-3.5 h-3.5 text-[#C0991B]" />
-              <span>Portal Login</span>
+              <span>Staff Login</span>
             </Link>
           </div>
         </div>
@@ -221,7 +221,7 @@ export default function Header() {
               className="w-full text-center px-4 py-2.5 text-xs font-bold text-white bg-[#074504] rounded-lg shadow-xs flex items-center justify-center gap-2"
             >
               <UserCheck className="w-4 h-4 text-[#C0991B]" />
-              <span>Portal Login</span>
+              <span>Staff Login</span>
             </Link>
           </div>
         </div>

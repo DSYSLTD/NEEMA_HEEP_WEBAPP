@@ -113,26 +113,27 @@ export default function Volunteer() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="inline-flex items-center gap-2 bg-[#C0991B]/20 backdrop-blur-md border border-[#C0991B]/30 px-6 py-2 rounded-full mb-8 shadow-xl"
+            className="inline-flex items-center gap-3 justify-center mb-4"
           >
-            <Users className="w-5 h-5 text-[#C0991B]" />
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#C0991B]">Be the Change Agent</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+            <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">BE THE CHANGE AGENT</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
           </motion.div>
           
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-[0.8] mb-8"
+            className="text-5xl lg:text-7xl font-extrabold text-white uppercase mb-6 tracking-tight leading-[1.1]"
           >
-            Serve <br/><span className="text-[#C0991B]">to</span> Shine.
+            SERVE <br/><span className="text-[#C0991B]">TO</span> SHINE
           </motion.h1>
           
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-white/70 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed"
+            className="text-lg text-white/80 max-w-2xl mx-auto mb-12 font-medium leading-relaxed"
           >
             Your time, expertise, and passion can ignite the potential of thousands. Join our volunteer network and mentor the next generation of leaders.
           </motion.p>

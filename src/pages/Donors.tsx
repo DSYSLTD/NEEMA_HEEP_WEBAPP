@@ -70,18 +70,19 @@ export default function Donors() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="inline-flex items-center gap-2 bg-[#C0991B]/20 backdrop-blur-md border border-[#C0991B]/30 px-6 py-2 rounded-full mb-8 shadow-xl"
+            className="inline-flex items-center gap-3 justify-center mb-4"
           >
-            <Heart className="w-5 h-5 text-[#C0991B] animate-pulse" />
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#C0991B]">Become a Partner in Progress</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+            <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">BECOME A PARTNER IN PROGRESS</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
           </motion.div>
           
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 tracking-tighter uppercase leading-[0.9] text-white">
-            Fuel the <br/>
-            <span className="text-[#C0991B]">Dreams</span> of Many.
+          <h1 className="text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] uppercase text-white">
+            FUEL THE <br/>
+            <span className="text-[#C0991B]">DREAMS</span> OF MANY
           </h1>
           
-          <p className="text-xl md:text-2xl text-white/80 max-w-3xl mx-auto font-medium leading-relaxed">
+          <p className="text-lg text-white/80 max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
             We actively seek partnerships with individuals and organizations who share our vision of educational empowerment. Together, we can reach more deserving students.
           </p>
         </div>

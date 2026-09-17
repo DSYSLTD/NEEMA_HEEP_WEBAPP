@@ -27,10 +27,10 @@ export default function ContactUs() {
           <div>
             <div className="inline-flex items-center gap-3 justify-center mb-4">
               <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
-              <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">Get in Touch</span>
+              <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">GET IN TOUCH</span>
               <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
             </div>
-            <h1 className="text-4xl lg:text-7xl font-extrabold leading-[0.95] mb-8 tracking-tight uppercase">
+            <h1 className="text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] uppercase">
               Let's <span className="text-[#C0991B]">Get in Touch.</span>
             </h1>
             <p className="text-lg text-white/80 max-w-xl mb-12 font-medium leading-relaxed">

@@ -73,10 +73,10 @@ export default function LoanProduct() {
               </span>
               <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
             </div>
-            <h1 className="text-4xl lg:text-6xl font-extrabold mb-4 leading-[1.1] tracking-tight uppercase">
+            <h1 className="text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] uppercase">
               {product.name}
             </h1>
-            <p className="text-lg lg:text-xl text-[#C0991B] max-w-lg mb-8 font-bold leading-relaxed">
+            <p className="text-lg text-[#C0991B] max-w-xl mb-8 font-bold leading-relaxed">
               {product.subHeading || product.tagline}
             </p>
             <Link to="/pre-qualification" className="inline-flex items-center gap-2 bg-[#599200] hover:bg-[#28A428] text-white font-bold py-4 px-8 rounded-full transition-transform hover:scale-105 duration-300 shadow-[0_10px_20px_rgba(50,205,50,0.3)]">

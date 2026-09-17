@@ -71,32 +71,31 @@ export default function AboutUs() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-3 justify-center mb-8 bg-white/5 backdrop-blur-md px-6 py-2 rounded-full border border-white/10"
+            className="inline-flex items-center gap-3 justify-center mb-4"
           >
-            <span className="w-2 h-2 rounded-full bg-[#599200] animate-pulse"></span>
-            <span className="text-[#C0991B] font-black tracking-[0.3em] text-[10px] uppercase block">ESTABLISHED 2010 · KENYA BASED</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+            <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">ESTABLISHED 2010 · KENYA BASED</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
           </motion.div>
           
           <motion.h1 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-5xl md:text-7xl lg:text-[6rem] font-black mb-10 leading-[0.95] tracking-tight max-w-5xl"
+            className="text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] uppercase max-w-5xl"
           >
-            Empowering <span className="text-[#C0991B]">Growth</span><br/>
-            Through Inclusion.
+            EMPOWERING <span className="text-[#C0991B]">GROWTH</span><br/>
+            THROUGH INCLUSION.
           </motion.h1>
 
-          <motion.div 
+          <motion.p 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-xl md:text-2xl text-white/80 max-w-4xl mb-16 font-medium leading-relaxed"
+            className="text-lg text-white/80 max-w-2xl mx-auto mb-12 font-medium leading-relaxed"
           >
-            <p className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
-              Neema HEEP Microfinance is a Kenya-based, impact-driven microfinance institution dedicated to advancing financial inclusion by providing accessible, flexible, and responsible financial solutions to underserved individuals, entrepreneurs, and SMEs.
-            </p>
-          </motion.div>
+            Neema HEEP Microfinance is a Kenya-based, impact-driven microfinance institution dedicated to advancing financial inclusion by providing accessible, flexible, and responsible financial solutions to underserved individuals, entrepreneurs, and SMEs.
+          </motion.p>
 
           <div className="flex flex-col sm:flex-row gap-6 w-full sm:w-auto">
             <Link to="/registration" className="bg-[#599200] hover:bg-[#4d7d00] text-white font-black py-5 px-12 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-2xl text-center uppercase tracking-widest text-sm border-b-4 border-[#3a5e00]">

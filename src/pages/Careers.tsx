@@ -94,9 +94,15 @@ export default function Careers() {
     <main className="flex-grow bg-[#f8faf8] pb-0">
       {/* Hero */}
       <section className="bg-[#074504] text-white py-24 px-6 lg:px-12 text-center relative overflow-hidden">
-        <p className="text-[#C0991B] font-bold tracking-widest uppercase text-sm mb-4">Empower Your Future</p>
-        <h1 className="text-5xl lg:text-7xl font-bold mb-6 tracking-tight">CAREERS AT NEEMA <span className="text-[#C0991B]">HEEP</span></h1>
-        <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8 font-medium leading-relaxed">
+        <div className="inline-flex items-center gap-3 justify-center mb-4">
+          <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+          <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">EMPOWER YOUR FUTURE</span>
+          <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+        </div>
+        <h1 className="text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] uppercase">
+          CAREERS AT NEEMA <span className="text-[#C0991B]">HEEP</span>
+        </h1>
+        <p className="text-lg text-white/80 max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
           Join a team dedicated to real microfinance impact across Kenya. Discover roles where your career growth aligns with community empowerment.
         </p>
         

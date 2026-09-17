@@ -359,15 +359,15 @@ export default function FAQ() {
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none mix-blend-overlay"></div>
         
         <div className="max-w-4xl mx-auto relative z-10 text-center">
-          <div className="inline-flex items-center gap-3 justify-center mb-6">
+          <div className="inline-flex items-center gap-3 justify-center mb-4">
             <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
             <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">NEEMA HEEP FAQs</span>
             <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold mb-8 tracking-tight uppercase">
+          <h1 className="text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] uppercase">
             HOW CAN WE <span className="text-[#C0991B]">HELP YOU?</span>
           </h1>
-          <p className="text-lg md:text-xl text-white/90 font-medium mb-12 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-white/80 max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
             Expert, trusted, and customer-focused guide to unlocking financial opportunities responsibly. Find clear and honest answers below.
           </p>
           

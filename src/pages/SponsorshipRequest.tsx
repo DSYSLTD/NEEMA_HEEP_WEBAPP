@@ -247,30 +247,31 @@ export default function SponsorshipRequest() {
           <div className="absolute bottom-[-10%] right-[-5%] w-[450px] h-[450px] bg-[#599200] rounded-full blur-[130px]" />
         </div>
         
-        <div className="max-w-4xl mx-auto px-6 relative z-10">
+        <div className="max-w-4xl mx-auto px-6 relative z-10 text-center flex flex-col items-center">
           <motion.div 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-1.5 rounded-full mb-6"
+            className="inline-flex items-center gap-3 justify-center mb-4"
           >
-            <GraduationCap className="w-4 h-4 text-[#C0991B]" />
-            <span className="text-xs font-bold uppercase tracking-widest text-[#C0991B]">Arise & Shine Education Support</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
+            <span className="text-[#C0991B] font-black tracking-[0.2em] text-xs uppercase block">ARISE & SHINE EDUCATION SUPPORT</span>
+            <span className="w-8 h-1 bg-[#599200] rounded-full"></span>
           </motion.div>
           
           <motion.h1 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl font-black mb-6 tracking-tight uppercase"
+            className="text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] uppercase"
           >
-            Scholarship <span className="text-[#C0991B]">Application Portal</span>
+            SCHOLARSHIP <span className="text-[#C0991B]">APPLICATION PORTAL</span>
           </motion.h1>
           
           <motion.p 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-base text-gray-200 max-w-2xl mx-auto leading-relaxed font-medium"
+            className="text-lg text-white/80 max-w-2xl mx-auto mb-12 font-medium leading-relaxed"
           >
             Empowering children and youth through school fees support, mentorship, and junior/senior school scholarships for grades 10 to 12.
           </motion.p>

@@ -8,8 +8,8 @@ const branches = [
   { county: 'EMBU COUNTY', name: 'Embu Branch (Main Office)', badge: 'Head Office', location: 'Neema Plaza, 3rd Floor, Mama Ngina Street, Embu Town', phone: '+254 705 759 365', email: 'info@neemaheep.com', coords: '-0.53882, 37.45477' },
   { county: 'MERU COUNTY', name: 'Meru Branch', badge: 'Branch', location: 'Sarah Plaza, Bus Stage Road, Meru Town', phone: '+254 705 759 365', email: 'info@neemaheep.com', coords: '0.0514, 37.6491' },
   { county: 'EMBU COUNTY', name: 'Kiritiri Branch', badge: 'Branch', location: 'Embu-Kiritiri Road, Kiritiri', phone: '+254 705 759 365', email: 'info@neemaheep.com', coords: '-0.7100, 37.6480' },
-  { county: 'MURANG\'A COUNTY', name: 'Murang\'a Branch', badge: 'Branch', location: 'Kahuro Market, along Mukuyu-Githambo Road', phone: '+254 705 759 365', email: 'info@neemaheep.com', coords: '-0.745669, 36.9122' },
-  { county: 'EMBU COUNTY', name: 'Siakago Branch', badge: 'Branch', location: 'Near PEMA Building, Siakago', phone: '+254 705 759 365', email: 'info@neemaheep.com', coords: '-0.5828, 37.6367' },
+  { county: 'MURANG\'A COUNTY', name: 'Murang\'a Branch', badge: 'Branch', location: 'Mathioya Plaza, 2nd floor\nOpposite KCB Murang\'a', phone: '+254 705 759 365', email: 'info@neemaheep.com', coords: '-0.7208, 37.1518' },
+  { county: 'EMBU COUNTY', name: 'Siakago Branch', badge: 'Branch', location: 'Rehoboth Shopping Mall\nNext to Mbeere inn', phone: '+254 705 759 365', email: 'info@neemaheep.com', coords: '-0.5828, 37.6367' },
   { county: 'THARAKA NITHI', name: 'Chuka Branch', badge: 'Branch', location: 'Near Kenya Power Office, Chuka Town', phone: '+254 705 759 365', email: 'info@neemaheep.com', coords: '-0.3325, 37.6472' }
 ];
 
@@ -319,7 +319,7 @@ export default function ContactUs() {
                   <div className="flex items-start gap-4">
                     <MapPin className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" />
                     <div className="flex flex-col">
-                      <p className="text-sm text-gray-600 font-medium">{branch.location}</p>
+                      <p className="text-sm text-gray-600 font-medium whitespace-pre-line">{branch.location}</p>
                       <a href={`https://maps.google.com/?q=${branch.coords}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#C0991B] font-semibold mt-1.5 hover:text-[#28a428] flex items-center gap-1 transition-colors">
                         View Map <ChevronRight className="w-3 h-3"/>
                       </a>

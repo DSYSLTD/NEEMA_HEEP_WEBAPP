@@ -1,6 +1,6 @@
 {
   "name": "Remix Neema-Heep",
-  "description": "Imported from GitHub: DSYSLTD/Neema-Heep",
+  "description": "A trusted financial partner serving individuals, farmers and businesses across Mt. Kenya region with accessible business loans, asset financing and inclusive financial solutions designed to support enterprise growth and improve livelihoods.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

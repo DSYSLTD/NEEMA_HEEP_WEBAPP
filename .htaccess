@@ -1,12 +1,12 @@
+# Prevent search engines from ever viewing a raw folder listing again
+Options -Indexes
+
 # ====================================================================
 # Neema HEEP Production Web Server & Reverse Proxy Configuration
 # Compatible with: LiteSpeed Web Server, Apache 2.4+, Phusion Passenger
 # ====================================================================
 
-# 1. Disable Directory Indexing (Eliminates "Index of /" completely)
-Options -Indexes
-
-# 2. Preferred Directory Index order
+# 1. Preferred Directory Index order
 DirectoryIndex dist/index.html index.html index.htm
 
 # 3. Security: Block direct web access to project source and sensitive files

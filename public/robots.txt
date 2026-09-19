@@ -1,0 +1,16 @@
+# Robots.txt for Neema HEEP Microfinance
+# https://neemaheep.com
+
+User-agent: *
+Allow: /
+
+# Disallow internal administrative and portal areas
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /staff-portal
+Disallow: /portal
+Disallow: /portal-activation
+Disallow: /api/*
+
+# Explicit Sitemap Location
+Sitemap: https://neemaheep.com/sitemap.xml

@@ -724,6 +724,27 @@ async function startServer() {
     res.status(404).json({ success: false, error: "API endpoint not found." });
   });
 
+  // Explicit XML Sitemap and Robots.txt Handlers
+  app.get("/sitemap.xml", (_req: Request, res: Response) => {
+    const sitemapPath = path.join(process.cwd(), "public", "sitemap.xml");
+    if (fs.existsSync(sitemapPath)) {
+      res.setHeader("Content-Type", "application/xml; charset=utf-8");
+      res.sendFile(sitemapPath);
+    } else {
+      res.status(404).send("Sitemap not found");
+    }
+  });
+
+  app.get("/robots.txt", (_req: Request, res: Response) => {
+    const robotsPath = path.join(process.cwd(), "public", "robots.txt");
+    if (fs.existsSync(robotsPath)) {
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.sendFile(robotsPath);
+    } else {
+      res.status(404).send("Robots.txt not found");
+    }
+  });
+
   // Serve static assets from /public directory
   app.use(express.static(path.join(process.cwd(), "public"), {
     maxAge: "1d",

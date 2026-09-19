@@ -72,6 +72,7 @@ const RequestPartnership = lazyWithRetry(() => import('./pages/RequestPartnershi
 const AdminDashboard = lazyWithRetry(() => import('./pages/AdminDashboard'));
 const NewsletterSubscribe = lazyWithRetry(() => import('./pages/NewsletterSubscribe'));
 const ThankYou = lazyWithRetry(() => import('./pages/ThankYou'));
+const SitemapPage = lazyWithRetry(() => import('./pages/SitemapPage'));
 
 function PageLoader() {
   return (
@@ -152,6 +153,7 @@ function AppContent() {
           <Route path="/talk-to-us" element={<TalkToUsPage />} />
           <Route path="/request-callback" element={<RequestCallBack />} />
           <Route path="/requirements" element={<RequirementsPage />} />
+          <Route path="/sitemap" element={<SitemapPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

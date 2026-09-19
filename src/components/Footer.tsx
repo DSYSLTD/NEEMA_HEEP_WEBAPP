@@ -8,6 +8,7 @@ const quickLinks = [
   { label: "About Us", path: "/about-us" },
   { label: "Products", path: "/loans" },
   { label: "Contact Us", path: "/contact" },
+  { label: "Site Map", path: "/sitemap" },
 ];
 
 const programsMap = [
@@ -240,6 +241,8 @@ export default function Footer() {
             <Link to="/terms-conditions" className="text-white hover:text-[#C0991B] transition-colors">Terms & Conditions</Link>
             <span className="text-white/20">•</span>
             <Link to="/regulatory-disclosures" className="text-white hover:text-[#C0991B] transition-colors">Regulatory Disclosures</Link>
+            <span className="text-white/20">•</span>
+            <Link to="/sitemap" className="text-white hover:text-[#C0991B] transition-colors">Site Map</Link>
           </div>
 
           <div className="text-white/60 uppercase tracking-widest text-center md:text-right font-semibold text-[11px]">

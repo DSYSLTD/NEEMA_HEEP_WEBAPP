@@ -21,11 +21,14 @@ DirectoryIndex dist/index.html index.html index.htm
 </FilesMatch>
 
 # 4. Hostinger / LiteSpeed Phusion Passenger Directives
-<IfModule mod_passenger.c>
-  PassengerEnabled on
-  PassengerAppType node
-  PassengerStartupFile server.js
-</IfModule>
+PassengerAppRoot /home/u744050538/domains/neemaheep.com/hbuilds/current/nodejs
+PassengerAppType node
+PassengerNodejs /opt/alt/alt-nodejs22/root/bin/node
+PassengerStartupFile server.cjs
+PassengerBaseURI /
+PassengerRestartDir /home/u744050538/domains/neemaheep.com/hbuilds/current/nodejs/tmp
+SetEnv NODE_OPTIONS "--require /home/u744050538/domains/neemaheep.com/hbuilds/config/preload-timestamp.js"
+SetEnv LSNODE_CONSOLE_LOG console.log
 
 # 5. URL Rewriting & SPA Fallback Engine
 <IfModule mod_rewrite.c>

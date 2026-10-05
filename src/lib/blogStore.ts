@@ -1,5 +1,3 @@
-import { BLOG_POSTS } from './blogData';
-
 export interface BlogCategory {
   id: string;
   name: string;
@@ -184,7 +182,7 @@ export interface BlogAuthor {
   socials?: any;
 }
 
-// Reset initial data to empty array - only database rows will be displayed
+// Dynamic posts stored in Supabase (populated dynamically via articleService)
 let storedPosts: BlogPostItem[] = [];
 
 const mockAuthors: BlogAuthor[] = [
@@ -211,7 +209,7 @@ const mockComments: BlogComment[] = [];
 let blacklistedEmails: string[] = [];
 let mockUsers = [
   { id: 'u1', name: 'Patrick Munene', email: 'ptrckmunene@gmail.com', role: 'Superadmin' },
-  { id: 'u2', name: 'Charity Muthoni', email: 'muthonichar12@gmail.com', role: 'Author' }
+  { id: 'u2', name: 'Charity Muthoni', email: 'muthonichar12@gmail.com', role: 'Content editor' }
 ];
 
 let storedCategoriesList: BlogCategory[] = [];
@@ -309,9 +307,7 @@ export const blogStore = {
   },
 
   getSubscribers() {
-    return [
-      { id: 's1', email: 'subscriber@example.com', date: '2026-02-20', status: 'Active' }
-    ];
+    return [];
   },
 
   getSettings(): SiteSettings {

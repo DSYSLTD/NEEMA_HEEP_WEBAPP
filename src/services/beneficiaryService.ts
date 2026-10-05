@@ -15,7 +15,7 @@ export const beneficiaryService = {
         .order('serial_number', { ascending: true });
 
       if (error || !data || data.length === 0) {
-        return beneficiariesStore.getPublishedLists().filter(d => d.year !== '2027');
+        return [];
       }
 
       // Group by year with deduplication
@@ -55,7 +55,7 @@ export const beneficiaryService = {
         students: grouped[yr]
       }));
     } catch {
-      return beneficiariesStore.getPublishedLists().filter(d => d.year !== '2027');
+      return [];
     }
   },
 

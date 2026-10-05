@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   User, Mail, Phone, MapPin, Award, BookOpen, ArrowLeft, ArrowUpRight, 
   CheckCircle2, ShieldCheck, Briefcase, GraduationCap, Globe 
 } from 'lucide-react';
-import { BLOG_POSTS } from '../lib/blogData';
+import { BlogPostItem } from '../lib/blogStore';
+import { articleService } from '../services/articleService';
 
 interface AuthorData {
   id: string;
@@ -17,13 +18,6 @@ interface AuthorData {
   education: string;
   experience: string;
   expertise: string[];
-  articles: Array<{
-    title: string;
-    slug: string;
-    category: string;
-    date: string;
-    excerpt: string;
-  }>;
 }
 
 const AUTHORS_DATA: Record<string, AuthorData> = {
@@ -37,14 +31,7 @@ const AUTHORS_DATA: Record<string, AuthorData> = {
     bio: 'Pioneer in Kenyan microfinance and rural economic development. Leading Neema Heep expansion and agricultural credit accessibility across Mount Kenya counties since 2010.',
     education: 'Master of Science in Finance (M.Sc. Finance)',
     experience: '14+ Years Experience in Microfinance & SME Credit Risk',
-    expertise: ['Micro-Financing Innovation', 'SME Credit Analysis', 'Agribusiness Loans', 'Financial Inclusion Policy'],
-    articles: BLOG_POSTS.filter((p) => p.authorName.toLowerCase().includes('patrick') || p.authorInitials === 'PM').map((p) => ({
-      title: p.title,
-      slug: p.slug,
-      category: p.category,
-      date: p.date,
-      excerpt: p.excerpt,
-    })),
+    expertise: ['Micro-Financing Innovation', 'SME Credit Analysis', 'Agribusiness Loans', 'Financial Inclusion Policy']
   },
   'dr-jane-muturi': {
     id: 'dr-jane-muturi',
@@ -56,14 +43,7 @@ const AUTHORS_DATA: Record<string, AuthorData> = {
     bio: 'Public health strategist overseeing WASH and medical micro-credit programs in Mount Kenya counties. Passionate about marrying financial stability with health outcome improvements.',
     education: 'Doctor of Medicine (M.D.) & Master of Public Health (MPH)',
     experience: '10+ Years in Community Medicine & Social Impact Livelihoods',
-    expertise: ['WASH Micro-Lending', 'Health Livelihoods', 'Community Development', 'Preventive Health Care'],
-    articles: BLOG_POSTS.filter((p) => p.authorName.toLowerCase().includes('jane') || p.authorInitials === 'JM').map((p) => ({
-      title: p.title,
-      slug: p.slug,
-      category: p.category,
-      date: p.date,
-      excerpt: p.excerpt,
-    })),
+    expertise: ['WASH Micro-Lending', 'Health Livelihoods', 'Community Development', 'Preventive Health Care']
   },
   'samuel-ochieng': {
     id: 'samuel-ochieng',
@@ -75,23 +55,38 @@ const AUTHORS_DATA: Record<string, AuthorData> = {
     bio: 'Expert in agricultural group-guaranteed lending, Chama credit models, and M-PESA automated risk analysis.',
     education: 'Bachelor of Commerce (Finance) & CPA (K)',
     experience: '11+ Years in Micro-Credit Underwriting & Risk Analysis',
-    expertise: ['Portfolio Risk Control', 'Group Lending Guarantee Systems', 'Fintech Credit Scoring', 'Agri-Value Chains'],
-    articles: BLOG_POSTS.filter((p) => p.authorName.toLowerCase().includes('samuel') || p.authorInitials === 'SO').map((p) => ({
-      title: p.title,
-      slug: p.slug,
-      category: p.category,
-      date: p.date,
-      excerpt: p.excerpt,
-    })),
-  },
+    expertise: ['Portfolio Risk Control', 'Group Lending Guarantee Systems', 'Fintech Credit Scoring', 'Agri-Value Chains']
+  }
 };
 
 export default function AuthorProfile() {
   const { authorId } = useParams<{ authorId: string }>();
+  const [authorArticles, setAuthorArticles] = useState<BlogPostItem[]>([]);
 
   // Normalize author lookup
   const normalizedId = (authorId || 'patrick-munene').toLowerCase().replace(/\s+/g, '-');
   const author = AUTHORS_DATA[normalizedId] || AUTHORS_DATA['patrick-munene'];
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadArticles = async () => {
+      try {
+        const posts = await articleService.fetchPublishedArticles();
+        if (isMounted) {
+          const authorFirstWord = author.name.toLowerCase().split(' ')[0];
+          const filtered = posts.filter(p => 
+            p.authorName?.toLowerCase().includes(authorFirstWord) ||
+            p.authorId === author.id
+          );
+          setAuthorArticles(filtered);
+        }
+      } catch (e) {
+        console.error('Error loading author articles:', e);
+      }
+    };
+    loadArticles();
+    return () => { isMounted = false; };
+  }, [author.name, author.id]);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -128,55 +123,36 @@ export default function AuthorProfile() {
               className="w-28 h-28 md:w-36 md:h-36 rounded-2xl object-cover border-4 border-white shadow-xl bg-gray-100"
             />
             <div className="space-y-1">
-              <div className="flex items-center justify-center md:justify-start gap-2">
-                <h1 className="text-2xl md:text-3xl font-black text-gray-900">{author.name}</h1>
-                <CheckCircle2 className="w-5 h-5 text-[#074504]" />
+              <h1 className="text-2xl font-black text-gray-900">{author.name}</h1>
+              <p className="text-xs font-bold text-[#826507]">{author.jobTitle} • {author.department}</p>
+              <div className="flex items-center justify-center md:justify-start gap-4 pt-1 text-xs text-gray-500 font-medium">
+                <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-gray-400" /> Mount Kenya Region</span>
+                <span className="flex items-center gap-1"><GraduationCap className="w-3.5 h-3.5 text-gray-400" /> {author.education}</span>
               </div>
-              <p className="text-xs font-bold text-[#074504]">{author.jobTitle}</p>
-              <p className="text-xs text-gray-500 font-medium">{author.department} • Neema HEEP Microfinance</p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/contact"
-              className="px-4 py-2 bg-[#074504] text-white text-xs font-bold rounded-xl hover:bg-[#053203] shadow-sm transition-all"
-            >
-              Contact Author
-            </Link>
           </div>
         </div>
       </div>
 
-      {/* Grid Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main Grid: Bio & Articles */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Bio & Credentials */}
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-xs space-y-4">
-            <h3 className="text-xs font-black uppercase text-[#074504] tracking-wider border-b pb-2 flex items-center gap-1.5">
+            <h2 className="text-sm font-black uppercase text-[#074504] flex items-center gap-2">
               <User className="w-4 h-4 text-[#C0991B]" /> About the Author
-            </h3>
-            <p className="text-xs text-gray-600 leading-relaxed font-medium">{author.bio}</p>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-xs space-y-4">
-            <h3 className="text-xs font-black uppercase text-[#074504] tracking-wider border-b pb-2 flex items-center gap-1.5">
-              <GraduationCap className="w-4 h-4 text-[#C0991B]" /> Qualifications
-            </h3>
-            <div className="space-y-3 text-xs">
-              <div className="flex items-start gap-2 text-gray-700">
-                <GraduationCap className="w-4 h-4 text-[#074504] shrink-0 mt-0.5" />
-                <span className="font-bold">{author.education}</span>
-              </div>
-              <div className="flex items-start gap-2 text-gray-700">
-                <Briefcase className="w-4 h-4 text-[#074504] shrink-0 mt-0.5" />
-                <span className="font-medium">{author.experience}</span>
+            </h2>
+            <p className="text-xs text-gray-700 leading-relaxed font-medium">{author.bio}</p>
+            <div className="pt-2 border-t border-gray-100 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                <Briefcase className="w-4 h-4 text-emerald-600" />
+                <span>{author.experience}</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-xs space-y-4">
-            <h3 className="text-xs font-black uppercase text-[#074504] tracking-wider border-b pb-2 flex items-center gap-1.5">
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-xs space-y-3">
+            <h3 className="text-xs font-black uppercase text-gray-900 flex items-center gap-2">
               <Award className="w-4 h-4 text-[#C0991B]" /> Core Expertise
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -197,29 +173,35 @@ export default function AuthorProfile() {
                 <BookOpen className="w-4 h-4 text-[#C0991B]" /> Articles Authored by {author.name}
               </h2>
               <span className="text-xs font-bold text-[#826507] bg-amber-50 px-2.5 py-0.5 rounded-full border border-[#C0991B]/30">
-                {author.articles.length} Published
+                {authorArticles.length} Published
               </span>
             </div>
 
-            <div className="space-y-4">
-              {author.articles.map((art, idx) => (
-                <div key={idx} className="p-4 bg-gray-50 hover:bg-emerald-50/40 rounded-xl border border-gray-200 hover:border-[#074504]/30 transition-all space-y-2">
-                  <div className="flex items-center justify-between text-[10px] font-black uppercase text-[#826507]">
-                    <span>{art.category}</span>
-                    <span>{art.date}</span>
+            {authorArticles.length > 0 ? (
+              <div className="space-y-4">
+                {authorArticles.map((art) => (
+                  <div key={art.id || art.slug} className="p-4 bg-gray-50 hover:bg-emerald-50/40 rounded-xl border border-gray-200 hover:border-[#074504]/30 transition-all space-y-2">
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase text-[#826507]">
+                      <span>{art.category}</span>
+                      <span>{art.date}</span>
+                    </div>
+                    <h3 className="font-bold text-sm text-gray-900 hover:text-[#074504]">
+                      <Link to={`/blog/${art.slug}`}>{art.title}</Link>
+                    </h3>
+                    <p className="text-xs text-gray-600 line-clamp-2 font-medium">{art.excerpt}</p>
+                    <div className="pt-1 flex items-center justify-end">
+                      <Link to={`/blog/${art.slug}`} className="text-xs font-bold text-[#074504] hover:underline flex items-center gap-1">
+                        Read Full Article <ArrowUpRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
                   </div>
-                  <h3 className="font-bold text-sm text-gray-900 hover:text-[#074504]">
-                    <Link to={`/blog/${art.slug}`}>{art.title}</Link>
-                  </h3>
-                  <p className="text-xs text-gray-600 line-clamp-2 font-medium">{art.excerpt}</p>
-                  <div className="pt-1 flex items-center justify-end">
-                    <Link to={`/blog/${art.slug}`} className="text-xs font-bold text-[#074504] hover:underline flex items-center gap-1">
-                      Read Full Article <ArrowUpRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center text-xs text-gray-500 font-medium bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                No articles published by this author yet.
+              </div>
+            )}
           </div>
         </div>
       </div>

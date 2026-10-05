@@ -23,14 +23,14 @@ export async function fetchAuditLogsFromDB(): Promise<AuditLogEntry[]> {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       const mapped: AuditLogEntry[] = data.map((item: any) => ({
         id: item.id,
         timestamp: item.created_at ? new Date(item.created_at).toLocaleString() : new Date().toLocaleString(),
-        event: item.event || 'System Action',
-        actor: item.actor || 'Patrick Munene',
-        actorRole: item.actor_role || 'Superadmin',
-        category: item.category || 'System',
+        event: item.event || item.action || 'System Action',
+        actor: item.actor || item.user_name || 'System Operator',
+        actorRole: item.actor_role || item.user_role || 'Superadmin',
+        category: item.category || item.module || 'System',
         status: item.status || 'Success',
         ipAddress: item.ip_address || '102.218.45.12',
         location: item.location || 'Nairobi, Kenya',
@@ -41,17 +41,7 @@ export async function fetchAuditLogsFromDB(): Promise<AuditLogEntry[]> {
       return mapped;
     }
   } catch (err) {
-    console.warn('[AuditService] Supabase audit log fetch failed, using cached logs:', err);
-  }
-
-  // Fallback to local cache if offline or table empty
-  const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
-    }
+    console.warn('[AuditService] Supabase audit log fetch notice:', err);
   }
 
   return [];

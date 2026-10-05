@@ -193,7 +193,7 @@ export function useJobs() {
     async function loadFromSupabase() {
       try {
         const dbJobs = await jobService.getJobs();
-        if (isMounted && dbJobs.length > 0) {
+        if (isMounted) {
           const todayStr = new Date().toISOString().split('T')[0];
           const autoArchived = dbJobs.map(v => {
             if (v.deadline && v.deadline < todayStr && v.status === 'Published') {

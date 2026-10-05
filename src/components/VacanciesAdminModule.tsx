@@ -42,32 +42,7 @@ export default function VacanciesAdminModule({ className = '' }: { className?: s
     positionsCount: number;
     deadline: string;
     summary: string;
-  }>>([
-    {
-      id: 'batch-1',
-      title: 'Senior Micro-Finance Credit Officer',
-      refNumber: 'NH-VAC-2026-B01',
-      department: 'Credit Operations',
-      category: 'Credit & Risk',
-      employmentType: 'Full-Time',
-      location: 'Nyeri Main Branch',
-      positionsCount: 2,
-      deadline: '2026-08-30',
-      summary: 'Conduct credit appraisals, manage chama field lending operations, and monitor portfolio performance.'
-    },
-    {
-      id: 'batch-2',
-      title: 'Junior Field Credit Officer',
-      refNumber: 'NH-VAC-2026-B02',
-      department: 'Credit Operations',
-      category: 'Credit & Risk',
-      employmentType: 'Full-Time',
-      location: 'Murang\'a Branch',
-      positionsCount: 3,
-      deadline: '2026-08-30',
-      summary: 'Engage with local microfinance groups, process weekly chama loan disbursements, and conduct field visits.'
-    }
-  ]);
+  }>>([]);
 
   // Scheduled Vacancies State (supporting single & batch scheduling)
   const [scheduledVacancies, setScheduledVacancies] = useState<Array<{
@@ -83,36 +58,7 @@ export default function VacanciesAdminModule({ className = '' }: { className?: s
     deadline: string;
     summary: string;
     status: 'Scheduled';
-  }>>([
-    {
-      id: 'sched-1',
-      title: 'Branch Audit & Internal Control Specialist',
-      refNumber: 'NH-SCHED-2026-01',
-      department: 'Risk & Audit',
-      category: 'Risk & Compliance',
-      positionsCount: 1,
-      location: 'Nyeri HQ',
-      scheduledDate: '2026-08-15',
-      scheduledTime: '08:00 AM',
-      deadline: '2026-09-15',
-      summary: 'Lead internal branch audits, compliance policy verification, and operational risk assessments.',
-      status: 'Scheduled'
-    },
-    {
-      id: 'sched-2',
-      title: 'Regional Field Collection Team Lead',
-      refNumber: 'NH-SCHED-2026-02',
-      department: 'Credit Operations',
-      category: 'Credit & Risk',
-      positionsCount: 2,
-      location: 'Embu & Meru Regional Branches',
-      scheduledDate: '2026-08-20',
-      scheduledTime: '09:00 AM',
-      deadline: '2026-09-20',
-      summary: 'Oversee regional group portfolio recovery, field collections, and credit officer coaching.',
-      status: 'Scheduled'
-    }
-  ]);
+  }>>([]);
 
   // Batch Scheduling state form
   const [batchSchedRows, setBatchSchedRows] = useState<Array<{
@@ -127,34 +73,7 @@ export default function VacanciesAdminModule({ className = '' }: { className?: s
     scheduledTime: string;
     deadline: string;
     summary: string;
-  }>>([
-    {
-      id: 'bsched-1',
-      title: 'ICT Core Systems Administrator',
-      refNumber: 'NH-BSCHED-01',
-      department: 'ICT & Technology',
-      category: 'IT & Digital Financial Services',
-      positionsCount: 1,
-      location: 'Nyeri HQ',
-      scheduledDate: '2026-09-01',
-      scheduledTime: '08:00 AM',
-      deadline: '2026-09-30',
-      summary: 'Maintain microfinance core banking software, network security infrastructure, and database backups.'
-    },
-    {
-      id: 'bsched-2',
-      title: 'Customer Experience & Tele-Support Officer',
-      refNumber: 'NH-BSCHED-02',
-      department: 'Operations',
-      category: 'Customer Experience',
-      positionsCount: 2,
-      location: 'Nyeri HQ',
-      scheduledDate: '2026-09-01',
-      scheduledTime: '08:00 AM',
-      deadline: '2026-09-30',
-      summary: 'Handle member enquiries, loan product support, candidate calls, and feedback ticketing.'
-    }
-  ]);
+  }>>([]);
 
   // Category & Department Addition/Editing State
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);

@@ -275,7 +275,7 @@ export default function LoanProduct() {
             <Link to="/pre-qualification" className="w-full sm:w-auto bg-[#074504] text-white font-bold py-4 px-10 rounded-full hover:bg-[#053303] transition-all text-sm uppercase tracking-widest">
               Check Pre-Qualification
             </Link>
-            <Link to="/contact" className="w-full sm:w-auto bg-white border-2 border-[#074504]/20 text-[#074504] font-bold py-4 px-10 rounded-full hover:border-[#074504] transition-all text-sm uppercase tracking-widest">
+            <Link to="/request-callback" className="w-full sm:w-auto bg-white border-2 border-[#074504]/20 text-[#074504] font-bold py-4 px-10 rounded-full hover:border-[#074504] transition-all text-sm uppercase tracking-widest">
               Request a Call Back
             </Link>
           </div>

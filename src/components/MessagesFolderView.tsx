@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import { 
   Mail, Search, Star, Trash2, Reply, CheckCircle2, AlertCircle, 
   Send, User, Phone, Calendar, Tag, Shield, Download, FileText, 
@@ -89,11 +90,11 @@ const INITIAL_MESSAGES: MessageItem[] = [
     senderPhone: '+254 712 345 678',
     subject: 'Inquiry regarding Biashara Boost Loan Eligibility in Nyeri',
     category: 'Loan Application Lead',
-    content: 'Habari, I have a fast-growing cereals wholesale business in Nyeri town market. I would like to inquire about the minimum documentation required to apply for the KES 250,000 Biashara Boost Loan and whether grace periods are offered during seasonal harvests.',
+    content: 'Habari, I have a fast-growing cereals wholesale business in Nyeri town market. I would like to inquire about the minimum documentation required to apply for the Kshs 250,000 Biashara Boost Loan and whether grace periods are offered during seasonal harvests.',
     date: '2026-03-29 09:42 AM',
     status: 'Unread',
     starred: true,
-    meta: { requestedAmount: 'KES 250,000', location: 'Nyeri Main Branch', businessType: 'Agri-Cereals Wholesale' }
+    meta: { requestedAmount: 'Kshs 250,000', location: 'Nyeri Main Branch', businessType: 'Agri-Cereals Wholesale' }
   },
   {
     id: 'msg-102',
@@ -129,7 +130,7 @@ const INITIAL_MESSAGES: MessageItem[] = [
     content: 'I need financing for a solar-powered irrigation pump system for my 3-acre dairy and horticulture farm in Othaya. Kindly share the repayment schedule options.',
     date: '2026-03-26 02:10 PM',
     status: 'Replied',
-    meta: { requestedAmount: 'KES 180,000', location: 'Othaya Branch' }
+    meta: { requestedAmount: 'Kshs 180,000', location: 'Othaya Branch' }
   },
   {
     id: 'msg-105',
@@ -170,6 +171,96 @@ export default function MessagesFolderView() {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
   };
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLiveMessages() {
+      try {
+        const liveItems: MessageItem[] = [];
+
+        // 1. Contact Messages
+        const { data: contacts } = await supabase
+          .from('contact_messages')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (contacts) {
+          contacts.forEach((c: any) => {
+            liveItems.push({
+              id: c.id,
+              senderName: c.name || 'Anonymous',
+              senderEmail: c.email || 'no-email@neemaheep.com',
+              senderPhone: c.phone || '',
+              subject: `Inquiry: ${c.interest || 'General'}`,
+              category: 'Contact Form',
+              content: c.message || `Interest in ${c.interest || 'services'}. Urgency: ${c.urgency || 'Normal'}`,
+              date: c.created_at ? new Date(c.created_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' }) : 'Recent',
+              status: c.status === 'Read' ? 'Read' : 'Unread',
+              meta: { interest: c.interest, urgency: c.urgency, ...c.details }
+            });
+          });
+        }
+
+        // 2. Callback Requests
+        const { data: callbacks } = await supabase
+          .from('callback_requests')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (callbacks) {
+          callbacks.forEach((cb: any) => {
+            liveItems.push({
+              id: cb.id,
+              senderName: cb.name || 'Callback Requester',
+              senderEmail: cb.email || '',
+              senderPhone: cb.phone || '',
+              subject: `Phone Callback Request: ${cb.interest || 'Loan Inquiry'}`,
+              category: 'Loan Application Lead',
+              content: `Requested call back regarding: ${cb.interest || 'Loan Products'}. Preferred window: ${cb.preferred_time || 'Morning'}`,
+              date: cb.created_at ? new Date(cb.created_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' }) : 'Recent',
+              status: cb.status === 'Read' ? 'Read' : 'Unread',
+              meta: { interest: cb.interest, preferredTime: cb.preferred_time, ...cb.details }
+            });
+          });
+        }
+
+        // 3. Pre-Qualifications
+        const { data: prequals } = await supabase
+          .from('prequalifications')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (prequals) {
+          prequals.forEach((p: any) => {
+            liveItems.push({
+              id: p.id,
+              senderName: p.full_name || 'Loan Applicant',
+              senderEmail: p.email || '',
+              senderPhone: p.phone || '',
+              subject: `Pre-Qualification Submission - Score ${p.prequalification_score || 85}/100`,
+              category: 'Quiz Lead',
+              content: `Online Pre-qualification for ${p.recommended_product || 'Microfinance Facility'}. Requested amount: ${p.requested_amount || 'Kshs 150,000'}. Business sector: ${p.business_type || 'Retail'}.`,
+              date: p.created_at ? new Date(p.created_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' }) : 'Recent',
+              status: p.status === 'Read' ? 'Read' : 'Unread',
+              meta: { score: p.prequalification_score, recommendedProduct: p.recommended_product, ...p.details }
+            });
+          });
+        }
+
+        if (isMounted && liveItems.length > 0) {
+          setMessages(prev => {
+            const existingIds = new Set(liveItems.map(item => item.id));
+            const remainingInitial = prev.filter(m => !existingIds.has(m.id));
+            return [...liveItems, ...remainingInitial];
+          });
+        }
+      } catch (err) {
+        console.warn('Could not load live messages:', err);
+      }
+    }
+    loadLiveMessages();
+    return () => { isMounted = false; };
+  }, []);
 
   const selectedMsg = messages.find((m) => m.id === selectedId) || messages[0];
 

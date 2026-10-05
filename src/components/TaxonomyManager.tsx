@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { supabase } from '../lib/supabase';
 import { 
   FolderTree, Tag as TagIcon, Plus, Search, Filter, 
   Trash2, Edit3, ArrowRight, Layers, CheckCircle2, AlertCircle, 
   RefreshCw, Download, Upload, Copy, ExternalLink, HelpCircle, 
   ChevronRight, ChevronDown, Check, ShieldCheck,
-  List, Grid, Hash, AlertTriangle, X, Info
+  List, Grid, Hash, AlertTriangle, X, Info, FileSpreadsheet, Printer, Power
 } from 'lucide-react';
 import { blogStore, BlogCategory, BlogTag, BlogPostItem } from '../lib/blogStore';
+import { downloadExcel, downloadCSV, ColumnDef } from '../lib/excelReportExport';
+import ReportModal from './ReportModal';
 
 interface TaxonomyManagerProps {
   onSelectCategoryFilter?: (catName: string) => void;
@@ -58,6 +61,9 @@ export const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({
   const [sourceTagId, setSourceTagId] = useState<string>('');
   const [targetTagId, setTargetTagId] = useState<string>('');
 
+  // Report Modal State
+  const [showReportModal, setShowReportModal] = useState(false);
+
   // Delete Confirmation Dialog State
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'category' | 'tag'; item: BlogCategory | BlogTag } | null>(null);
 
@@ -93,6 +99,50 @@ export const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({
 
   useEffect(() => {
     reloadData();
+
+    // Fetch and merge categories and tags from Supabase categories table
+    async function loadRemoteCategories() {
+      try {
+        const { data, error } = await supabase.from('categories').select('*');
+        if (!error && data && data.length > 0) {
+          const remoteCats = data
+            .filter((d: any) => d.category_type === 'category' || d.type === 'category' || (!d.category_type && !d.type))
+            .map((d: any) => ({
+              id: d.id,
+              name: d.name,
+              slug: d.slug,
+              description: d.description || '',
+              color: d.color || '#074504',
+              parentCategory: d.parent_category || '',
+              seoTitle: d.seo_title || '',
+              seoDescription: d.seo_description || '',
+              isActive: d.is_active !== false
+            }));
+
+          const remoteTags = data
+            .filter((d: any) => d.category_type === 'tag' || d.type === 'tag')
+            .map((d: any) => ({
+              id: d.id,
+              name: d.name,
+              slug: d.slug,
+              description: d.description || '',
+              color: d.color || '#074504',
+              isActive: d.is_active !== false
+            }));
+
+          if (remoteCats.length > 0) {
+            blogStore.saveCategories(remoteCats);
+          }
+          if (remoteTags.length > 0) {
+            blogStore.saveTags(remoteTags);
+          }
+          reloadData();
+        }
+      } catch (err) {
+        console.warn("Notice loading categories from Supabase:", err);
+      }
+    }
+    loadRemoteCategories();
 
     const handleUpdate = () => reloadData();
     window.addEventListener('neema_cms_categories_updated', handleUpdate);
@@ -185,6 +235,23 @@ export const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({
 
       blogStore.saveCategories(updatedCats);
       showToast(`Category "${catFormData.name}" updated successfully!`);
+
+      // Sync to Supabase categories table
+      supabase.from('categories').upsert([{
+        name: catFormData.name.trim(),
+        slug,
+        description: catFormData.description.trim(),
+        color: catFormData.color,
+        category_type: 'category',
+        type: 'category',
+        is_active: true,
+        parent_category: catFormData.parentCategory || null,
+        seo_title: catFormData.seoTitle || null,
+        seo_description: catFormData.seoDescription || null,
+        updated_at: new Date().toISOString()
+      }], { onConflict: 'slug' }).then(({ error }) => {
+        if (error) console.warn("Notice syncing category update to Supabase:", error);
+      });
     } else {
       // Create New
       const newCat: BlogCategory = {
@@ -201,6 +268,22 @@ export const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({
 
       blogStore.saveCategories([...categories, newCat]);
       showToast(`Category "${catFormData.name}" created!`);
+
+      // Sync to Supabase categories table
+      supabase.from('categories').upsert([{
+        name: catFormData.name.trim(),
+        slug,
+        description: catFormData.description.trim(),
+        color: catFormData.color,
+        category_type: 'category',
+        type: 'category',
+        is_active: true,
+        parent_category: catFormData.parentCategory || null,
+        seo_title: catFormData.seoTitle || null,
+        seo_description: catFormData.seoDescription || null
+      }], { onConflict: 'slug' }).then(({ error }) => {
+        if (error) console.warn("Notice syncing new category to Supabase:", error);
+      });
     }
 
     setShowCategoryModal(false);
@@ -215,11 +298,23 @@ export const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({
       const filtered = categories.filter(c => c.id !== cat.id);
       blogStore.saveCategories(filtered);
       showToast(`Category "${cat.name}" deleted.`);
+
+      if (cat.slug) {
+        supabase.from('categories').delete().eq('slug', cat.slug).then(({ error }) => {
+          if (error) console.warn("Notice deleting category from Supabase:", error);
+        });
+      }
     } else {
       const tag = deleteTarget.item as BlogTag;
       const filtered = tags.filter(t => t.id !== tag.id);
       blogStore.saveTags(filtered);
       showToast(`Tag "#${tag.name}" deleted.`);
+
+      if (tag.slug) {
+        supabase.from('categories').delete().eq('slug', tag.slug).then(({ error }) => {
+          if (error) console.warn("Notice deleting tag from Supabase:", error);
+        });
+      }
     }
 
     setDeleteTarget(null);
@@ -286,6 +381,20 @@ export const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({
 
       blogStore.saveTags(updatedTags);
       showToast(`Tag "#${cleanName}" updated successfully!`);
+
+      // Sync tag update to Supabase categories table
+      supabase.from('categories').upsert([{
+        name: cleanName,
+        slug,
+        description: tagFormData.description ? tagFormData.description.trim() : null,
+        color: tagFormData.color || '#074504',
+        category_type: 'tag',
+        type: 'tag',
+        is_active: true,
+        updated_at: new Date().toISOString()
+      }], { onConflict: 'slug' }).then(({ error }) => {
+        if (error) console.warn("Notice syncing tag update to Supabase:", error);
+      });
     } else {
       const newTag: BlogTag = {
         id: `tag-${Date.now()}`,
@@ -298,6 +407,19 @@ export const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({
 
       blogStore.saveTags([...tags, newTag]);
       showToast(`Tag "#${cleanName}" created!`);
+
+      // Sync new tag to Supabase categories table
+      supabase.from('categories').upsert([{
+        name: cleanName,
+        slug,
+        description: tagFormData.description ? tagFormData.description.trim() : null,
+        color: tagFormData.color || '#074504',
+        category_type: 'tag',
+        type: 'tag',
+        is_active: true
+      }], { onConflict: 'slug' }).then(({ error }) => {
+        if (error) console.warn("Notice syncing new tag to Supabase:", error);
+      });
     }
 
     setShowTagModal(false);
@@ -371,6 +493,88 @@ export const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({
         return a.name.localeCompare(b.name);
       });
   }, [tags, searchQuery, sortBy]);
+
+  // Toggle Active Status
+  const handleToggleCategoryActive = async (cat: BlogCategory & { isActive?: boolean }) => {
+    const newStatus = cat.isActive === false ? true : false;
+    const updated = categories.map(c => c.id === cat.id ? { ...c, isActive: newStatus } : c);
+    setCategories(updated);
+    blogStore.saveCategories(updated);
+    showToast(`Category "${cat.name}" marked as ${newStatus ? 'Active' : 'Inactive'}.`);
+    try {
+      await supabase.from('categories').update({ is_active: newStatus }).eq('slug', cat.slug);
+    } catch (err) {
+      console.warn("Notice updating category status:", err);
+    }
+  };
+
+  const handleToggleTagActive = async (tag: BlogTag & { isActive?: boolean }) => {
+    const newStatus = tag.isActive === false ? true : false;
+    const updated = tags.map(t => t.id === tag.id ? { ...t, isActive: newStatus } : t);
+    setTags(updated);
+    blogStore.saveTags(updated);
+    showToast(`Tag "#${tag.name}" marked as ${newStatus ? 'Active' : 'Inactive'}.`);
+    try {
+      await supabase.from('categories').update({ is_active: newStatus }).eq('slug', tag.slug);
+    } catch (err) {
+      console.warn("Notice updating tag status:", err);
+    }
+  };
+
+  // Reporting and Export Columns
+  const categoryColumns: ColumnDef[] = [
+    { key: 'name', label: 'Category Name' },
+    { key: 'slug', label: 'Slug' },
+    { key: 'postCount', label: 'Articles Count', type: 'number' },
+    { key: 'statusText', label: 'Status' },
+    { key: 'description', label: 'Description' },
+    { key: 'parentCategory', label: 'Parent Category' },
+  ];
+
+  const tagColumns: ColumnDef[] = [
+    { key: 'name', label: 'Tag Name' },
+    { key: 'slug', label: 'Slug' },
+    { key: 'postCount', label: 'Articles Count', type: 'number' },
+    { key: 'statusText', label: 'Status' },
+    { key: 'description', label: 'Description' },
+  ];
+
+  const categoryReportData = useMemo(() => {
+    return filteredCategories.map(c => ({
+      ...c,
+      statusText: (c as any).isActive === false ? 'Inactive' : 'Active',
+      parentCategory: (c as any).parentCategory || 'None',
+      description: c.description || '—'
+    }));
+  }, [filteredCategories]);
+
+  const tagReportData = useMemo(() => {
+    return filteredTags.map(t => ({
+      ...t,
+      statusText: (t as any).isActive === false ? 'Inactive' : 'Active',
+      description: (t as any).description || '—'
+    }));
+  }, [filteredTags]);
+
+  const handleDownloadExcel = () => {
+    if (activeTab === 'categories') {
+      if (categoryReportData.length === 0) return;
+      downloadExcel('Blog_Categories', categoryColumns, categoryReportData);
+    } else {
+      if (tagReportData.length === 0) return;
+      downloadExcel('Blog_Tags', tagColumns, tagReportData);
+    }
+  };
+
+  const handleDownloadCSV = () => {
+    if (activeTab === 'categories') {
+      if (categoryReportData.length === 0) return;
+      downloadCSV('Blog_Categories', categoryColumns, categoryReportData);
+    } else {
+      if (tagReportData.length === 0) return;
+      downloadCSV('Blog_Tags', tagColumns, tagReportData);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -454,6 +658,35 @@ export const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({
           >
             <Layers className="w-4 h-4 text-[#C0991B]" />
             <span>Merge Tags</span>
+          </button>
+
+          <div className="h-6 w-px bg-white/20 hidden sm:block mx-1" />
+
+          <button
+            type="button"
+            onClick={handleDownloadExcel}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#C0991B] hover:bg-[#a88414] text-[#074504] rounded-xl text-xs font-black uppercase shadow-md transition-all cursor-pointer"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Export Excel</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadCSV}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-black uppercase shadow-md transition-all cursor-pointer"
+          >
+            <Download className="w-4 h-4 text-[#C0991B]" />
+            <span>Export CSV</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowReportModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-black uppercase shadow-md transition-all cursor-pointer"
+          >
+            <Printer className="w-4 h-4 text-[#C0991B]" />
+            <span>Print Report</span>
           </button>
         </div>
       </div>
@@ -566,9 +799,23 @@ export const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({
                           {cat.name}
                         </h3>
                       </div>
-                      <span className="px-2.5 py-1 bg-amber-50 text-[#7a600d] border border-[#C0991B]/30 rounded-full text-[10px] font-black shrink-0">
-                        {cat.postCount} {cat.postCount === 1 ? 'post' : 'posts'}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCategoryActive(cat as any)}
+                          title="Click to toggle Active / Inactive"
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-black cursor-pointer transition-colors border ${
+                            (cat as any).isActive === false 
+                              ? 'bg-gray-100 text-gray-500 border-gray-300 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300' 
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300'
+                          }`}
+                        >
+                          {(cat as any).isActive === false ? 'Inactive' : 'Active'}
+                        </button>
+                        <span className="px-2.5 py-0.5 bg-amber-50 text-[#7a600d] border border-[#C0991B]/30 rounded-full text-[10px] font-black shrink-0">
+                          {cat.postCount} {cat.postCount === 1 ? 'post' : 'posts'}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="text-[11px] font-mono text-gray-500 bg-amber-50/50 border border-amber-100/80 px-2.5 py-1 rounded-lg inline-block">
@@ -656,6 +903,19 @@ export const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({
                     <span className="text-[#C0991B] mr-0.5">#</span>{tag.name}
                   </span>
                   
+                  <button
+                    type="button"
+                    onClick={() => handleToggleTagActive(tag as any)}
+                    title="Click to toggle Active / Inactive"
+                    className={`px-1.5 py-0.5 rounded-full text-[9px] font-black cursor-pointer transition-colors border ${
+                      (tag as any).isActive === false 
+                        ? 'bg-gray-100 text-gray-500 border-gray-300 hover:bg-emerald-50 hover:text-emerald-700' 
+                        : 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-amber-50 hover:text-amber-800'
+                    }`}
+                  >
+                    {(tag as any).isActive === false ? 'Inactive' : 'Active'}
+                  </button>
+
                   <span className="px-2 py-0.5 bg-white border border-[#C0991B]/30 group-hover:border-[#C0991B] rounded-full text-[10px] font-black text-[#7a600d]">
                     {tag.postCount}
                   </span>
@@ -1013,6 +1273,22 @@ export const TaxonomyManager: React.FC<TaxonomyManagerProps> = ({
           </div>
         </div>
       )}
+
+      {/* Formal Taxonomy Management Audit & Directory Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        title={activeTab === 'categories' ? 'Blog Categories Taxonomy Directory Report' : 'Blog Tags Taxonomy Directory Report'}
+        moduleName="Blog Management"
+        submoduleName={activeTab === 'categories' ? 'Categories' : 'Tags'}
+        columns={activeTab === 'categories' ? categoryColumns : tagColumns}
+        data={activeTab === 'categories' ? categoryReportData : tagReportData}
+        filterDescription={`Scope: Active & Inactive ${activeTab === 'categories' ? 'Categories' : 'Tags'} | Filter: ${searchQuery || 'All'} | Sort: ${sortBy.toUpperCase()}`}
+        summaryMetrics={[
+          { label: `Total ${activeTab === 'categories' ? 'Categories' : 'Tags'}`, value: activeTab === 'categories' ? categories.length : tags.length },
+          { label: 'Filtered Result', value: activeTab === 'categories' ? filteredCategories.length : filteredTags.length, color: '#074504' }
+        ]}
+      />
 
     </div>
   );

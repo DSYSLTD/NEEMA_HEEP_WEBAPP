@@ -6,7 +6,7 @@ export interface CMSUser {
   email: string;
   displayName: string;
   userName: string;
-  role: 'Superadmin' | 'Author' | 'Editor' | 'Web Master' | 'Webmaster' | string;
+  role: 'Superadmin' | 'Content editor' | 'Administrator' | 'Reviewer' | string;
   department: string;
   status: 'Active' | 'Disabled' | 'Pending';
   provider?: string;
@@ -56,7 +56,7 @@ export function useAuth() {
             email: 'muthonichar12@gmail.com',
             displayName: 'Charity Muthoni',
             userName: 'Charity Muthoni',
-            role: 'Author',
+            role: 'Content editor',
             department: 'CMS Editorial',
             status: 'Active',
             provider: sessionUser.app_metadata?.provider || 'email'
@@ -283,7 +283,7 @@ export function useAuth() {
             email: 'muthonichar12@gmail.com',
             user_metadata: { full_name: 'Charity Muthoni' },
             app_metadata: { provider: 'core-credentials' },
-            role: 'Author',
+            role: 'Content editor',
             department: 'CMS Editorial',
             status: 'Active'
           };

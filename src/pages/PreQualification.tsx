@@ -598,7 +598,7 @@ export default function EligibilityQuiz() {
                                 Register as New Member <User className="w-4 h-4"/>
                              </Link>
                              <Link 
-                               to="/contact" 
+                               to="/request-callback" 
                                className="w-full border-2 border-gray-200 text-gray-600 hover:bg-gray-50 font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
                              >
                                 Request a Call Back <Phone className="w-4 h-4"/>

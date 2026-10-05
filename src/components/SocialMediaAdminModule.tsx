@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import { 
   Share2, Save, Plus, Trash2, CheckCircle2, ExternalLink, RefreshCw, Eye, Globe, X,
   MessageCircle, Code, Database, Smartphone, Settings, Check
@@ -20,6 +21,31 @@ export default function SocialMediaAdminModule() {
   useEffect(() => {
     setLinks(blogStore.getSocialLinks());
     setWaSettings(blogStore.getWhatsAppSettings());
+
+    // Fetch from Supabase social_media table if available
+    async function loadRemoteSocialMedia() {
+      try {
+        const { data, error } = await supabase
+          .from('social_media')
+          .select('*')
+          .order('display_order', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          const mapped: SocialLinkItem[] = data.map((d: any) => ({
+            id: d.id,
+            platform: d.platform,
+            name: d.name,
+            url: d.url,
+            enabled: Boolean(d.enabled)
+          }));
+          setLinks(mapped);
+          blogStore.saveSocialLinks(mapped);
+        }
+      } catch (err) {
+        console.warn("Notice loading social_media from Supabase:", err);
+      }
+    }
+    loadRemoteSocialMedia();
   }, []);
 
   const handleUrlChange = (id: string, url: string) => {
@@ -36,15 +62,38 @@ export default function SocialMediaAdminModule() {
     setSavedSuccess(false);
   };
 
-  const handleDeleteLink = (id: string) => {
+  const handleDeleteLink = async (id: string, platform?: string) => {
     setLinks((prev) => prev.filter((item) => item.id !== id));
     setSavedSuccess(false);
+    if (platform) {
+      try {
+        await supabase.from('social_media').delete().eq('platform', platform);
+      } catch (err) {
+        console.warn("Delete social media notice:", err);
+      }
+    }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     blogStore.saveSocialLinks(links);
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 4000);
+
+    try {
+      for (let i = 0; i < links.length; i++) {
+        const item = links[i];
+        await supabase.from('social_media').upsert([{
+          platform: item.platform,
+          name: item.name,
+          url: item.url,
+          enabled: item.enabled,
+          display_order: i,
+          updated_at: new Date().toISOString()
+        }], { onConflict: 'platform' });
+      }
+    } catch (err) {
+      console.warn("Notice saving social_media to Supabase:", err);
+    }
   };
 
   const handleSaveWhatsApp = () => {

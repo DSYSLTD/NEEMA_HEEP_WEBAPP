@@ -3,6 +3,7 @@ import { PhoneCall, Clock } from 'lucide-react';
 import WhatsAppIcon from '../components/WhatsAppIcon';
 import { motion } from 'motion/react';
 import SmartLeadForm from '../components/SmartLeadForm';
+import { CALLBACK_FORM_FIELDS, CALLBACK_FORM_CTA, CALLBACK_FORM_TITLE, CALLBACK_FORM_DESC } from '../lib/callbackFields';
 
 export default function TalkToUsPage() {
   const whatsappUrl = `https://wa.me/254705759365?text=${encodeURIComponent("Hi! I'm looking to consult with a loan specialist regarding my options.")}`;
@@ -66,14 +67,10 @@ export default function TalkToUsPage() {
         >
           <SmartLeadForm 
             type="Callback"
-            title="Request a Consultation"
-            description="Our experts will guide you through the best loan options for your needs."
-            ctaText="Schedule Callback"
-            fields={[
-              { name: 'name', label: 'Full Name', type: 'text', placeholder: 'John Doe', required: true },
-              { name: 'phone', label: 'Mobile Number', type: 'tel', placeholder: '07XX...', required: true },
-              { name: 'purpose', label: 'Preferred Time', type: 'text', placeholder: 'e.g. Afternoon' }
-            ]}
+            title={CALLBACK_FORM_TITLE}
+            description={CALLBACK_FORM_DESC}
+            ctaText={CALLBACK_FORM_CTA}
+            fields={CALLBACK_FORM_FIELDS}
           />
         </motion.div>
       </div>

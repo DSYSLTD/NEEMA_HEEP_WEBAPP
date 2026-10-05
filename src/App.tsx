@@ -91,8 +91,13 @@ function AppContent() {
   const isPortal = location.pathname.startsWith('/staff-portal') || location.pathname === '/portal';
   const isBlog = location.pathname.startsWith('/blog');
   const isVolunteer = location.pathname === '/volunteer' || location.pathname === '/volunteers';
+  const isContact = location.pathname === '/contact' || 
+                    location.pathname.startsWith('/contact') || 
+                    location.pathname === '/contact-us' || 
+                    location.pathname.startsWith('/contact-us') || 
+                    location.pathname === '/talk-to-us';
   const isDashboardOrPortal = isAdmin || isPortal;
-  const hideFloatingButtons = isDashboardOrPortal || isBlog || isVolunteer;
+  const hideFloatingButtons = isDashboardOrPortal || isBlog || isVolunteer || isContact;
 
   return (
     <div className={`min-h-screen flex flex-col font-sans bg-[#f8faf8] relative overflow-hidden md:overflow-visible ${isAdmin ? 'pt-0' : 'pt-[88px]'}`}>
@@ -111,6 +116,7 @@ function AppContent() {
           <Route path="/volunteer" element={<Volunteer />} />
           <Route path="/volunteers" element={<Volunteer />} />
           <Route path="/contact" element={<ContactUs />} />
+          <Route path="/contact-us" element={<ContactUs />} />
           <Route path="/programs" element={<Programs />} />
           <Route path="/programs/education-support" element={<EducationSupport />} />
           <Route path="/programs/community-health" element={<CommunityHealth />} />

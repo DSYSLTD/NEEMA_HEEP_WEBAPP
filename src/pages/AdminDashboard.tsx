@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  LayoutDashboard, FileText, FilePlus, Image as ImageIcon, 
-  BarChart3, BarChart2, Award, LayoutGrid, Settings, User, LogOut, Search, Plus, Trash2, 
+  FileText, FilePlus, Image as ImageIcon, 
+  BarChart2, Award, LayoutGrid, Settings, User, LogOut, Search, Plus, Trash2, 
   Eye, Edit3, Check, Lock, UploadCloud, Copy, ExternalLink, 
   ChevronLeft, ChevronRight, Bell, ChevronDown, Bold, 
   Italic, Underline, List, ListOrdered, Quote, Link as LinkIcon, 
   Code, Table, AlignLeft, AlignCenter, AlignRight, CheckCircle2,
   X, RefreshCw, Shield, Building2, UserPlus, Users, UserCheck, MessageSquare, AlertCircle,
-  FolderTree, Tag, Mail, Palette, Globe, Database, Download, Upload, Play, CheckSquare, Flame, Rss, ArrowUpRight, Send,
-  Key, KeyRound, LockKeyhole, Activity, TrendingUp, PieChart, Filter, HelpCircle, Menu, Briefcase, Target, Layers,
-  Wallet, Coins, ShieldCheck, Clock, Sun, Home, ArrowUp, HardDrive, Sliders, Calendar as CalendarIcon, ArrowDown, Server, Share2, PenTool
+  FolderTree, Tag, Mail, Palette, Globe, Download, Upload, Play, CheckSquare, Flame, Rss, ArrowUpRight, Send,
+  Key, KeyRound, LockKeyhole, Activity, TrendingUp, PieChart, Filter, HelpCircle, Menu, Briefcase, Layers,
+  Wallet, Coins, ShieldCheck, Clock, Sun, Home, ArrowUp, HardDrive, Sliders, Calendar as CalendarIcon, ArrowDown, Share2, PenTool,
+  ShieldAlert, FileSpreadsheet, Printer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../hooks/useAuth';
@@ -25,37 +26,82 @@ import TaxonomyManager from '../components/TaxonomyManager';
 import UserProfileManager from '../components/UserProfileManager';
 import MessagesFolderView from '../components/MessagesFolderView';
 import PasswordSecurityModule from '../components/PasswordSecurityModule';
-import EnterpriseAdminModule from '../components/EnterpriseAdminModule';
-import SystemAdminModule from '../components/SystemAdminModule';
 import RolesManagerModule from '../components/RolesManagerModule';
 import VacanciesAdminModule from '../components/VacanciesAdminModule';
 import BeneficiariesAdminModule from '../components/BeneficiariesAdminModule';
 import CommentsModerationModule from '../components/CommentsModerationModule';
+import LeadInquiriesManager from '../components/LeadInquiriesManager';
+import MembershipRegistrationsModule from '../components/MembershipRegistrationsModule';
+import SponsorshipPartnershipsModule from '../components/SponsorshipPartnershipsModule';
+import ApplicationsSubscriptionsModule from '../components/ApplicationsSubscriptionsModule';
+import AuditLogsAdminModule from '../components/AuditLogsAdminModule';
 import SocialMediaAdminModule from '../components/SocialMediaAdminModule';
-import TrackingManagerModule from '../components/TrackingManagerModule';
-import { AnalyticsModule } from '../components/AnalyticsModule';
-import { EnterpriseBackupModule } from '../components/EnterpriseBackupModule';
+import { downloadExcel, downloadCSV, ColumnDef } from '../lib/excelReportExport';
+import ReportModal from '../components/ReportModal';
+import { articleService } from '../services/articleService';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const u = user as any;
   
-  // Navigation State
+  // Navigation State (Dashboard and Analytics removed as requested)
+  // Modules: Blog Management, Beneficiary Management, Lead & Inquiries, Membership Registrations,
+  // Sponsorship & Partnerships, Applications & Subscriptions, Administration
   const [activeNav, setActiveNav] = useState<
-    'dashboard' | 'analytics' | 'posts' | 'add_post' | 'media' | 'categories_tags' | 'authors' | 'password_manager' | 'beneficiaries' | 'vacancies' | 'comments' | 'messages' | 'dashboard_admin' | 'system_admin' | 'roles_manager' | 'backups' | 'social_media' | 'tracking_manager' | 'appearance' | 'settings' | 'profile'
+    // 1. Blog Management
+    | 'blog_articles'
+    | 'blog_comments'
+    | 'blog_media'
+    | 'add_post'
+    // 2. Beneficiary management
+    | 'beneficiary_entries'
+    | 'beneficiary_lists'
+    // 3. Lead and inquiries management
+    | 'lead_prequal'
+    | 'lead_callbacks'
+    | 'lead_contacts'
+    // 4. Membership registrations management
+    | 'member_individual'
+    | 'member_group'
+    // 5. Sponsorship and Partnerships management
+    | 'sponsor_requests'
+    | 'partner_requests'
+    // 6. Applications and subscriptions
+    | 'apps_jobs'
+    | 'apps_job_applications'
+    | 'apps_volunteer'
+    | 'apps_newsletter'
+    // 7. Administration, users and permissions
+    | 'admin_profiles'
+    | 'admin_roles'
+    | 'admin_custom_roles'
+    | 'admin_passwords'
+    | 'admin_social'
+    | 'admin_audit_logs'
+    // Legacy aliases
+    | 'posts' | 'media' | 'comments' | 'beneficiaries' | 'vacancies' | 'messages' | 'authors' | 'password_manager' | 'roles_manager' | 'profile' | 'categories_tags'
   >(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
-    if (tab && ['dashboard', 'analytics', 'posts', 'add_post', 'media', 'categories_tags', 'authors', 'password_manager', 'beneficiaries', 'vacancies', 'comments', 'messages', 'dashboard_admin', 'system_admin', 'roles_manager', 'backups', 'social_media', 'tracking_manager', 'appearance', 'settings', 'profile'].includes(tab)) {
+    if (tab) {
+      if (tab === 'posts' || tab === 'articles') return 'blog_articles';
+      if (tab === 'comments') return 'blog_comments';
+      if (tab === 'media') return 'blog_media';
+      if (tab === 'beneficiaries') return 'beneficiary_entries';
+      if (tab === 'vacancies' || tab === 'jobs') return 'apps_jobs';
+      if (tab === 'messages' || tab === 'leads') return 'lead_prequal';
+      if (tab === 'authors' || tab === 'profile') return 'admin_profiles';
+      if (tab === 'roles_manager' || tab === 'roles') return 'admin_roles';
+      if (tab === 'password_manager' || tab === 'passwords') return 'admin_passwords';
       return tab as any;
     }
-    return 'dashboard';
+    return 'blog_articles';
   });
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // User Role & Super Admin check
+  // User Role & Permissions (Only: Superadmin, Content editor, Administrator, Reviewer)
   const userRole = user?.role || 'Superadmin';
   const isSuperAdmin = 
     user?.email?.toLowerCase() === 'ptrckmunene@gmail.com' ||
@@ -64,22 +110,19 @@ export default function AdminDashboard() {
     userRole === 'admin' || 
     userRole === 'superadmin' || 
     !user?.role;
-  const isWebMaster = 
-    !isSuperAdmin && (
-      userRole === 'Web Master' || 
-      userRole === 'Webmaster' || 
-      userRole === 'webmaster' || 
-      userRole === 'Site Administrator'
-    );
-  const isEditor = userRole === 'Editor';
-  const isAuthor = userRole === 'Author';
-  const canUserCreateArticles = isSuperAdmin || isEditor || (user as any)?.canCreateArticles !== false;
+  const isAdministrator = isSuperAdmin || userRole === 'Administrator';
+  const isContentEditor = userRole === 'Content editor' || userRole === 'Content Editor' || userRole === 'Editor' || userRole === 'Author';
+  const isReviewer = userRole === 'Reviewer';
+  const canUserCreateArticles = isSuperAdmin || isAdministrator || isContentEditor || (user as any)?.canCreateArticles !== false;
 
   useEffect(() => {
-    if (isWebMaster && !['beneficiaries', 'vacancies', 'comments', 'messages', 'authors', 'password_manager'].includes(activeNav)) {
-      setActiveNav('beneficiaries');
+    if (isReviewer && !['apps_jobs', 'apps_job_applications', 'apps_volunteer', 'apps_newsletter', 'lead_prequal', 'lead_callbacks', 'lead_contacts', 'beneficiary_entries', 'beneficiary_lists', 'member_individual', 'member_group', 'sponsor_requests', 'partner_requests', 'blog_comments'].includes(activeNav)) {
+      setActiveNav('apps_job_applications');
     }
-  }, [isWebMaster, activeNav]);
+    if (isContentEditor && !['blog_articles', 'blog_comments', 'blog_media', 'add_post', 'admin_social', 'admin_profiles'].includes(activeNav)) {
+      setActiveNav('blog_articles');
+    }
+  }, [isReviewer, isContentEditor, activeNav]);
 
   // Handle Logout
   const handleLogout = async () => {
@@ -193,6 +236,7 @@ export default function AdminDashboard() {
 
   // Load Store Data
   const refreshStoreData = () => {
+    // Immediate synchronous load from cache
     setPosts(blogStore.getPosts());
     setCategories(blogStore.getCategories());
     setTags(blogStore.getTags());
@@ -205,6 +249,15 @@ export default function AdminDashboard() {
     setBlacklistedEmails(blogStore.getBlacklistedEmails());
     setBeneficiaries(blogStore.getBeneficiaries());
     setVacancies(blogStore.getVacancies());
+
+    // Asynchronous background sync from Supabase
+    articleService.fetchAllArticlesForAdmin().then(remoteArticles => {
+      if (Array.isArray(remoteArticles)) {
+        setPosts(remoteArticles);
+      }
+    }).catch(err => {
+      console.warn('[Admin Articles Sync Notice]:', err);
+    });
   };
 
   useEffect(() => {
@@ -333,34 +386,6 @@ export default function AdminDashboard() {
     setActiveNav('add_post');
   };
 
-  const handleQuickPublish = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canUserCreateArticles) {
-      showToast('Article creation privilege is restricted by Site Admin for your user account.');
-      return;
-    }
-    if (!quickPublishTitle.trim()) {
-      showToast('Please enter an article title first');
-      return;
-    }
-    setEditingPostId(null);
-    setEditorTitle(quickPublishTitle);
-    setEditorSlug(quickPublishTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
-    setEditorExcerpt(`${quickPublishTitle} - Overview and key insights.`);
-    setEditorCategory(quickPublishCategory || categories[0]?.name || 'Financial Literacy');
-    setEditorTags(['Microfinance', 'Kenya']);
-    setEditorImage('/imara_loan.jpg');
-    setEditorStatus('Published');
-    setEditorIsFeatured(false);
-    setEditorBlocks([
-      { id: `b-${Date.now()}-1`, type: 'headline', content: quickPublishTitle },
-      { id: `b-${Date.now()}-2`, type: 'text', content: 'Write your article body here...' }
-    ]);
-    setActiveNav('add_post');
-    setQuickPublishTitle('');
-    showToast(`Started draft for "${quickPublishTitle}"!`);
-  };
-
   const handleOpenEditPost = (post: BlogPostItem) => {
     setEditingPostId(post.id);
     setEditorTitle(post.title);
@@ -380,14 +405,23 @@ export default function AdminDashboard() {
     setActiveNav('add_post');
   };
 
-  const handleSavePost = (publishNow: boolean | string = true) => {
+  const handleSavePost = async (publishNow: boolean | string = true) => {
     if (!editorTitle.trim()) {
       showToast('Please enter an article title');
       return;
     }
 
-    const matchedAuthor = authors.find(a => a.id === editorAuthorId) || authors[0];
-    const generatedSlug = editorSlug || editorTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const matchedAuthor = authors.find(a => a.id === editorAuthorId) || authors[0] || {
+      id: 'auth_pm',
+      name: 'Patrick Munene',
+      initials: 'PM',
+      role: 'Managing Director & Superadmin',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
+    };
+    const generatedSlug = (editorSlug || editorTitle)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '') || `article-${Date.now()}`;
 
     let finalStatus = 'Draft';
     if (typeof publishNow === 'string') {
@@ -399,80 +433,92 @@ export default function AdminDashboard() {
     }
 
     const newPostData: BlogPostItem = {
-      id: editingPostId || `post-${Date.now()}`,
+      id: editingPostId || undefined,
       slug: generatedSlug,
-      title: editorTitle,
-      excerpt: editorExcerpt || editorTitle,
-      category: editorCategory,
+      title: editorTitle.trim(),
+      excerpt: editorExcerpt || editorTitle.trim(),
+      category: editorCategory || 'Financial Literacy',
       tags: editorTags,
       authorId: matchedAuthor.id,
       authorName: matchedAuthor.name,
-      authorInitials: matchedAuthor.initials,
+      authorInitials: matchedAuthor.initials || 'PM',
       authorAvatar: matchedAuthor.avatar,
       authorRole: matchedAuthor.role,
       date: new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }),
       readTime: `${Math.max(2, Math.ceil(editorBlocks.map(b => b.content).join(' ').split(' ').length / 150))} min read`,
-      image: editorImage,
+      image: editorImage || '/imara_loan.jpg',
       views: editingPostId ? (posts.find(p => p.id === editingPostId)?.views || 100) : 1,
       likes: editingPostId ? (posts.find(p => p.id === editingPostId)?.likes || 10) : 0,
       status: finalStatus as any,
       isFeatured: editorIsFeatured,
       blocks: editorBlocks,
-      content: editorExcerpt + ' ' + editorBlocks.map(b => b.content).join(' '),
+      content: editorExcerpt + '\n\n' + editorBlocks.map(b => b.content).join('\n\n'),
       seo: {
-        metaTitle: `${editorTitle} | Neema Heep Journal`,
-        metaDescription: editorMetaDesc || editorExcerpt,
-        ogTitle: editorTitle,
+        metaTitle: `${editorTitle.trim()} | Neema Heep Journal`,
+        metaDescription: editorMetaDesc || editorExcerpt || editorTitle.trim(),
+        ogTitle: editorTitle.trim(),
         ogImage: editorImage,
         twitterCard: 'summary_large_image',
-        canonicalUrl: `https://neemaheep.co.ke/blog/${generatedSlug}`,
+        canonicalUrl: `https://www.neemaheep.com/blog/${generatedSlug}`,
         focusKeyword: editorSeoFocus,
         schemaType: 'BlogPosting'
-      },
-      revisions: [
-        {
-          id: `rev-${Date.now()}`,
-          timestamp: new Date().toLocaleString(),
-          author: user?.displayName || matchedAuthor.name,
-          title: editorTitle,
-          content: editorExcerpt
-        }
-      ]
+      }
     };
 
-    let updatedList: BlogPostItem[];
-    if (editingPostId) {
-      updatedList = posts.map(p => p.id === editingPostId ? newPostData : p);
-      showToast(`Article "${editorTitle}" updated successfully!`);
-    } else {
-      updatedList = [newPostData, ...posts];
-      showToast(`Article "${editorTitle}" published!`);
-    }
+    showToast(finalStatus === 'Published' ? 'Saving & Publishing article to Supabase...' : 'Saving draft to Supabase...');
 
-    blogStore.savePosts(updatedList);
-    setPosts(updatedList);
-    setActiveNav('posts');
+    try {
+      const result = await articleService.saveArticle(newPostData);
+      if (result.success) {
+        showToast(
+          finalStatus === 'Published'
+            ? `Article "${editorTitle}" successfully published and live on public blog!`
+            : `Draft "${editorTitle}" saved in Supabase!`
+        );
+        const refreshed = await articleService.fetchAllArticlesForAdmin();
+        setPosts(refreshed);
+        setActiveNav('posts');
+      }
+    } catch (saveErr: any) {
+      console.error('Error saving article to Supabase:', saveErr);
+      showToast(`Database Notice: ${saveErr.message || 'Saved in local session.'}`);
+      const fallbackList = blogStore.getPosts();
+      setPosts(fallbackList);
+      setActiveNav('posts');
+    }
   };
 
-  const handleTrashPost = (postId: string) => {
+  const handleTrashPost = async (postId: string) => {
+    const target = posts.find(p => p.id === postId);
+    if (target?.slug) {
+      await articleService.updateArticleStatus(target.slug, 'Trash');
+    }
     const updated = posts.map(p => p.id === postId ? { ...p, status: 'Trash' as const } : p);
     blogStore.savePosts(updated);
     setPosts(updated);
-    showToast('Moved article to Trash');
+    showToast('Moved article to Trash in Supabase');
   };
 
-  const handleRestorePost = (postId: string) => {
+  const handleRestorePost = async (postId: string) => {
+    const target = posts.find(p => p.id === postId);
+    if (target?.slug) {
+      await articleService.updateArticleStatus(target.slug, 'Published');
+    }
     const updated = posts.map(p => p.id === postId ? { ...p, status: 'Published' as const } : p);
     blogStore.savePosts(updated);
     setPosts(updated);
-    showToast('Restored article to Published');
+    showToast('Restored article to Published in Supabase');
   };
 
-  const handleDeletePermanent = (postId: string) => {
+  const handleDeletePermanent = async (postId: string) => {
+    const target = posts.find(p => p.id === postId);
+    if (target?.slug) {
+      await articleService.deleteArticle(target.slug);
+    }
     const updated = posts.filter(p => p.id !== postId);
     blogStore.savePosts(updated);
     setPosts(updated);
-    showToast('Permanently deleted article');
+    showToast('Permanently deleted article from Supabase');
   };
 
   // Block editor helpers
@@ -900,6 +946,17 @@ export default function AdminDashboard() {
     return matchesStatus && matchesSearch && matchesCategory && matchesAuthor && matchesTag;
   });
 
+  const [showArticlesReportModal, setShowArticlesReportModal] = useState(false);
+  const articleReportColumns: ColumnDef[] = [
+    { key: 'title', label: 'Article Title' },
+    { key: 'category', label: 'Category' },
+    { key: 'authorName', label: 'Author' },
+    { key: 'status', label: 'Status' },
+    { key: 'publishedAt', label: 'Published Date', type: 'date' },
+    { key: 'viewsCount', label: 'Views', type: 'number' },
+    { key: 'likesCount', label: 'Likes', type: 'number' }
+  ];
+
   const activeAuthorToEdit = authors.find(a => a.id === selectedAuthorForEdit) || authors[0];
 
   return (
@@ -1052,283 +1109,359 @@ export default function AdminDashboard() {
         {/* Sidebar Nav Sections */}
         <div className="p-3 space-y-4 flex-1 overflow-y-auto scrollbar-hide">
           
-          {/* 1. MAIN MODULES */}
+          {/* 1. BLOG MANAGEMENT */}
+          {(!isReviewer) && (
+            <div>
+              <div className={`px-3 py-1 text-[10px] font-extrabold text-[#C0991B] uppercase tracking-wider ${!sidebarOpen && 'hidden'}`}>
+                Blog Management
+              </div>
+              <div className="space-y-1 mt-1">
+                <button
+                  onClick={() => setActiveNav('blog_articles')}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'blog_articles' || activeNav === 'posts' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <FileText className={`w-4 h-4 shrink-0 ${activeNav === 'blog_articles' || activeNav === 'posts' ? 'text-[#C0991B]' : ''}`} />
+                  {sidebarOpen && <span>Articles</span>}
+                </button>
+
+                <button
+                  onClick={() => setActiveNav('blog_comments')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'blog_comments' || activeNav === 'comments' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <MessageSquare className={`w-4 h-4 shrink-0 ${activeNav === 'blog_comments' || activeNav === 'comments' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Comments</span>}
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveNav('blog_media')}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'blog_media' || activeNav === 'media' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <ImageIcon className={`w-4 h-4 shrink-0 ${activeNav === 'blog_media' || activeNav === 'media' ? 'text-[#C0991B]' : ''}`} />
+                  {sidebarOpen && <span>Media</span>}
+                </button>
+
+                <button
+                  onClick={() => setActiveNav('categories_tags')}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'categories_tags' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <FolderTree className={`w-4 h-4 shrink-0 ${activeNav === 'categories_tags' ? 'text-[#C0991B]' : ''}`} />
+                  {sidebarOpen && <span>Categories &amp; Tags</span>}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 2. BENEFICIARY MANAGEMENT */}
+          {(!isContentEditor) && (
+            <div>
+              <div className={`px-3 py-1 text-[10px] font-extrabold text-[#C0991B] uppercase tracking-wider ${!sidebarOpen && 'hidden'}`}>
+                Beneficiary Management
+              </div>
+              <div className="space-y-1 mt-1">
+                <button
+                  onClick={() => setActiveNav('beneficiary_entries')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'beneficiary_entries' || activeNav === 'beneficiaries' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Users className={`w-4 h-4 shrink-0 ${activeNav === 'beneficiary_entries' || activeNav === 'beneficiaries' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Beneficiaries</span>}
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveNav('beneficiary_lists')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'beneficiary_lists' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Layers className={`w-4 h-4 shrink-0 ${activeNav === 'beneficiary_lists' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Beneficiary Lists</span>}
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 3. LEAD AND INQUIRIES MANAGEMENT */}
+          {(!isContentEditor) && (
+            <div>
+              <div className={`px-3 py-1 text-[10px] font-extrabold text-[#C0991B] uppercase tracking-wider ${!sidebarOpen && 'hidden'}`}>
+                Lead &amp; Inquiries Management
+              </div>
+              <div className="space-y-1 mt-1">
+                <button
+                  onClick={() => setActiveNav('lead_prequal')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'lead_prequal' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck className={`w-4 h-4 shrink-0 ${activeNav === 'lead_prequal' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Prequalification</span>}
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveNav('lead_callbacks')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'lead_callbacks' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Clock className={`w-4 h-4 shrink-0 ${activeNav === 'lead_callbacks' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Call Back Request</span>}
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveNav('lead_contacts')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'lead_contacts' || activeNav === 'messages' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Mail className={`w-4 h-4 shrink-0 ${activeNav === 'lead_contacts' || activeNav === 'messages' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Contact Us Messages</span>}
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 4. MEMBERSHIP REGISTRATIONS MANAGEMENT */}
+          {(!isContentEditor) && (
+            <div>
+              <div className={`px-3 py-1 text-[10px] font-extrabold text-[#C0991B] uppercase tracking-wider ${!sidebarOpen && 'hidden'}`}>
+                Membership Registrations
+              </div>
+              <div className="space-y-1 mt-1">
+                <button
+                  onClick={() => setActiveNav('member_individual')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'member_individual' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <UserCheck className={`w-4 h-4 shrink-0 ${activeNav === 'member_individual' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Individual Member Reg.</span>}
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveNav('member_group')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'member_group' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Users className={`w-4 h-4 shrink-0 ${activeNav === 'member_group' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Group Members’ Reg.</span>}
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 5. SPONSORSHIP AND PARTNERSHIPS MANAGEMENT */}
+          {(!isContentEditor) && (
+            <div>
+              <div className={`px-3 py-1 text-[10px] font-extrabold text-[#C0991B] uppercase tracking-wider ${!sidebarOpen && 'hidden'}`}>
+                Sponsorship &amp; Partnerships
+              </div>
+              <div className="space-y-1 mt-1">
+                <button
+                  onClick={() => setActiveNav('sponsor_requests')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'sponsor_requests' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Award className={`w-4 h-4 shrink-0 ${activeNav === 'sponsor_requests' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Sponsorship Requests</span>}
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveNav('partner_requests')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'partner_requests' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Building2 className={`w-4 h-4 shrink-0 ${activeNav === 'partner_requests' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Partnership Requests</span>}
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 6. APPLICATIONS AND SUBSCRIPTIONS */}
+          {(!isContentEditor) && (
+            <div>
+              <div className={`px-3 py-1 text-[10px] font-extrabold text-[#C0991B] uppercase tracking-wider ${!sidebarOpen && 'hidden'}`}>
+                Applications &amp; Subscriptions
+              </div>
+              <div className="space-y-1 mt-1">
+                <button
+                  onClick={() => setActiveNav('apps_jobs')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'apps_jobs' || activeNav === 'vacancies' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Briefcase className={`w-4 h-4 shrink-0 ${activeNav === 'apps_jobs' || activeNav === 'vacancies' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Jobs (Vacancies)</span>}
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveNav('apps_job_applications')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'apps_job_applications' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className={`w-4 h-4 shrink-0 ${activeNav === 'apps_job_applications' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Job Applications</span>}
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveNav('apps_volunteer')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'apps_volunteer' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <UserPlus className={`w-4 h-4 shrink-0 ${activeNav === 'apps_volunteer' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Volunteer Applications</span>}
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveNav('apps_newsletter')}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'apps_newsletter' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Mail className={`w-4 h-4 shrink-0 ${activeNav === 'apps_newsletter' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Newsletter Subscriptions</span>}
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 7. ADMINISTRATION, USERS AND PERMISSIONS */}
           <div>
             <div className={`px-3 py-1 text-[10px] font-extrabold text-[#C0991B] uppercase tracking-wider ${!sidebarOpen && 'hidden'}`}>
-              Main Modules
+              Administration, Users &amp; Permissions
             </div>
             <div className="space-y-1 mt-1">
               <button
-                onClick={() => {
-                  if (isWebMaster) {
-                    showToast('Access Restricted: Web Master role is limited to Webmaster sub-modules (Beneficiaries, Vacancies, Comments, Inquiries) plus Profiles and Passwords.');
-                  } else {
-                    setActiveNav('dashboard');
-                  }
-                }}
+                onClick={() => setActiveNav('admin_profiles')}
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'dashboard' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  activeNav === 'admin_profiles' || activeNav === 'authors' || activeNav === 'profile' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
                 }`}
               >
-                <LayoutDashboard className={`w-4 h-4 shrink-0 ${activeNav === 'dashboard' ? 'text-[#C0991B]' : ''}`} />
-                {sidebarOpen && <span>Dashboard</span>}
-              </button>
-
-              <button
-                onClick={() => {
-                  if (isWebMaster) {
-                    showToast('Access Restricted: Web Master role is limited to Webmaster sub-modules (Beneficiaries, Vacancies, Comments, Inquiries) plus Profiles and Passwords.');
-                  } else {
-                    setActiveNav('analytics');
-                  }
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'analytics' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <BarChart3 className={`w-4 h-4 shrink-0 ${activeNav === 'analytics' ? 'text-[#C0991B]' : ''}`} />
-                {sidebarOpen && <span>Analytics</span>}
-              </button>
-
-              <button
-                onClick={() => {
-                  if (isWebMaster) {
-                    showToast('Access Restricted: Web Master role is limited to Webmaster sub-modules (Beneficiaries, Vacancies, Comments, Inquiries) plus Profiles and Passwords.');
-                  } else {
-                    setActiveNav('posts');
-                  }
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'posts' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <FileText className={`w-4 h-4 shrink-0 ${activeNav === 'posts' ? 'text-[#C0991B]' : ''}`} />
-                {sidebarOpen && <span>Articles</span>}
-              </button>
-
-              <button
-                onClick={() => {
-                  if (isWebMaster) {
-                    showToast('Access Restricted: Web Master role is limited to Webmaster sub-modules (Beneficiaries, Vacancies, Comments, Inquiries) plus Profiles and Passwords.');
-                  } else {
-                    setActiveNav('media');
-                  }
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'media' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <ImageIcon className={`w-4 h-4 shrink-0 ${activeNav === 'media' ? 'text-[#C0991B]' : ''}`} />
-                {sidebarOpen && <span>Media</span>}
-              </button>
-
-              <button
-                onClick={() => {
-                  if (isWebMaster) {
-                    showToast('Access Restricted: Web Master role is limited to Webmaster sub-modules (Beneficiaries, Vacancies, Comments, Inquiries) plus Profiles and Passwords.');
-                  } else {
-                    setActiveNav('categories_tags');
-                  }
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'categories_tags' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <FolderTree className={`w-4 h-4 shrink-0 ${activeNav === 'categories_tags' ? 'text-[#C0991B]' : ''}`} />
-                {sidebarOpen && <span>Categories</span>}
-              </button>
-
-              <button
-                onClick={() => setActiveNav('authors')}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'authors' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <User className={`w-4 h-4 shrink-0 ${activeNav === 'authors' ? 'text-[#C0991B]' : ''}`} />
+                <User className={`w-4 h-4 shrink-0 ${activeNav === 'admin_profiles' || activeNav === 'authors' || activeNav === 'profile' ? 'text-[#C0991B]' : ''}`} />
                 {sidebarOpen && <span>Profiles</span>}
               </button>
 
-              <button
-                onClick={() => setActiveNav('password_manager')}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'password_manager' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <KeyRound className={`w-4 h-4 shrink-0 ${activeNav === 'password_manager' ? 'text-[#C0991B]' : ''}`} />
-                {sidebarOpen && <span>Passwords</span>}
-              </button>
-            </div>
-          </div>
+              {(!isReviewer && !isContentEditor) && (
+                <>
+                  <button
+                    onClick={() => {
+                      if (isSuperAdmin || isAdministrator) {
+                        setActiveNav('admin_roles');
+                      } else {
+                        showToast('Access Restricted: Administrator privilege required for Roles Manager.');
+                      }
+                    }}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      activeNav === 'admin_roles' || activeNav === 'roles_manager' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Sliders className={`w-4 h-4 shrink-0 ${activeNav === 'admin_roles' || activeNav === 'roles_manager' ? 'text-[#C0991B]' : ''}`} />
+                      {sidebarOpen && <span>User Roles</span>}
+                    </div>
+                  </button>
 
-          {/* 2. WEBMASTER */}
-          <div>
-            <div className={`px-3 py-1 text-[10px] font-extrabold text-[#C0991B] uppercase tracking-wider ${!sidebarOpen && 'hidden'}`}>
-              Webmaster
-            </div>
-            <div className="space-y-1 mt-1">
-              <button
-                onClick={() => setActiveNav('beneficiaries')}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'beneficiaries' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Users className={`w-4 h-4 shrink-0 ${activeNav === 'beneficiaries' ? 'text-[#C0991B]' : ''}`} />
-                  {sidebarOpen && <span>Beneficiaries</span>}
-                </div>
-                {sidebarOpen && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#C0991B] text-[#033B18]">
-                    12
-                  </span>
-                )}
-              </button>
+                  <button
+                    onClick={() => {
+                      if (isSuperAdmin || isAdministrator) {
+                        setActiveNav('admin_custom_roles');
+                      } else {
+                        showToast('Access Restricted: Administrator privilege required for Custom Roles.');
+                      }
+                    }}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      activeNav === 'admin_custom_roles' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Shield className={`w-4 h-4 shrink-0 ${activeNav === 'admin_custom_roles' ? 'text-[#C0991B]' : ''}`} />
+                      {sidebarOpen && <span>Custom Roles</span>}
+                    </div>
+                  </button>
 
-              <button
-                onClick={() => setActiveNav('vacancies')}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'vacancies' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Briefcase className={`w-4 h-4 shrink-0 ${activeNav === 'vacancies' ? 'text-[#C0991B]' : ''}`} />
-                  {sidebarOpen && <span>Vacancies</span>}
-                </div>
-                {sidebarOpen && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#C0991B] text-[#033B18]">
-                    5
-                  </span>
-                )}
-              </button>
+                  <button
+                    onClick={() => {
+                      if (!isSuperAdmin && !isAdministrator) {
+                        showToast('Access Restricted: Administrative access required for Password Management.');
+                      } else {
+                        setActiveNav('admin_passwords');
+                      }
+                    }}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      activeNav === 'admin_passwords' || activeNav === 'password_manager' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <KeyRound className={`w-4 h-4 shrink-0 ${activeNav === 'admin_passwords' || activeNav === 'password_manager' ? 'text-[#C0991B]' : ''}`} />
+                    {sidebarOpen && <span>Passwords</span>}
+                  </button>
+                </>
+              )}
 
-              <button
-                onClick={() => {
-                  setActiveNav('comments');
-                }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'comments' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <MessageSquare className={`w-4 h-4 shrink-0 ${activeNav === 'comments' ? 'text-[#C0991B]' : ''}`} />
-                  {sidebarOpen && <span>Comments</span>}
-                </div>
-                {sidebarOpen && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#C0991B] text-[#033B18]">
-                    23
-                  </span>
-                )}
-              </button>
+              {(!isReviewer) && (
+                <button
+                  onClick={() => setActiveNav('admin_social')}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'admin_social' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <Share2 className={`w-4 h-4 shrink-0 ${activeNav === 'admin_social' ? 'text-[#C0991B]' : ''}`} />
+                  {sidebarOpen && <span>Social Media</span>}
+                </button>
+              )}
 
-              <button
-                onClick={() => setActiveNav('messages')}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'messages' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Mail className={`w-4 h-4 shrink-0 ${activeNav === 'messages' ? 'text-[#C0991B]' : ''}`} />
-                  {sidebarOpen && <span>Leads and Inquiries</span>}
-                </div>
-                {sidebarOpen && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#C0991B] text-[#033B18]">
-                    8
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* 3. SITE ADMINISTRATION */}
-          <div>
-            <div className={`px-3 py-1 text-[10px] font-extrabold text-[#C0991B] uppercase tracking-wider ${!sidebarOpen && 'hidden'}`}>
-              Site Administration
-            </div>
-            <div className="space-y-1 mt-1">
-              <button
-                onClick={() => {
-                  if (isSuperAdmin) {
-                    setActiveNav('system_admin');
-                  } else {
-                    showToast('Access Restricted: Super Admin privilege required for Administration.');
-                  }
-                }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'system_admin' || activeNav === 'dashboard_admin' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Server className={`w-4 h-4 shrink-0 ${activeNav === 'system_admin' || activeNav === 'dashboard_admin' ? 'text-[#C0991B]' : ''}`} />
-                  {sidebarOpen && <span>Administration</span>}
-                </div>
-              </button>
-
-              <button
-                onClick={() => {
-                  if (isSuperAdmin) {
-                    setActiveNav('roles_manager');
-                  } else {
-                    showToast('Access Restricted: Super Admin privilege required for Roles Manager.');
-                  }
-                }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'roles_manager' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Sliders className={`w-4 h-4 shrink-0 ${activeNav === 'roles_manager' ? 'text-[#C0991B]' : ''}`} />
-                  {sidebarOpen && <span>Roles Manager</span>}
-                </div>
-              </button>
-
-              <button
-                onClick={() => {
-                  if (isSuperAdmin) {
-                    setActiveNav('backups');
-                  } else {
-                    showToast('Access Restricted: Super Admin privilege required for Backup Manager.');
-                  }
-                }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'backups' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Database className={`w-4 h-4 shrink-0 ${activeNav === 'backups' ? 'text-[#C0991B]' : ''}`} />
-                  {sidebarOpen && <span>Backup Manager</span>}
-                </div>
-              </button>
-
-              <button
-                onClick={() => {
-                  if (isWebMaster) {
-                    showToast('Access Restricted: Web Master role is limited to Webmaster sub-modules (Beneficiaries, Vacancies, Comments, Inquiries) plus Profiles and Passwords.');
-                  } else {
-                    setActiveNav('social_media');
-                  }
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'social_media' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <Share2 className={`w-4 h-4 shrink-0 ${activeNav === 'social_media' ? 'text-[#C0991B]' : ''}`} />
-                {sidebarOpen && <span>Social Media</span>}
-              </button>
-
-              <button
-                onClick={() => {
-                  if (isWebMaster) {
-                    showToast('Access Restricted: Web Master role is limited to Webmaster sub-modules (Beneficiaries, Vacancies, Comments, Inquiries) plus Profiles and Passwords.');
-                  } else {
-                    setActiveNav('tracking_manager');
-                  }
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeNav === 'tracking_manager' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                <Target className={`w-4 h-4 shrink-0 ${activeNav === 'tracking_manager' ? 'text-[#C0991B]' : ''}`} />
-                {sidebarOpen && <span>Pixel Activation</span>}
-              </button>
+              {(!isReviewer && !isContentEditor) && (
+                <button
+                  onClick={() => setActiveNav('admin_audit_logs')}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeNav === 'admin_audit_logs' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <ShieldAlert className={`w-4 h-4 shrink-0 ${activeNav === 'admin_audit_logs' ? 'text-[#C0991B]' : ''}`} />
+                  {sidebarOpen && <span>Audit Logs</span>}
+                </button>
+              )}
             </div>
           </div>
 
@@ -1536,14 +1669,14 @@ export default function AdminDashboard() {
         </header>
 
         {/* Sub-Header Breadcrumb & Action Toolbar - Hidden on Webmaster & Site Administration Modules */}
-        {!['beneficiaries', 'vacancies', 'comments', 'messages', 'system_admin', 'dashboard_admin', 'roles_manager', 'backups', 'social_media', 'tracking_manager'].includes(activeNav) && (
+        {!['beneficiaries', 'vacancies', 'comments', 'messages', 'roles_manager'].includes(activeNav) && (
           <div className="bg-white border-b border-gray-200 px-6 md:px-8 py-3 flex items-center justify-between shadow-2xs">
             <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
               <Home className="w-3.5 h-3.5 text-gray-400" />
-              <span>Dashboard</span>
+              <span>CMS</span>
               <ChevronRight className="w-3 h-3 text-gray-300" />
               <span className="font-extrabold text-gray-900">
-                {activeNav === 'dashboard' ? 'Overview' : activeNav.replace('_', ' ').toUpperCase()}
+                {activeNav.replace('_', ' ').toUpperCase()}
               </span>
             </div>
 
@@ -1590,238 +1723,13 @@ export default function AdminDashboard() {
         {/* PAGE BODY CONTENT */}
         <main className="p-6 md:p-8 space-y-8 max-w-[1700px] mx-auto w-full">
 
-          {/* 1. OVERVIEW DASHBOARD */}
-          {activeNav === 'dashboard' && (
-            <div className="space-y-8 animate-in fade-in duration-300">
-              
-              {/* TOP ROW: 4 TRAFFIC & PERFORMANCE KPI CARDS */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                
-                {/* 1. Bounce Rate */}
-                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-2xs border-t-4 border-t-[#C0991B] space-y-3 relative overflow-hidden group hover:border-[#C0991B]/50 transition-all">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Bounce Rate</span>
-                    <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-[#074504]">
-                      <Activity className="w-5 h-5" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-black text-gray-900">28.4%</div>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 mt-1">
-                      <TrendingUp className="w-3.5 h-3.5 rotate-180" />
-                      <span>-2.1% exit reduction</span>
-                    </div>
-                  </div>
-                  <svg className="w-full h-8 stroke-emerald-600 fill-emerald-50/30" viewBox="0 0 100 25">
-                    <path d="M0,8 Q25,18 50,12 T100,22 L100,25 L0,25 Z" strokeWidth="2" />
-                  </svg>
-                </div>
-
-                {/* 2. Direct Visits */}
-                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-2xs border-t-4 border-t-[#074504] space-y-3 relative overflow-hidden group hover:border-[#074504]/50 transition-all">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Direct Visits</span>
-                    <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-[#074504]">
-                      <Globe className="w-5 h-5" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-black text-gray-900">14,850</div>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#074504] mt-1">
-                      <ArrowUp className="w-3.5 h-3.5" />
-                      <span>34% overall traffic</span>
-                    </div>
-                  </div>
-                  <svg className="w-full h-8 stroke-[#074504] fill-emerald-50/40" viewBox="0 0 100 25">
-                    <path d="M0,20 Q15,5 30,15 T60,8 T90,18 T100,5 L100,25 L0,25 Z" strokeWidth="2" />
-                  </svg>
-                </div>
-
-                {/* 3. Organic Search */}
-                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-2xs border-t-4 border-t-[#C0991B] space-y-3 relative overflow-hidden group hover:border-[#C0991B]/50 transition-all">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Organic Search</span>
-                    <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-[#C0991B]">
-                      <Search className="w-5 h-5" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-black text-gray-900">28,420</div>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#C0991B] mt-1">
-                      <ArrowUp className="w-3.5 h-3.5" />
-                      <span>52% search engine traffic</span>
-                    </div>
-                  </div>
-                  <svg className="w-full h-8 stroke-[#C0991B] fill-amber-50/40" viewBox="0 0 100 25">
-                    <path d="M0,18 Q20,22 40,10 T70,12 T100,3 L100,25 L0,25 Z" strokeWidth="2" />
-                  </svg>
-                </div>
-
-                {/* 4. Social Media */}
-                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-2xs border-t-4 border-t-purple-600 space-y-3 relative overflow-hidden group hover:border-purple-600/50 transition-all">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Social Media</span>
-                    <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-700">
-                      <Share2 className="w-5 h-5" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-black text-gray-900">11,290</div>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700 mt-1">
-                      <ArrowUp className="w-3.5 h-3.5" />
-                      <span>14% social referral traffic</span>
-                    </div>
-                  </div>
-                  <svg className="w-full h-8 stroke-purple-600 fill-purple-50/40" viewBox="0 0 100 25">
-                    <path d="M0,15 Q30,18 60,12 T100,8 L100,25 L0,25 Z" strokeWidth="2" />
-                  </svg>
-                </div>
-
-              </div>
-
-              {/* MAIN CONTENT GRID: TOP PERFORMING ARTICLES & QUICK PUBLISH STUDIO */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                
-                {/* 1. Top Performing Articles (Spans 7 cols on lg) */}
-                <div className="lg:col-span-7 bg-white p-6 rounded-2xl border border-gray-200 shadow-2xs space-y-4 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-[#074504]" />
-                        <h3 className="font-extrabold text-sm text-gray-900">Top Performing Articles</h3>
-                      </div>
-                      <button onClick={() => setActiveNav('posts')} className="text-xs font-bold text-[#C0991B] hover:underline cursor-pointer flex items-center gap-1">
-                        <span>View All Posts</span>
-                        <ArrowUpRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    <div className="space-y-3">
-                      {posts
-                        .filter(p => p.status !== 'Trash')
-                        .sort((a, b) => (b.views || 0) - (a.views || 0))
-                        .slice(0, 5)
-                        .map((art, idx) => (
-                          <div key={art.id} className="flex items-center gap-3 p-2.5 hover:bg-gray-50 rounded-xl transition-all border border-transparent hover:border-gray-200">
-                            <span className={`text-xs font-black w-5 shrink-0 text-center ${idx === 0 ? 'text-[#C0991B]' : 'text-gray-400'}`}>#{idx + 1}</span>
-                            <img src={art.image} alt={art.title} className="w-11 h-11 rounded-xl object-cover shrink-0 border border-gray-200 shadow-2xs" />
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-extrabold text-gray-900 line-clamp-1 leading-snug">{art.title}</p>
-                              <p className="text-[10px] text-gray-400 font-medium mt-0.5">{art.date} • <span className="text-[#074504] font-bold">{art.category}</span></p>
-                            </div>
-                            <div className="flex items-center gap-1 text-xs font-bold text-gray-600 shrink-0 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
-                              <Eye className="w-3.5 h-3.5 text-[#C0991B]" />
-                              <span>{(art.views || 0) > 999 ? `${((art.views || 0) / 1000).toFixed(1)}K` : (art.views || 0)}</span>
-                            </div>
-                          </div>
-                        ))}
-                      {posts.filter(p => p.status !== 'Trash').length === 0 && (
-                        <p className="text-xs text-gray-400 italic py-6 text-center">No active articles available.</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 font-medium">
-                    <span>Showing top 5 published stories</span>
-                    <button 
-                      onClick={() => setActiveNav('analytics')} 
-                      className="text-[#074504] font-bold hover:underline cursor-pointer flex items-center gap-1"
-                    >
-                      <span>Detailed Analytics</span>
-                      <ArrowUpRight className="w-3 h-3 text-[#C0991B]" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* 2. Quick Article Publisher Box (Spans 5 cols on lg) */}
-                <div className="lg:col-span-5 bg-white p-6 rounded-2xl border border-gray-200 shadow-2xs space-y-5 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
-                      <div className="flex items-center gap-2">
-                        <PenTool className="w-4 h-4 text-[#C0991B]" />
-                        <h3 className="font-extrabold text-sm text-gray-900">Quick Article Publisher</h3>
-                      </div>
-                      <span className="px-2.5 py-0.5 bg-[#C0991B]/15 text-[#826507] text-[10px] font-black uppercase tracking-wider rounded-md">
-                        Express Studio
-                      </span>
-                    </div>
-
-                    <form onSubmit={handleQuickPublish} className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1.5">Article Title</label>
-                        <input 
-                          type="text" 
-                          value={quickPublishTitle}
-                          onChange={(e) => setQuickPublishTitle(e.target.value)}
-                          placeholder="e.g., 2026 Agribusiness Loan Application Guide..." 
-                          className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium outline-none focus:bg-white focus:ring-2 focus:ring-[#C0991B] transition-all"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1.5">Primary Category</label>
-                        <select 
-                          value={quickPublishCategory}
-                          onChange={(e) => setQuickPublishCategory(e.target.value)}
-                          className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium outline-none focus:bg-white focus:ring-2 focus:ring-[#C0991B] transition-all cursor-pointer"
-                        >
-                          {categories.map(c => (
-                            <option key={c.id} value={c.name}>{c.name}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <button 
-                        type="submit"
-                        className="w-full py-3 bg-[#074504] hover:bg-[#032402] text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all border-b-2 border-b-[#C0991B] group"
-                      >
-                        <Plus className="w-4 h-4 text-[#C0991B] group-hover:scale-110 transition-transform" />
-                        <span>Create & Open Editor</span>
-                      </button>
-                    </form>
-                  </div>
-
-                  {/* Quick Shortcut Buttons */}
-                  <div className="pt-4 border-t border-gray-100 grid grid-cols-2 gap-2 text-center">
-                    <button 
-                      onClick={() => {
-                        setEditingPostId(null);
-                        setActiveNav('add_post');
-                        showToast('Opened Full Article Studio');
-                      }}
-                      className="py-2 px-3 bg-gray-50 hover:bg-emerald-50 hover:text-[#074504] border border-gray-200 rounded-xl text-[11px] font-bold text-gray-700 transition-all cursor-pointer"
-                    >
-                      Full Article Studio
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setQuickPublishTitle('Microfinance Growth Strategy & Loan Qualification Guide');
-                        showToast('Loaded template title into Quick Publisher');
-                      }}
-                      className="py-2 px-3 bg-gray-50 hover:bg-amber-50 hover:text-[#826507] border border-gray-200 rounded-xl text-[11px] font-bold text-gray-700 transition-all cursor-pointer"
-                    >
-                      Load Quick Template
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
-          )}
-
-          {/* 2. MEDIA MODULE (ENTERPRISE DIGITAL ASSET MANAGEMENT SYSTEM) */}
-          {activeNav === 'media' && (
+          {/* 1. MEDIA MODULE (ENTERPRISE DIGITAL ASSET MANAGEMENT SYSTEM) */}
+          {(activeNav === 'blog_media' || activeNav === 'media') && (
             <MediaManagerDAM media={media} showToast={showToast} />
           )}
 
-          {/* 3. PERFORMANCE ANALYTICS MODULE */}
-          {activeNav === 'analytics' && (
-            <AnalyticsModule showToast={showToast} />
-          )}
-
-          {/* 4. POST MANAGEMENT MODULE */}
-          {activeNav === 'posts' && (
+          {/* 2. POST MANAGEMENT MODULE */}
+          {(activeNav === 'blog_articles' || activeNav === 'posts') && (
             <div className="space-y-6 animate-in fade-in duration-300">
               
               {/* TOP HEADER BAR */}
@@ -1850,6 +1758,30 @@ export default function AdminDashboard() {
                     className="px-4 py-2.5 bg-[#C0991B] hover:bg-[#a88414] text-[#074504] font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
                   >
                     <Plus className="w-4 h-4 stroke-[3]" /> + New Article
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => downloadExcel('Neema_HEEP_Articles_Directory', articleReportColumns, filteredPostsList)}
+                    className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" /> Download Excel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => downloadCSV('Neema_HEEP_Articles_Directory', articleReportColumns, filteredPostsList)}
+                    className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-[#C0991B]/40 font-bold text-xs rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 text-[#C0991B]" /> Export CSV
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowArticlesReportModal(true)}
+                    className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-[#C0991B]/40 font-bold text-xs rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4 text-[#C0991B]" /> Generate Report
                   </button>
                 </div>
               </div>
@@ -1950,24 +1882,36 @@ export default function AdminDashboard() {
                       </span>
                       <div className="flex items-center gap-2">
                         <button 
-                          onClick={() => {
+                          onClick={async () => {
                             const updated = posts.map(p => selectedArticleIds.includes(p.id) ? { ...p, status: 'Published' as const } : p);
                             blogStore.savePosts(updated);
                             setPosts(updated);
+                            for (const id of selectedArticleIds) {
+                              const item = posts.find(p => p.id === id);
+                              if (item?.slug) {
+                                await articleService.updateArticleStatus(item.slug, 'Published');
+                              }
+                            }
                             setSelectedArticleIds([]);
-                            showToast('Published selected articles');
+                            showToast('Published selected articles in Supabase');
                           }}
                           className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 rounded-lg text-xs font-bold cursor-pointer"
                         >
                           Publish Selected
                         </button>
                         <button 
-                          onClick={() => {
+                          onClick={async () => {
                             const updated = posts.map(p => selectedArticleIds.includes(p.id) ? { ...p, status: 'Trash' as const } : p);
                             blogStore.savePosts(updated);
                             setPosts(updated);
+                            for (const id of selectedArticleIds) {
+                              const item = posts.find(p => p.id === id);
+                              if (item?.slug) {
+                                await articleService.updateArticleStatus(item.slug, 'Trash');
+                              }
+                            }
                             setSelectedArticleIds([]);
-                            showToast('Moved selected articles to Trash');
+                            showToast('Moved selected articles to Trash in Supabase');
                           }}
                           className="px-3 py-1.5 bg-red-800 hover:bg-red-700 rounded-lg text-xs font-bold cursor-pointer"
                         >
@@ -2218,6 +2162,23 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
+                  {/* Formal Management Audit & Export Report Modal */}
+                  <ReportModal
+                    isOpen={showArticlesReportModal}
+                    onClose={() => setShowArticlesReportModal(false)}
+                    title="Blog Articles Editorial Management Audit Report"
+                    moduleName="Blog Management"
+                    submoduleName="Articles"
+                    summaryMetrics={[
+                      { label: 'Total Articles', value: posts.length, color: '#074504' },
+                      { label: 'Filtered Articles', value: filteredPostsList.length, color: '#16a34a' },
+                      { label: 'Published Articles', value: posts.filter(p => p.status === 'Published').length, color: '#C0991B' }
+                    ]}
+                    columns={articleReportColumns}
+                    data={filteredPostsList}
+                    filterDescription={`Status: ${postFilterStatus} | Category: ${articleCategoryFilter} | Author: ${articleAuthorFilter} | Search: "${postSearchQuery || 'All'}"`}
+                  />
+
                 </div>
 
             </div>
@@ -2263,77 +2224,84 @@ export default function AdminDashboard() {
             />
           )}
 
-          {/* 5. CATEGORIES & TAGS (TAXONOMY MANAGEMENT SYSTEM) */}
-          {activeNav === 'categories_tags' && (
-            <TaxonomyManager 
-              onSelectCategoryFilter={(catName) => {
-                setArticleCategoryFilter(catName);
-                setActiveNav('posts');
-              }}
-              onOpenArticleEditor={() => setActiveNav('add_post')}
-            />
-          )}
-
-          {/* 6. ENTERPRISE USER PROFILES & MANAGEMENT MODULE */}
-          {(activeNav === 'authors' || activeNav === 'profile') && (
-            <UserProfileManager />
-          )}
-
-          {/* 7. ENTERPRISE COMMENTS & COMMUNITY MODERATION MODULE */}
-          {activeNav === 'comments' && (
+          {/* 1. BLOG MANAGEMENT - COMMENTS */}
+          {(activeNav === 'blog_comments' || activeNav === 'comments') && (
             <CommentsModerationModule />
           )}
 
-          {/* MESSAGES & INQUIRIES FOLDER MODULE */}
-          {activeNav === 'messages' && (
-            <MessagesFolderView />
+          {/* 2. BENEFICIARY MANAGEMENT */}
+          {(activeNav === 'beneficiary_entries' || activeNav === 'beneficiaries') && (
+            <BeneficiariesAdminModule 
+              initialSubmodule="entries"
+              userRole={userRole.toLowerCase().includes('webmaster') ? 'webmaster' : 'administrator'}
+              userName={u?.name || u?.displayName || 'Site Administrator'}
+            />
           )}
 
-          {/* VACANCIES & ONLINE JOB APPLICATIONS MODULE */}
-          {activeNav === 'vacancies' && (
-            <VacanciesAdminModule />
+          {activeNav === 'beneficiary_lists' && (
+            <BeneficiariesAdminModule 
+              initialSubmodule="lists"
+              userRole={userRole.toLowerCase().includes('webmaster') ? 'webmaster' : 'administrator'}
+              userName={u?.name || u?.displayName || 'Site Administrator'}
+            />
           )}
 
-          {/* 8. PASSWORD MANAGER MODULE */}
-          {activeNav === 'password_manager' && (
+          {/* 3. LEAD AND INQUIRIES MANAGEMENT */}
+          {activeNav === 'lead_prequal' && (
+            <LeadInquiriesManager initialSubmodule="prequalifications" showToast={showToast} />
+          )}
+
+          {activeNav === 'lead_callbacks' && (
+            <LeadInquiriesManager initialSubmodule="callbacks" showToast={showToast} />
+          )}
+
+          {(activeNav === 'lead_contacts' || activeNav === 'messages') && (
+            <LeadInquiriesManager initialSubmodule="contacts" showToast={showToast} />
+          )}
+
+          {/* 4. MEMBERSHIP REGISTRATIONS MANAGEMENT */}
+          {activeNav === 'member_individual' && (
+            <MembershipRegistrationsModule initialSubmodule="individual" showToast={showToast} />
+          )}
+
+          {activeNav === 'member_group' && (
+            <MembershipRegistrationsModule initialSubmodule="group" showToast={showToast} />
+          )}
+
+          {/* 5. SPONSORSHIP AND PARTNERSHIPS MANAGEMENT */}
+          {activeNav === 'sponsor_requests' && (
+            <SponsorshipPartnershipsModule initialSubmodule="sponsorship" showToast={showToast} />
+          )}
+
+          {activeNav === 'partner_requests' && (
+            <SponsorshipPartnershipsModule initialSubmodule="partnership" showToast={showToast} />
+          )}
+
+          {/* 6. APPLICATIONS AND SUBSCRIPTIONS */}
+          {(activeNav === 'apps_jobs' || activeNav === 'vacancies') && (
+            <ApplicationsSubscriptionsModule initialSubmodule="jobs" showToast={showToast} />
+          )}
+
+          {activeNav === 'apps_job_applications' && (
+            <ApplicationsSubscriptionsModule initialSubmodule="job_applications" showToast={showToast} />
+          )}
+
+          {activeNav === 'apps_volunteer' && (
+            <ApplicationsSubscriptionsModule initialSubmodule="volunteer_applications" showToast={showToast} />
+          )}
+
+          {activeNav === 'apps_newsletter' && (
+            <ApplicationsSubscriptionsModule initialSubmodule="newsletter" showToast={showToast} />
+          )}
+
+          {/* 7. ADMINISTRATION, USERS AND PERMISSIONS */}
+          {(activeNav === 'admin_profiles' || activeNav === 'authors' || activeNav === 'profile') && (
+            <UserProfileManager />
+          )}
+
+          {(activeNav === 'admin_roles' || activeNav === 'roles_manager' || activeNav === 'admin_custom_roles') && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              <PasswordSecurityModule 
-                mode="change" 
-                username={user?.displayName || 'Admin'} 
-                onSuccess={() => setPassStatus('Password updated successfully!')}
-              />
-            </div>
-          )}
-
-          {/* 9. ADMINISTRATION MODULE */}
-          {(activeNav === 'system_admin' || activeNav === 'dashboard_admin') && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-              {!isSuperAdmin ? (
-                <div className="bg-amber-50 rounded-2xl border-2 border-[#C0991B] p-8 text-center space-y-4 max-w-xl mx-auto my-12 shadow-xs">
-                  <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto text-[#C0991B]">
-                    <Lock className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-base font-black text-amber-900 uppercase">Super Admin Privilege Required</h3>
-                  <p className="text-xs text-amber-800 font-medium">
-                    Administration Module is restricted to Super Admin accounts. You are currently logged in as <strong className="uppercase">{userRole}</strong>.
-                  </p>
-                  <button 
-                    onClick={() => setActiveNav('authors')}
-                    className="px-5 py-2.5 bg-[#074504] text-[#C0991B] rounded-xl text-xs font-bold uppercase cursor-pointer shadow-sm hover:bg-[#053203]"
-                  >
-                    Go to Author Profile
-                  </button>
-                </div>
-              ) : (
-                <SystemAdminModule />
-              )}
-            </div>
-          )}
-
-          {/* 10. ROLES & PERMISSIONS MANAGER MODULE */}
-          {activeNav === 'roles_manager' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-              {!isSuperAdmin ? (
+              {!isSuperAdmin && !isAdministrator ? (
                 <div className="bg-amber-50 rounded-2xl border-2 border-[#C0991B] p-8 text-center space-y-4 max-w-xl mx-auto my-12 shadow-xs">
                   <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto text-[#C0991B]">
                     <Lock className="w-6 h-6" />
@@ -2343,10 +2311,10 @@ export default function AdminDashboard() {
                     Roles Manager Module is restricted to Super Admin accounts. You are currently logged in as <strong className="uppercase">{userRole}</strong>.
                   </p>
                   <button 
-                    onClick={() => setActiveNav('authors')}
+                    onClick={() => setActiveNav('admin_profiles')}
                     className="px-5 py-2.5 bg-[#074504] text-[#C0991B] rounded-xl text-xs font-bold uppercase cursor-pointer shadow-sm hover:bg-[#053203]"
                   >
-                    Go to Author Profile
+                    Go to User Profile
                   </button>
                 </div>
               ) : (
@@ -2355,32 +2323,33 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* 10. ENTERPRISE BACKUP & DISASTER RECOVERY COMMAND CENTER */}
-          {activeNav === 'backups' && (
-            <EnterpriseBackupModule 
-              userRole={userRole.toLowerCase().includes('webmaster') ? 'webmaster' : userRole}
-              userName={u?.name || u?.displayName || 'Site Administrator'}
-            />
+          {(activeNav === 'admin_passwords' || activeNav === 'password_manager') && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              <PasswordSecurityModule 
+                mode="change" 
+                username={user?.displayName || 'Admin'} 
+                onSuccess={() => setPassStatus('Password updated successfully!')}
+              />
+            </div>
           )}
 
-          {/* 11. BENEFICIARIES MANAGEMENT MODULE */}
-          {activeNav === 'beneficiaries' && (
-            <BeneficiariesAdminModule 
-              userRole={userRole.toLowerCase().includes('webmaster') ? 'webmaster' : 'administrator'}
-              userName={u?.name || u?.displayName || 'Site Administrator'}
-            />
-          )}
-
-
-
-          {/* 12. SOCIAL MEDIA LINKS MODULE */}
-          {activeNav === 'social_media' && (
+          {activeNav === 'admin_social' && (
             <SocialMediaAdminModule />
           )}
 
-          {/* 13. TRACKING MANAGER MODULE */}
-          {activeNav === 'tracking_manager' && (
-            <TrackingManagerModule />
+          {activeNav === 'admin_audit_logs' && (
+            <AuditLogsAdminModule showToast={showToast} />
+          )}
+
+          {/* 5. TAXONOMY MANAGEMENT SYSTEM */}
+          {activeNav === 'categories_tags' && (
+            <TaxonomyManager 
+              onSelectCategoryFilter={(catName) => {
+                setArticleCategoryFilter(catName);
+                setActiveNav('blog_articles');
+              }}
+              onOpenArticleEditor={() => setActiveNav('add_post')}
+            />
           )}
 
         </main>

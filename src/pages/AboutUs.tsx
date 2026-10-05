@@ -6,6 +6,7 @@ import IconGrid from '../components/IconGrid';
 import SimpleProcess from '../components/SimpleProcess';
 import SmartLeadForm from '../components/SmartLeadForm';
 import WhoWeAre from '../components/WhoWeAre';
+import { CALLBACK_FORM_FIELDS, CALLBACK_FORM_CTA, CALLBACK_FORM_TITLE, CALLBACK_FORM_DESC } from '../lib/callbackFields';
 
 export default function AboutUs() {
 
@@ -729,14 +730,11 @@ export default function AboutUs() {
           <div className="bg-white p-8 md:p-12 rounded-[3.5rem] w-full max-w-2xl mx-auto shadow-2xl relative">
             <SmartLeadForm 
               type="Callback"
-              title=""
-              description=""
-              ctaText="Request a Call Back"
-              fields={[
-                { name: 'name', label: 'Full Name', type: 'text', placeholder: 'John Doe', required: true },
-                { name: 'phone', label: 'Email or Phone Number', type: 'tel', placeholder: '+254...', required: true }
-              ]}
-              successMessage="We have received your details. A Neema Expert will contact you shortly!"
+              title={CALLBACK_FORM_TITLE}
+              description={CALLBACK_FORM_DESC}
+              ctaText={CALLBACK_FORM_CTA}
+              fields={CALLBACK_FORM_FIELDS}
+              successMessage="We have received your callback request. A Neema loan specialist will contact you during your preferred time window!"
             />
           </div>
           <p className="text-white/60 text-sm mt-6 font-bold uppercase tracking-wider">No commitments. Just clear, honest financial guidance.</p>

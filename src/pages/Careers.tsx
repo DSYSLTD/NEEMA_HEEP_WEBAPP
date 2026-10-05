@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { ArrowUpRight, MapPin, Briefcase, Linkedin, Github, Instagram, Heart, Sun, TrendingUp, Clock, FileText, CheckCircle2, ChevronDown, ChevronUp, Facebook, Youtube, Search, Bookmark, BookmarkCheck } from 'lucide-react';
+import { ArrowUpRight, MapPin, Briefcase, Heart, Sun, TrendingUp, Clock, FileText, CheckCircle2, ChevronDown, ChevronUp, Search, Bookmark, BookmarkCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import SmartLeadForm from '../components/SmartLeadForm';
-import { XIcon, TikTokIcon } from '../components/SocialIcons';
 import { useJobs } from '../hooks/useJobs';
 
 const FAQS = [
@@ -81,15 +80,6 @@ export default function Careers() {
     return true;
   });
 
-  const socialLinks = [
-    { icon: <Facebook className="w-5 h-5 text-white" />, href: "https://www.facebook.com/NeemaHeepOrganization", label: "Facebook" },
-    { icon: <Instagram className="w-5 h-5 text-white" />, href: "https://www.instagram.com/neemaheep", label: "Instagram" },
-    { icon: <XIcon className="w-4 h-4 text-white" />, href: "https://x.com/NeemaHeepLtd", label: "X" },
-    { icon: <Linkedin className="w-5 h-5 text-white" />, href: "https://www.linkedin.com/in/neema-heep-ltd", label: "LinkedIn" },
-    { icon: <TikTokIcon className="w-4 h-4 text-white" />, href: "https://www.tiktok.com/@neema.heep.ltd", label: "TikTok" },
-    { icon: <Youtube className="w-5 h-5 text-white" />, href: "#", label: "YouTube" }
-  ];
-
   return (
     <main className="flex-grow bg-[#f8faf8] pb-0">
       {/* Hero */}
@@ -102,42 +92,9 @@ export default function Careers() {
         <h1 className="text-5xl lg:text-7xl font-extrabold mb-6 tracking-tight leading-[1.1] uppercase">
           CAREERS AT NEEMA <span className="text-[#C0991B]">HEEP</span>
         </h1>
-        <p className="text-lg text-white/80 max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
+        <p className="text-lg text-white/80 max-w-2xl mx-auto mb-0 font-medium leading-relaxed">
           Join a team dedicated to real microfinance impact across Kenya. Discover roles where your career growth aligns with community empowerment.
         </p>
-        
-        {/* Social Media Integration */}
-        <motion.div 
-          className="flex justify-center items-center gap-4"
-          initial="hidden"
-          animate="visible"
-          variants={{
-            hidden: { opacity: 0 },
-            visible: {
-              opacity: 1,
-              transition: { staggerChildren: 0.1 }
-            }
-          }}
-        >
-          {socialLinks.map((link, idx) => (
-            <motion.a 
-              key={idx}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={link.label}
-              className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center transition-colors"
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0 }
-              }}
-              whileHover={{ scale: 1.1, backgroundColor: '#C0991B' }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {link.icon}
-            </motion.a>
-          ))}
-        </motion.div>
       </section>
 
       {/* Recruiting KPIs */}

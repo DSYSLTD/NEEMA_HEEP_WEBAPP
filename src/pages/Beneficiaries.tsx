@@ -5,10 +5,16 @@ import { useState, useEffect } from 'react';
 import { beneficiariesStore, maskBeneficiaryName } from '../lib/beneficiariesStore';
 import { beneficiaryService } from '../services/beneficiaryService';
 
+interface PublishedCohort {
+  year: string;
+  title: string;
+  students: { id: string; name: string; school: string }[];
+}
+
 export default function Beneficiaries() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSchool, setSelectedSchool] = useState('All');
-  const [publishedData, setPublishedData] = useState(() => beneficiariesStore.getPublishedLists().filter(d => d.year !== '2027'));
+  const [publishedData, setPublishedData] = useState<PublishedCohort[]>([]);
 
   // Determine available years and the most current year (highest numerical year)
   const availableYears = Array.from(new Set(publishedData.map(d => d.year)))
@@ -17,11 +23,7 @@ export default function Beneficiaries() {
   const mostCurrentYear = availableYears[0] || '2026';
 
   // Active year defaults to the most current year dynamically
-  const [activeYear, setActiveYear] = useState<string>(() => {
-    const initialLists = beneficiariesStore.getPublishedLists().filter(d => d.year !== '2027');
-    const years = Array.from(new Set(initialLists.map(d => d.year))).filter(y => y !== '2027').sort((a, b) => Number(b) - Number(a));
-    return years[0] || '2026';
-  });
+  const [activeYear, setActiveYear] = useState<string>('All');
 
   useEffect(() => {
     let isMounted = true;

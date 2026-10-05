@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { 
   Image as ImageIcon, Folder, Layers, UploadCloud, Clock, 
   Trash2, BarChart3, ShieldAlert, Plus, Search, 
-  Check, Filter, ShieldCheck, Bell, RefreshCw 
+  Check, Filter, ShieldCheck, Bell, RefreshCw, FileSpreadsheet, Printer, Download 
 } from 'lucide-react';
 import { damStore } from '../lib/damStore';
 import { MediaItem, DAMSubModule } from '../types/dam';
+import { downloadExcel, downloadCSV, ColumnDef } from '../lib/excelReportExport';
+import ReportModal from './ReportModal';
 import { SupportedFileTypesBanner } from './dam/SupportedFileTypesBanner';
 import { MediaDashboard } from './dam/MediaDashboard';
 import { FolderManagerView } from './dam/FolderManagerView';
@@ -39,6 +41,29 @@ export function MediaManagerDAM({ showToast }: Props) {
   const [editingMedia, setEditingMedia] = useState<MediaItem | null>(null);
   const [aiAssistantMedia, setAiAssistantMedia] = useState<MediaItem | null>(null);
   const [previewMedia, setPreviewMedia] = useState<MediaItem | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+
+  const mediaColumns: ColumnDef[] = [
+    { key: 'filename', label: 'Filename' },
+    { key: 'displayName', label: 'Asset Title' },
+    { key: 'fileType', label: 'Type' },
+    { key: 'formattedSize', label: 'File Size' },
+    { key: 'folderName', label: 'Folder' },
+    { key: 'uploadDate', label: 'Upload Date' },
+    { key: 'uploadedBy', label: 'Uploaded By' },
+    { key: 'status', label: 'Optimization Status' },
+    { key: 'usageCount', label: 'Usage Count', type: 'number' },
+  ];
+
+  const handleDownloadExcel = () => {
+    if (mediaList.length === 0) return;
+    downloadExcel('Neema_HEEP_Media_Assets_Inventory', mediaColumns, mediaList);
+  };
+
+  const handleDownloadCSV = () => {
+    if (mediaList.length === 0) return;
+    downloadCSV('Neema_HEEP_Media_Assets_Inventory', mediaColumns, mediaList);
+  };
 
   const loadData = () => {
     setMediaList(damStore.getMedia());
@@ -93,6 +118,30 @@ export function MediaManagerDAM({ showToast }: Props) {
             className="px-4 py-2.5 bg-[#C0991B] hover:bg-[#a88414] text-[#074504] font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" /> Upload Media
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadExcel}
+            className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
+          >
+            <FileSpreadsheet className="w-4 h-4" /> Download Excel
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadCSV}
+            className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-[#C0991B]/40 font-bold text-xs rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
+          >
+            <Download className="w-4 h-4 text-[#C0991B]" /> Export CSV
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowReportModal(true)}
+            className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-[#C0991B]/40 font-bold text-xs rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
+          >
+            <Printer className="w-4 h-4 text-[#C0991B]" /> Print Inventory Report
           </button>
         </div>
 
@@ -275,6 +324,23 @@ export function MediaManagerDAM({ showToast }: Props) {
           onOpenAIAssistant={(item) => setAiAssistantMedia(item)}
         />
       )}
+
+      {/* Formal Media Inventory Audit & Metadata Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        title="Digital Media Assets Inventory Report"
+        moduleName="Blog Management"
+        submoduleName="Media"
+        columns={mediaColumns}
+        data={mediaList}
+        filterDescription={`Total Assets: ${mediaList.length} | Active View: ${submodule.toUpperCase()}`}
+        summaryMetrics={[
+          { label: 'Total Assets', value: mediaList.length },
+          { label: 'Optimized', value: mediaList.filter(m => m.status === 'Optimized').length, color: '#074504' },
+          { label: 'In Use', value: mediaList.filter(m => m.usageCount > 0).length, color: '#C0991B' }
+        ]}
+      />
     </div>
   );
 }

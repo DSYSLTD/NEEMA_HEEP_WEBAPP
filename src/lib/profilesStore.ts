@@ -18,7 +18,7 @@ export interface ExtendedUserProfile {
   departmentExtension: string;
   canCreateArticles: boolean;
   physicalAddress?: string;
-  role: 'Super Admin' | 'Site Administrator' | 'Editor' | 'Author' | 'Loan Officer' | 'Webmaster' | 'Auditor' | string;
+  role: 'Superadmin' | 'Content editor' | 'Administrator' | 'Reviewer' | string;
   status: 'Active' | 'Inactive' | 'Suspended';
   verificationStatus: 'Verified' | 'Pending' | 'Unverified' | 'Rejected';
   profilePhoto: string;
@@ -38,6 +38,7 @@ export interface ExtendedUserProfile {
   publicBio?: string;
   publicPagePublished?: boolean;
   showPublicContact?: boolean;
+  password?: string;
   initialPassword?: string;
   // Super Admin Management Metadata
   createdAt?: string;
@@ -151,7 +152,7 @@ class ProfilesStore {
           departmentExtension: 'Ext. 200',
           canCreateArticles: true,
           physicalAddress: 'Neema HEEP HQ',
-          role: u.role || 'Author',
+          role: u.role || 'Content editor',
           status: u.status || 'Active',
           verificationStatus: u.verification_status || 'Verified',
           profilePhoto: u.profile_photo || '/developer_teaching_coding.jpg',
@@ -171,7 +172,8 @@ class ProfilesStore {
           publicBio: u.bio || 'Registered CMS User',
           publicPagePublished: true,
           showPublicContact: true,
-          initialPassword: u.initial_password || '',
+          password: u.password || u.initial_password || '',
+          initialPassword: u.initial_password || u.password || '',
           createdAt: u.created_at ? new Date(u.created_at).toLocaleString() : new Date().toLocaleString(),
           createdBy: 'System/Supabase',
           stats: u.stats || {
@@ -188,9 +190,10 @@ class ProfilesStore {
           achievements: ['Registered User']
         }));
 
-        const existingEmails = new Set(fetchedProfiles.map(p => p.email.toLowerCase()));
-        const localOnly = this.profiles.filter(p => !existingEmails.has(p.email.toLowerCase()));
-        this.profiles = [...fetchedProfiles, ...localOnly];
+        this.profiles = fetchedProfiles;
+        this.saveToStorage();
+      } else if (!error && data && data.length === 0) {
+        this.profiles = [];
         this.saveToStorage();
       }
     } catch (err) {
@@ -322,7 +325,8 @@ class ProfilesStore {
       role: newProfile.role,
       department: newProfile.department,
       status: newProfile.status,
-      initial_password: newProfile.initialPassword,
+      password: newProfile.password || newProfile.initialPassword,
+      initial_password: newProfile.initialPassword || newProfile.password,
       job_title: newProfile.jobTitle
     }], { onConflict: 'email' }).then(({ error }) => {
       if (error) console.warn("Supabase user_profiles upsert notice:", error);

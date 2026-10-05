@@ -2,22 +2,37 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { User, Calendar, ArrowRight, Search, Tag, Filter, X } from 'lucide-react';
 import { blogStore, BlogPostItem, BlogAuthor } from '../lib/blogStore';
+import { articleService } from '../services/articleService';
+import Helmet from '../components/Helmet';
 
 export default function Blog() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [posts, setPosts] = useState<BlogPostItem[]>([]);
+  const [posts, setPosts] = useState<BlogPostItem[]>(() => {
+    return blogStore.getPosts().filter(p => p.status !== 'Draft' && p.status !== 'Trash');
+  });
   const [authors, setAuthors] = useState<BlogAuthor[]>([]);
-
   const [createdCategories, setCreatedCategories] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const loadData = () => {
-      const allPosts = blogStore.getPosts();
-      setPosts(allPosts.filter(p => p.status !== 'Draft' && p.status !== 'Trash'));
-      setAuthors(blogStore.getAuthors());
-      const cats = blogStore.getCategories();
-      setCreatedCategories(cats.map(c => c.name));
+    let isMounted = true;
+
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const publishedArticles = await articleService.fetchPublishedArticles();
+        if (isMounted) {
+          setPosts(publishedArticles);
+          setAuthors(blogStore.getAuthors());
+          const cats = blogStore.getCategories();
+          setCreatedCategories(cats.map(c => c.name));
+        }
+      } catch (err) {
+        console.error('Error fetching blog articles:', err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
     };
 
     loadData();
@@ -26,6 +41,7 @@ export default function Blog() {
     window.addEventListener('neema_cms_posts_updated', handleUpdate);
     window.addEventListener('neema_cms_categories_updated', handleUpdate);
     return () => {
+      isMounted = false;
       window.removeEventListener('neema_cms_posts_updated', handleUpdate);
       window.removeEventListener('neema_cms_categories_updated', handleUpdate);
     };
@@ -70,6 +86,13 @@ export default function Blog() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+      <Helmet
+        title="Journal & Insights"
+        description="Explore expert financial literacy guides, microfinance case studies, community transformation stories, and updates from Neema HEEP Mount Kenya."
+        canonicalUrl="https://www.neemaheep.com/blog"
+        ogTitle="Neema HEEP Journal - Financial Literacy & Microfinance"
+        ogDescription="Explore expert financial literacy guides, microfinance case studies, and stories of community transformation from Mount Kenya."
+      />
       {/* Hero Header */}
       <div className="bg-[#074504] text-white p-8 md:p-14 rounded-3xl shadow-xl relative overflow-hidden text-center flex flex-col items-center">
         <div className="absolute top-0 right-0 w-80 h-80 bg-[#C0991B]/10 rounded-full blur-3xl pointer-events-none" />
@@ -269,13 +292,33 @@ export default function Blog() {
             );
           })}
         </div>
+      ) : posts.length === 0 ? (
+        /* Empty State: No articles published in DB yet */
+        <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center space-y-4 max-w-lg mx-auto my-12 shadow-xs">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-[#074504] flex items-center justify-center mx-auto border border-emerald-100">
+            <Tag className="w-8 h-8 text-[#C0991B]" />
+          </div>
+          <h3 className="text-xl font-black text-gray-900">No Articles Published Yet</h3>
+          <p className="text-xs text-gray-600 font-medium leading-relaxed">
+            Articles and insights published through the administrative Articles Studio will appear here dynamically. Check back soon for financial literacy guides and updates.
+          </p>
+          <div className="pt-2">
+            <Link
+              to="/admin"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#074504] text-white font-extrabold text-xs rounded-xl hover:bg-[#053203] transition-all shadow-xs"
+            >
+              <span>Go to Admin Dashboard</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#C0991B]" />
+            </Link>
+          </div>
+        </div>
       ) : (
-        /* Empty State */
+        /* Empty State: Filter mismatch */
         <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center space-y-4 max-w-lg mx-auto my-12">
           <div className="w-12 h-12 rounded-2xl bg-amber-50 text-[#C0991B] flex items-center justify-center mx-auto">
             <Filter className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900">No Articles Found</h3>
+          <h3 className="text-lg font-bold text-gray-900">No Matching Articles</h3>
           <p className="text-xs text-gray-600 font-medium">
             There are no articles matching category "<span className="font-bold text-gray-900">{selectedCategory}</span>"
             {search && <> and search query "<span className="font-bold text-gray-900">{search}</span>"</>}.

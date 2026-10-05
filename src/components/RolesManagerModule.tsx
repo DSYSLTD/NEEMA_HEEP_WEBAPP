@@ -63,7 +63,6 @@ export const CMS_MODULES = [
   { id: 'mod_messages', name: 'Leads & Inquiries' },
   { id: 'mod_profiles', name: 'Profiles & Staff' },
   { id: 'mod_passwords', name: 'Password Management' },
-  { id: 'mod_analytics', name: 'Analytics & Reports' },
   { id: 'mod_roles', name: 'Roles & Permissions' },
   { id: 'mod_security', name: 'Security & Auth Policies' },
   { id: 'mod_system', name: 'System Settings & Backups' },
@@ -77,10 +76,10 @@ const INITIAL_ROLES: EnterpriseRole[] = [
   {
     id: 'role-1',
     name: 'Superadmin',
-    description: 'Full unrestricted system administration access across all CMS modules, roles, and security policies.',
+    description: 'Full system administration',
     isDefault: true,
     userCount: 1,
-    permissionsCount: 224,
+    permissionsCount: 108,
     color: '#074504',
     category: 'System',
     canManageUsers: true,
@@ -90,25 +89,11 @@ const INITIAL_ROLES: EnterpriseRole[] = [
   },
   {
     id: 'role-2',
-    name: 'Web Master',
-    description: 'Access granted exclusively to webmaster sub-modules (Beneficiaries, Vacancies, Comments, Inquiries) plus Profiles and Passwords.',
+    name: 'Content editor',
+    description: 'Manage public website content',
     isDefault: true,
     userCount: 2,
-    permissionsCount: 54,
-    color: '#059669',
-    category: 'System',
-    canManageUsers: true,
-    canManageRoles: false,
-    canManageSecurity: false,
-    canManageContent: true,
-  },
-  {
-    id: 'role-3',
-    name: 'Editor',
-    description: 'Full editorial control over articles, media, categories, comments moderation, and publishing workflows.',
-    isDefault: true,
-    userCount: 4,
-    permissionsCount: 128,
+    permissionsCount: 48,
     color: '#C0991B',
     category: 'Editorial',
     canManageUsers: false,
@@ -117,18 +102,32 @@ const INITIAL_ROLES: EnterpriseRole[] = [
     canManageContent: true,
   },
   {
-    id: 'role-4',
-    name: 'Author',
-    description: 'Create, edit, and publish own articles, manage assigned publishing workflows, and upload media.',
+    id: 'role-3',
+    name: 'Administrator',
+    description: 'Administrative access',
     isDefault: true,
-    userCount: 8,
-    permissionsCount: 54,
+    userCount: 1,
+    permissionsCount: 96,
     color: '#2563EB',
-    category: 'Editorial',
+    category: 'System',
+    canManageUsers: true,
+    canManageRoles: false,
+    canManageSecurity: true,
+    canManageContent: true,
+  },
+  {
+    id: 'role-4',
+    name: 'Reviewer',
+    description: 'Review applications and submissions',
+    isDefault: true,
+    userCount: 1,
+    permissionsCount: 36,
+    color: '#059669',
+    category: 'Operations',
     canManageUsers: false,
     canManageRoles: false,
     canManageSecurity: false,
-    canManageContent: true,
+    canManageContent: false,
   },
 ];
 
@@ -152,7 +151,7 @@ const INITIAL_USER_MAPPINGS: UserRoleMapping[] = [
     username: 'muthonichar12@gmail.com',
     name: 'Charity Muthoni',
     email: 'muthonichar12@gmail.com',
-    role: 'Author',
+    role: 'Content editor',
     department: 'CMS Editorial',
     status: 'Active',
     assignedDate: '2026-09-17',
@@ -161,7 +160,9 @@ const INITIAL_USER_MAPPINGS: UserRoleMapping[] = [
     initialPassword: '@Cham123#',
     grantedRights: [
       'mod_articles:View', 'mod_articles:Create', 'mod_articles:Edit', 'mod_articles:Publish',
-      'mod_media:View', 'mod_media:Create', 'mod_media:Edit', 'mod_media:Publish'
+      'mod_media:View', 'mod_media:Create', 'mod_media:Edit', 'mod_media:Publish',
+      'mod_categories:View', 'mod_categories:Create', 'mod_categories:Edit',
+      'mod_comments:View', 'mod_comments:Moderate'
     ]
   },
 ];
@@ -192,7 +193,7 @@ export default function RolesManagerModule({ className = '' }: { className?: str
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserRole, setNewUserRole] = useState<string>('Author');
+  const [newUserRole, setNewUserRole] = useState<string>('Content editor');
   const [newUserDept, setNewUserDept] = useState<string>('CMS Editorial');
   const [newUserInitialPassword, setNewUserInitialPassword] = useState('');
   const [showInitialPassword, setShowInitialPassword] = useState(false);
@@ -226,13 +227,17 @@ export default function RolesManagerModule({ className = '' }: { className?: str
         PERMISSION_ACTIONS.forEach(act => {
           if (role.name === 'Superadmin' || role.id === 'role-1') {
             matrix[role.id][mod.id][act] = true;
-          } else if (role.name === 'Web Master' || role.name === 'Webmaster' || role.name === 'Site Administrator' || role.id === 'role-2') {
-            const isWebmasterSubModule = ['mod_beneficiaries', 'mod_vacancies', 'mod_comments', 'mod_messages', 'mod_profiles', 'mod_passwords'].includes(mod.id);
-            matrix[role.id][mod.id][act] = isWebmasterSubModule;
-          } else if (role.name === 'Editor' || role.id === 'role-3') {
-            matrix[role.id][mod.id][act] = ['View', 'Create', 'Edit', 'Publish', 'Moderate', 'Approve'].includes(act) && !mod.id.includes('security') && !mod.id.includes('system');
-          } else if (role.name === 'Author' || role.id === 'role-4') {
-            matrix[role.id][mod.id][act] = ['View', 'Create', 'Edit', 'Publish'].includes(act) && (mod.id === 'mod_articles' || mod.id === 'mod_media');
+          } else if (role.name === 'Administrator' || role.id === 'role-3') {
+            // Administrative access
+            matrix[role.id][mod.id][act] = mod.id !== 'mod_roles' || act !== 'Delete';
+          } else if (role.name === 'Content editor' || role.id === 'role-2') {
+            // Manage public website content
+            const isContentModule = ['mod_articles', 'mod_media', 'mod_categories', 'mod_comments'].includes(mod.id);
+            matrix[role.id][mod.id][act] = isContentModule && ['View', 'Create', 'Edit', 'Publish', 'Moderate'].includes(act);
+          } else if (role.name === 'Reviewer' || role.id === 'role-4') {
+            // Review applications and submissions
+            const isReviewModule = ['mod_beneficiaries', 'mod_vacancies', 'mod_messages', 'mod_comments'].includes(mod.id);
+            matrix[role.id][mod.id][act] = isReviewModule && ['View', 'Moderate', 'Approve', 'Export'].includes(act);
           } else {
             matrix[role.id][mod.id][act] = act === 'View';
           }
@@ -648,7 +653,7 @@ export default function RolesManagerModule({ className = '' }: { className?: str
                   {roles.filter(r => !r.isDefault).length} Custom
                 </span>
               </div>
-              <p className="text-[10.5px] text-gray-500 font-medium">Superadmin, Site Admin, Editor, Author & Custom</p>
+              <p className="text-[10.5px] text-gray-500 font-medium">Superadmin, Content editor, Administrator & Reviewer</p>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border-t-4 border-t-[#C0991B] border-x border-b border-gray-200 shadow-xs space-y-1">
@@ -1335,11 +1340,13 @@ export default function RolesManagerModule({ className = '' }: { className?: str
                     PERMISSION_ACTIONS.map(a => `${m.id}:${a}`)
                   ).filter(k => 
                     newUserRole === 'Superadmin' || 
-                    ((newUserRole === 'Web Master' || newUserRole === 'Webmaster' || newUserRole === 'Site Administrator') && (
-                      k.includes('beneficiaries') || k.includes('vacancies') || k.includes('comments') || k.includes('messages') || k.includes('profiles') || k.includes('passwords')
+                    (newUserRole === 'Administrator' && !k.includes('roles:Delete')) ||
+                    (newUserRole === 'Content editor' && (
+                      k.includes('articles') || k.includes('media') || k.includes('categories') || k.includes('comments')
                     )) ||
-                    (newUserRole === 'Editor' && !k.includes('security') && !k.includes('system')) ||
-                    (newUserRole === 'Author' && (k.includes('articles') || k.includes('media')))
+                    (newUserRole === 'Reviewer' && (
+                      k.includes('beneficiaries') || k.includes('vacancies') || k.includes('messages') || k.includes('comments')
+                    ))
                   );
 
                   // 1. Insert into user_roles table
@@ -1358,7 +1365,7 @@ export default function RolesManagerModule({ className = '' }: { className?: str
                     console.warn("Notice saving to user_roles table:", rolesErr);
                   }
 
-                  // 2. Insert into user_profiles table
+                  // 2. Insert into user_profiles table (with password column)
                   const { error: profsErr } = await supabase.from('user_profiles').upsert([{
                     first_name: newUserName.trim().split(' ')[0],
                     last_name: newUserName.trim().split(' ').slice(1).join(' ') || 'User',
@@ -1368,6 +1375,7 @@ export default function RolesManagerModule({ className = '' }: { className?: str
                     role: newUserRole,
                     department: newUserDept,
                     status: 'Active',
+                    password: newUserInitialPassword.trim(),
                     initial_password: newUserInitialPassword.trim(),
                     job_title: `${newUserRole} - ${newUserDept}`
                   }], { onConflict: 'email' });

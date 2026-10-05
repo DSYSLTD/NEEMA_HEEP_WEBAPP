@@ -53,7 +53,13 @@ export default function FloatingCTA() {
     };
   }, [location.pathname, isAboutPage]);
 
-  if (isDashboardOrPortal) return null;
+  const isContactPage = location.pathname === '/contact' || 
+                        location.pathname.startsWith('/contact') || 
+                        location.pathname === '/contact-us' || 
+                        location.pathname.startsWith('/contact-us') || 
+                        location.pathname === '/talk-to-us';
+
+  if (isDashboardOrPortal || isContactPage) return null;
 
   const positionClass = waPosition === 'bottom-left' 
     ? 'left-3 sm:left-6' 

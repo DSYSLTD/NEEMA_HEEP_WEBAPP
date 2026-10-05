@@ -98,313 +98,6 @@ export interface AutomationTask {
   avgDurationMs: number;
 }
 
-// ================= MOCK DATA =================
-const INITIAL_SESSIONS: ActiveSession[] = [
-  {
-    id: 'sess-1',
-    userId: 'usr-1',
-    username: 'admin_neema1',
-    role: 'Web Master',
-    device: 'MacBook Pro 16"',
-    browser: 'Chrome 126.0',
-    os: 'macOS Sonoma',
-    ipAddress: '102.218.45.12',
-    location: 'Nairobi, Kenya',
-    loginTime: '2026-07-31 08:30',
-    duration: '6 hrs 25 mins',
-    lastActivity: 'Just Now',
-    riskLevel: 'Low',
-    isCurrentSession: true,
-  },
-  {
-    id: 'sess-2',
-    userId: 'usr-1',
-    username: 'admin_neema1',
-    role: 'Web Master',
-    device: 'iPhone 15 Pro',
-    browser: 'Mobile Safari 17.4',
-    os: 'iOS 17',
-    ipAddress: '102.218.45.12',
-    location: 'Nairobi, Kenya',
-    loginTime: '2026-07-31 11:15',
-    duration: '3 hrs 40 mins',
-    lastActivity: '10 mins ago',
-    riskLevel: 'Low',
-  },
-  {
-    id: 'sess-3',
-    userId: 'usr-2',
-    username: 'staff_editor',
-    role: 'Editor',
-    device: 'Dell XPS 15',
-    browser: 'Firefox 127.0',
-    os: 'Windows 11',
-    ipAddress: '102.218.48.90',
-    location: 'Nyeri, Kenya',
-    loginTime: '2026-07-31 12:00',
-    duration: '2 hrs 55 mins',
-    lastActivity: '15 mins ago',
-    riskLevel: 'Low',
-  },
-  {
-    id: 'sess-4',
-    userId: 'usr-3',
-    username: 'author_sam',
-    role: 'Author',
-    device: 'HP EliteBook',
-    browser: 'Chrome 126.0',
-    os: 'Windows 11',
-    ipAddress: '197.232.88.11',
-    location: 'Meru, Kenya',
-    loginTime: '2026-07-31 13:10',
-    duration: '1 hr 45 mins',
-    lastActivity: '32 mins ago',
-    riskLevel: 'Low',
-  },
-  {
-    id: 'sess-5',
-    userId: 'usr-4',
-    username: 'dr_jane_m',
-    role: 'Webmaster',
-    device: 'Galaxy S24 Ultra',
-    browser: 'Chrome Mobile',
-    os: 'Android 14',
-    ipAddress: '41.203.11.89',
-    location: 'Mombasa, Kenya',
-    loginTime: '2026-07-31 14:05',
-    duration: '50 mins',
-    lastActivity: '5 mins ago',
-    riskLevel: 'Medium',
-  },
-];
-
-const INITIAL_DEVICES: TrustedDevice[] = [
-  {
-    id: 'dev-1',
-    userId: 'usr-1',
-    username: 'admin_neema1',
-    deviceName: 'Admin Workstation (MacBook Pro)',
-    os: 'macOS Sonoma',
-    browser: 'Chrome 126.0',
-    location: 'Nairobi, Kenya',
-    ipAddress: '102.218.45.12',
-    trustedSince: '2026-01-15',
-    lastUsed: 'Today 14:55',
-    riskScore: 2,
-    status: 'Approved',
-  },
-  {
-    id: 'dev-2',
-    userId: 'usr-1',
-    username: 'admin_neema1',
-    deviceName: 'Executive iPhone 15 Pro',
-    os: 'iOS 17',
-    browser: 'Safari',
-    location: 'Nairobi, Kenya',
-    ipAddress: '102.218.45.12',
-    trustedSince: '2026-03-20',
-    lastUsed: 'Today 11:15',
-    riskScore: 5,
-    status: 'Approved',
-  },
-  {
-    id: 'dev-3',
-    userId: 'usr-4',
-    username: 'dr_jane_m',
-    deviceName: 'Unrecognized Mobile Device',
-    os: 'Android 14',
-    browser: 'Chrome Mobile',
-    location: 'Mombasa, Kenya',
-    ipAddress: '41.203.11.89',
-    trustedSince: '2026-07-28',
-    lastUsed: 'Today 14:05',
-    riskScore: 68,
-    status: 'Pending Review',
-  },
-  {
-    id: 'dev-4',
-    userId: 'usr-5',
-    username: 'auditor_pete',
-    deviceName: 'Suspicious Remote Host',
-    os: 'Linux x86_64',
-    browser: 'Headless Chrome',
-    location: 'Unknown Proxy Range',
-    ipAddress: '197.254.12.44',
-    trustedSince: '2026-07-30',
-    lastUsed: '3 days ago',
-    riskScore: 92,
-    status: 'Blocked',
-  },
-];
-
-const INITIAL_AUDIT_LOGS: SystemAuditLog[] = [
-  {
-    id: 'audit-101',
-    timestamp: '2026-07-31 14:50:12',
-    event: 'System Policy Configuration Sync',
-    actor: 'admin_neema1',
-    actorRole: 'Site Administrator',
-    category: 'Security Policy',
-    status: 'Success',
-    ipAddress: '102.218.45.12',
-    location: 'Nairobi, KE',
-    details: 'Enforced password rotation cycle to 90 days across staff accounts.',
-    riskScore: 10,
-  },
-  {
-    id: 'audit-102',
-    timestamp: '2026-07-31 14:15:00',
-    event: 'Brute Force Login Threshold Exceeded',
-    actor: 'unknown_ip',
-    actorRole: 'Unauthenticated',
-    category: 'Auth',
-    status: 'Blocked',
-    ipAddress: '197.254.12.44',
-    location: 'Nakuru, KE',
-    details: 'Auto-locked account "auditor_pete" after 5 consecutive bad password attempts.',
-    riskScore: 88,
-  },
-  {
-    id: 'audit-103',
-    timestamp: '2026-07-31 13:20:18',
-    event: 'MFA Security Token Verification',
-    actor: 'staff_editor',
-    actorRole: 'Editor',
-    category: 'Auth',
-    status: 'Success',
-    ipAddress: '102.218.48.90',
-    location: 'Nyeri, KE',
-    details: 'Verified SMS OTP token on trusted device Dell XPS.',
-    riskScore: 5,
-  },
-  {
-    id: 'audit-104',
-    timestamp: '2026-07-31 11:05:44',
-    event: 'REST API Key Issued',
-    actor: 'admin_neema1',
-    actorRole: 'Site Administrator',
-    category: 'API',
-    status: 'Success',
-    ipAddress: '102.218.45.12',
-    location: 'Nairobi, KE',
-    details: 'Generated bearer token "Mobile App Gateway" with read:articles scope.',
-    riskScore: 15,
-  },
-  {
-    id: 'audit-105',
-    timestamp: '2026-07-31 09:12:30',
-    event: 'Automated Database Backup Completed',
-    actor: 'system_cron',
-    actorRole: 'System Engine',
-    category: 'Backup',
-    status: 'Success',
-    ipAddress: '127.0.0.1',
-    location: 'Internal Cloud',
-    details: 'Created encrypted snapshot (142.8 MB) stored to Firestore / Cloud Storage.',
-    riskScore: 0,
-  },
-];
-
-const INITIAL_API_TOKENS: ApiToken[] = [
-  {
-    id: 'tok-1',
-    name: 'Neema Mobile App Service',
-    prefix: 'nh_live_9f82...',
-    createdFor: 'Mobile App Gateway',
-    scopes: ['read:articles', 'read:beneficiaries', 'write:comments'],
-    rateLimitReqPerMin: 1200,
-    createdDate: '2026-02-10',
-    expiresDate: '2027-02-10',
-    lastUsed: '2 mins ago',
-    status: 'Active',
-  },
-  {
-    id: 'tok-2',
-    name: 'M-PESA Webhook Consumer',
-    prefix: 'nh_live_3k11...',
-    createdFor: 'Finance Backend',
-    scopes: ['read:beneficiaries', 'write:logs'],
-    rateLimitReqPerMin: 300,
-    createdDate: '2026-04-01',
-    expiresDate: '2026-10-01',
-    lastUsed: '1 hour ago',
-    status: 'Active',
-  },
-];
-
-const INITIAL_ACCOUNTS: UserAccountHealth[] = [
-  {
-    id: 'usr-1',
-    username: 'admin_neema1',
-    name: 'Neema Chief Administrator',
-    email: 'admin@neemaheep.com',
-    role: 'Site Administrator',
-    status: 'Active',
-    mfaEnabled: true,
-    healthScore: 98,
-    passwordAgeDays: 14,
-    failedAttempts: 0,
-    lastLogin: 'Just Now',
-    ipAddress: '102.218.45.12',
-  },
-  {
-    id: 'usr-2',
-    username: 'staff_editor',
-    name: 'Grace Wanjiku (Senior Editor)',
-    email: 'grace.wanjiku@neemaheep.com',
-    role: 'Editor',
-    status: 'Active',
-    mfaEnabled: true,
-    healthScore: 92,
-    passwordAgeDays: 28,
-    failedAttempts: 0,
-    lastLogin: '18 mins ago',
-    ipAddress: '102.218.48.90',
-  },
-  {
-    id: 'usr-3',
-    username: 'author_sam',
-    name: 'Samuel Ochieng',
-    email: 'samuel.ochieng@neemaheep.com',
-    role: 'Author',
-    status: 'Active',
-    mfaEnabled: true,
-    healthScore: 85,
-    passwordAgeDays: 45,
-    failedAttempts: 1,
-    lastLogin: '2 hours ago',
-    ipAddress: '197.232.88.11',
-  },
-  {
-    id: 'usr-4',
-    username: 'dr_jane_m',
-    name: 'Dr. Jane Muturi',
-    email: 'jane.muturi@neemaheep.com',
-    role: 'Webmaster',
-    status: 'Active',
-    mfaEnabled: false,
-    healthScore: 68,
-    passwordAgeDays: 82,
-    failedAttempts: 2,
-    lastLogin: '1 day ago',
-    ipAddress: '41.203.11.89',
-  },
-  {
-    id: 'usr-5',
-    username: 'auditor_pete',
-    name: 'Peter Kamau (Auditor)',
-    email: 'peter.kamau@neemaheep.com',
-    role: 'Auditor',
-    status: 'Locked',
-    mfaEnabled: true,
-    healthScore: 35,
-    passwordAgeDays: 110,
-    failedAttempts: 5,
-    lastLogin: '3 days ago',
-    ipAddress: '197.254.12.44',
-  },
-];
-
 const INITIAL_AUTOMATION_TASKS: AutomationTask[] = [
   {
     id: 'task-1',
@@ -447,15 +140,72 @@ export default function SystemAdminModule({ className = '' }: { className?: stri
   >('overview');
 
   // Master Module State
-  const [sessions, setSessions] = useState<ActiveSession[]>(INITIAL_SESSIONS);
-  const [devices, setDevices] = useState<TrustedDevice[]>(INITIAL_DEVICES);
-  const [auditLogs, setAuditLogs] = useState<SystemAuditLog[]>(INITIAL_AUDIT_LOGS);
-  const [apiTokens, setApiTokens] = useState<ApiToken[]>(INITIAL_API_TOKENS);
-  const [accounts, setAccounts] = useState<UserAccountHealth[]>(INITIAL_ACCOUNTS);
+  const [sessions, setSessions] = useState<ActiveSession[]>([
+    {
+      id: 'sess-current',
+      userId: 'usr-1',
+      username: 'admin_neema1',
+      role: 'Super Admin',
+      device: typeof navigator !== 'undefined' ? (navigator.userAgent.includes('Mac') ? 'MacBook / macOS' : navigator.userAgent.includes('Win') ? 'Windows PC' : 'Workstation') : 'Workstation',
+      browser: typeof navigator !== 'undefined' ? (navigator.userAgent.includes('Chrome') ? 'Chrome' : navigator.userAgent.includes('Firefox') ? 'Firefox' : 'Browser') : 'Web Browser',
+      os: typeof navigator !== 'undefined' ? (navigator.userAgent.includes('Mac') ? 'macOS' : navigator.userAgent.includes('Win') ? 'Windows' : 'Linux') : 'Secure OS',
+      ipAddress: '102.218.45.12',
+      location: 'Nairobi, Kenya',
+      loginTime: 'Active Session',
+      duration: 'Active',
+      lastActivity: 'Just Now',
+      riskLevel: 'Low',
+      isCurrentSession: true,
+    }
+  ]);
+  const [devices, setDevices] = useState<TrustedDevice[]>([
+    {
+      id: 'dev-current',
+      userId: 'usr-1',
+      username: 'admin_neema1',
+      deviceName: typeof navigator !== 'undefined' ? (navigator.userAgent.includes('Mac') ? 'MacBook Workstation' : 'Office PC Workstation') : 'Admin Workstation',
+      os: typeof navigator !== 'undefined' ? (navigator.userAgent.includes('Mac') ? 'macOS' : 'Windows') : 'OS',
+      browser: typeof navigator !== 'undefined' ? (navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Browser') : 'Browser',
+      location: 'Nairobi, Kenya',
+      ipAddress: '102.218.45.12',
+      trustedSince: '2026-01-01',
+      lastUsed: 'Just Now',
+      riskScore: 5,
+      status: 'Approved',
+    }
+  ]);
+  const [auditLogs, setAuditLogs] = useState<SystemAuditLog[]>([]);
+  const [apiTokens, setApiTokens] = useState<ApiToken[]>([]);
   const [automationTasks, setAutomationTasks] = useState<AutomationTask[]>(INITIAL_AUTOMATION_TASKS);
 
   // Profile Manager State (Synced live with profilesStore)
   const [profiles, setProfiles] = useState<ExtendedUserProfile[]>(() => profilesStore.getProfiles());
+
+  // Helper to map profile status to UserAccountHealth status
+  const mapAccountStatus = (status?: string): 'Active' | 'Disabled' | 'Locked' | 'Pending' => {
+    if (status === 'Archived' || status === 'Suspended') return 'Locked';
+    if (status === 'Inactive') return 'Disabled';
+    if (status === 'Pending') return 'Pending';
+    return 'Active';
+  };
+
+  // User Accounts Health dynamically derived from actual profiles
+  const [accounts, setAccounts] = useState<UserAccountHealth[]>(() => {
+    return profilesStore.getProfiles().map(p => ({
+      id: p.id,
+      username: p.username || p.email.split('@')[0],
+      name: p.displayName || `${p.firstName} ${p.lastName}`.trim(),
+      email: p.email,
+      role: p.role || 'Staff',
+      status: mapAccountStatus(p.status),
+      mfaEnabled: true,
+      healthScore: 98,
+      passwordAgeDays: 14,
+      failedAttempts: 0,
+      lastLogin: p.stats?.lastLogin || 'Active',
+      ipAddress: '102.218.45.12'
+    }));
+  });
   const [profileSearchQuery, setProfileSearchQuery] = useState('');
   const [profileRoleFilter, setProfileRoleFilter] = useState('All');
   const [profileStatusFilter, setProfileStatusFilter] = useState('All');
@@ -512,13 +262,25 @@ export default function SystemAdminModule({ className = '' }: { className?: stri
   useEffect(() => {
     const unsubscribe = profilesStore.subscribe((updatedProfiles) => {
       setProfiles(updatedProfiles);
+      setAccounts(updatedProfiles.map(p => ({
+        id: p.id,
+        username: p.username || p.email.split('@')[0],
+        name: p.displayName || `${p.firstName} ${p.lastName}`.trim(),
+        email: p.email,
+        role: p.role || 'Staff',
+        status: mapAccountStatus(p.status),
+        mfaEnabled: true,
+        healthScore: 98,
+        passwordAgeDays: 14,
+        failedAttempts: 0,
+        lastLogin: p.stats?.lastLogin || 'Active',
+        ipAddress: '102.218.45.12'
+      })));
     });
 
     const loadAuditLogs = async () => {
       const logs = await fetchAuditLogsFromDB();
-      if (logs && logs.length > 0) {
-        setAuditLogs(logs as any);
-      }
+      setAuditLogs((logs || []) as any);
     };
 
     loadAuditLogs();

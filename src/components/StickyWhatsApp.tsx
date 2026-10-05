@@ -70,7 +70,13 @@ export default function StickyWhatsApp() {
     };
   }, [location.pathname, isAboutPage]);
 
-  if (isDashboardOrPortal || !waSettings.floatingButtonEnabled) return null;
+  const isContactPage = location.pathname === '/contact' || 
+                        location.pathname.startsWith('/contact') || 
+                        location.pathname === '/contact-us' || 
+                        location.pathname.startsWith('/contact-us') || 
+                        location.pathname === '/talk-to-us';
+
+  if (isDashboardOrPortal || isContactPage || !waSettings.floatingButtonEnabled) return null;
 
   const getMessageContext = () => {
     if (waSettings.prefilledTextEnabled && waSettings.prefilledText.trim()) {

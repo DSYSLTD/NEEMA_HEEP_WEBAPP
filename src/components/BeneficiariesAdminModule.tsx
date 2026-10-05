@@ -18,22 +18,34 @@ import {
   maskBeneficiaryName 
 } from '../lib/beneficiariesStore';
 import { exportPdfReport, printHtmlReport } from '../lib/pdfPrintUtils';
+import { downloadExcel, downloadCSV, ColumnDef } from '../lib/excelReportExport';
+import ReportModal from './ReportModal';
 
 interface BeneficiariesAdminModuleProps {
   userRole?: 'administrator' | 'webmaster' | 'editor';
   userName?: string;
   className?: string;
+  initialSubmodule?: 'entries' | 'lists';
 }
 
 export default function BeneficiariesAdminModule({
   userRole = 'administrator',
   userName = 'Site Administrator',
-  className = ''
+  className = '',
+  initialSubmodule
 }: BeneficiariesAdminModuleProps) {
   // Navigation Tabs
   const [activeTab, setActiveTab] = useState<
     'dashboard' | 'create_list' | 'entries' | 'import' | 'export' | 'reports' | 'lists' | 'apis' | 'settings'
-  >('dashboard');
+  >(() => (initialSubmodule ? initialSubmodule : 'entries'));
+
+  useEffect(() => {
+    if (initialSubmodule) {
+      setActiveTab(initialSubmodule);
+    }
+  }, [initialSubmodule]);
+
+  const [showBenReportModal, setShowBenReportModal] = useState(false);
 
   // Core Data State from Store
   const [lists, setLists] = useState<AnnualBeneficiaryList[]>(() => beneficiariesStore.getLists());
@@ -73,11 +85,13 @@ export default function BeneficiariesAdminModule({
   };
 
   useEffect(() => {
+    beneficiariesStore.syncWithSupabase();
+    refreshData();
     window.addEventListener('neema_cms_beneficiaries_lists_updated', refreshData);
     return () => {
       window.removeEventListener('neema_cms_beneficiaries_lists_updated', refreshData);
     };
-  }, [selectedListId]);
+  }, []);
 
   // Selected List & Records
   const currentList = useMemo(() => {
@@ -154,13 +168,13 @@ export default function BeneficiariesAdminModule({
   const canPublishOrArchive = userRole === 'administrator' || userRole === 'webmaster';
 
   // Handler: Create List
-  const handleCreateList = (e: React.FormEvent) => {
+  const handleCreateList = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newYear || !newTitle) {
       showToast('Please provide Year and Title.');
       return;
     }
-    const newList = beneficiariesStore.createList({
+    const newList = await beneficiariesStore.createList({
       year: newYear,
       title: newTitle,
       description: newDesc,
@@ -248,14 +262,14 @@ export default function BeneficiariesAdminModule({
   };
 
   // Handler: Add Bulk Rows
-  const handleAddBulkRows = () => {
+  const handleAddBulkRows = async () => {
     if (!currentList) return;
     const validRows = bulkRows.filter(r => r.fullName.trim() && r.school.trim());
     if (validRows.length === 0) {
       showToast('Enter at least one valid beneficiary name and school.');
       return;
     }
-    const res = beneficiariesStore.bulkImport(currentList.id, validRows, userName);
+    const res = await beneficiariesStore.bulkImport(currentList.id, validRows, userName);
     setBulkRows([
       { fullName: '', school: '' },
       { fullName: '', school: '' },
@@ -298,7 +312,7 @@ export default function BeneficiariesAdminModule({
   };
 
   // Execute Bulk Import Commitment
-  const handleCommitImport = () => {
+  const handleCommitImport = async () => {
     const targetId = importTargetListId || selectedListId || lists[0]?.id;
     if (!targetId) {
       showToast('Select a target annual list first.');
@@ -310,7 +324,7 @@ export default function BeneficiariesAdminModule({
       return;
     }
 
-    const result = beneficiariesStore.bulkImport(targetId, validItems, userName);
+    const result = await beneficiariesStore.bulkImport(targetId, validItems, userName);
     setImportStep(3);
     showToast(`Import completed! Added ${result.imported} beneficiaries.`);
     refreshData();
@@ -387,6 +401,84 @@ export default function BeneficiariesAdminModule({
       columns,
       rows
     });
+  };
+
+  const benColumns: ColumnDef[] = [
+    { key: 'serialNumber', label: 'Serial No' },
+    { key: 'fullName', label: 'Full Legal Name' },
+    { key: 'maskedName', label: 'Public Masked Name' },
+    { key: 'school', label: 'High School Attending' },
+    { key: 'year', label: 'Cohort Year' },
+    { key: 'dateAdded', label: 'Date Added' },
+  ];
+
+  const handleDownloadBeneficiariesExcel = async () => {
+    if (filteredRecords.length === 0) {
+      showToast('No beneficiary records to export.');
+      return;
+    }
+    await downloadExcel(
+      `Neema_HEEP_Beneficiaries_${currentList?.year || 'Roster'}`,
+      benColumns,
+      filteredRecords
+    );
+    beneficiariesStore.addLog('Export Completed', `Exported Excel sheet for ${currentList?.yearIdentifier || 'All'}.`, userName);
+    showToast('Downloaded Excel beneficiary roster.');
+  };
+
+  const handleDownloadBeneficiariesCSV = async () => {
+    if (filteredRecords.length === 0) {
+      showToast('No beneficiary records to export.');
+      return;
+    }
+    await downloadCSV(
+      `Neema_HEEP_Beneficiaries_${currentList?.year || 'Roster'}`,
+      benColumns,
+      filteredRecords
+    );
+    beneficiariesStore.addLog('Export Completed', `Exported CSV sheet for ${currentList?.yearIdentifier || 'All'}.`, userName);
+    showToast('Downloaded CSV beneficiary roster.');
+  };
+
+  const [showListsReportModal, setShowListsReportModal] = useState(false);
+
+  const listColumns: ColumnDef[] = [
+    { key: 'year', label: 'Year' },
+    { key: 'yearIdentifier', label: 'Identifier' },
+    { key: 'title', label: 'List Title' },
+    { key: 'description', label: 'Description' },
+    { key: 'status', label: 'Status' },
+    { key: 'count', label: 'Scholars Count', type: 'number' },
+    { key: 'createdBy', label: 'Created By' },
+    { key: 'createdAt', label: 'Creation Date' },
+  ];
+
+  const handleDownloadListsExcel = async () => {
+    if (filteredLists.length === 0) {
+      showToast('No annual lists to export.');
+      return;
+    }
+    const reportData = filteredLists.map(l => ({
+      ...l,
+      createdAt: l.dateCreated,
+      count: l.recordsCount ?? beneficiariesStore.getRecordsByList(l.id).length
+    }));
+    await downloadExcel('Neema_HEEP_Beneficiary_Lists', listColumns, reportData);
+    showToast('Downloaded Excel beneficiary lists.');
+  };
+
+  const handleDownloadListsCSV = async () => {
+    if (filteredLists.length === 0) {
+      showToast('No annual lists to export.');
+      return;
+    }
+    const reportData = filteredLists.map(l => ({
+      ...l,
+      createdAt: l.dateCreated,
+      count: l.recordsCount ?? beneficiariesStore.getRecordsByList(l.id).length
+    }));
+    await downloadCSV('Neema_HEEP_Beneficiary_Lists', listColumns, reportData);
+    showToast('Downloaded CSV beneficiary lists.');
   };
 
   // Delete Annual List
@@ -680,6 +772,35 @@ export default function BeneficiariesAdminModule({
                   {st}
                 </button>
               ))}
+
+              <div className="h-6 w-px bg-gray-200 hidden sm:block mx-1" />
+
+              <button
+                type="button"
+                onClick={handleDownloadListsExcel}
+                className="px-3 py-1.5 bg-[#074504] hover:bg-[#053203] text-[#C0991B] font-black text-xs uppercase rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-[#C0991B]" />
+                <span>Download Excel</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownloadListsCSV}
+                className="px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs uppercase rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-gray-200 whitespace-nowrap"
+              >
+                <Download className="w-3.5 h-3.5 text-[#C0991B]" />
+                <span>Export CSV</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowListsReportModal(true)}
+                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs uppercase rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-gray-200 whitespace-nowrap"
+              >
+                <FileText className="w-3.5 h-3.5 text-[#074504]" />
+                <span>Generate Report</span>
+              </button>
             </div>
           </div>
 
@@ -983,7 +1104,7 @@ export default function BeneficiariesAdminModule({
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-black text-gray-500 uppercase">School:</span>
               <select
                 value={schoolFilter}
@@ -994,6 +1115,31 @@ export default function BeneficiariesAdminModule({
                   <option key={sch} value={sch}>{sch}</option>
                 ))}
               </select>
+
+              <button
+                type="button"
+                onClick={handleDownloadBeneficiariesExcel}
+                className="px-3.5 py-2 bg-[#074504] hover:bg-[#053203] text-[#C0991B] font-black text-xs uppercase rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-[#C0991B]" />
+                <span>Download Excel</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadBeneficiariesCSV}
+                className="px-3.5 py-2 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs uppercase rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-gray-200"
+              >
+                <Download className="w-3.5 h-3.5 text-[#C0991B]" />
+                <span>Export CSV</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowBenReportModal(true)}
+                className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs uppercase rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-gray-200"
+              >
+                <FileText className="w-3.5 h-3.5 text-[#074504]" />
+                <span>Generate Report</span>
+              </button>
             </div>
           </div>
 
@@ -1533,6 +1679,42 @@ export default function BeneficiariesAdminModule({
           </div>
         </div>
       )}
+
+      {/* Formal Beneficiary Scholars Management Audit Report Modal */}
+      <ReportModal
+        isOpen={showBenReportModal}
+        onClose={() => setShowBenReportModal(false)}
+        title={`Beneficiary Scholars Audit Report - ${currentList?.title || 'Annual List'}`}
+        moduleName="Beneficiary Management"
+        submoduleName="Beneficiary Roster"
+        summaryMetrics={[
+          { label: 'Total Scholars', value: currentRecords.length, color: '#074504' },
+          { label: 'Filtered Scholars', value: filteredRecords.length, color: '#16a34a' },
+          { label: 'Annual Year', value: currentList?.year || '2026', color: '#C0991B' },
+          { label: 'Publication Status', value: currentList?.status || 'Active', color: '#2563eb' }
+        ]}
+        columns={benColumns}
+        data={filteredRecords}
+        filterDescription={`Cohort: ${currentList?.year || 'All'} | School Filter: ${schoolFilter} | Search Query: "${searchTerm || 'All Records'}"`}
+      />
+
+      {/* Formal Annual Beneficiary Lists Management Audit Report Modal */}
+      <ReportModal
+        isOpen={showListsReportModal}
+        onClose={() => setShowListsReportModal(false)}
+        title="Annual Beneficiary Lists Roster Report"
+        moduleName="Beneficiary Management"
+        submoduleName="Beneficiary Lists"
+        summaryMetrics={[
+          { label: 'Total Annual Lists', value: lists.length, color: '#074504' },
+          { label: 'Filtered Lists', value: filteredLists.length, color: '#16a34a' },
+          { label: 'Active Filter', value: statusFilter, color: '#C0991B' }
+        ]}
+        columns={listColumns}
+        data={filteredLists.map(l => ({ ...l, createdAt: l.dateCreated, count: l.recordsCount ?? beneficiariesStore.getRecordsByList(l.id).length }))}
+        filterDescription={`Status Filter: ${statusFilter} | Search Query: "${searchTerm || 'All Lists'}"`}
+      />
+
     </div>
   );
 }

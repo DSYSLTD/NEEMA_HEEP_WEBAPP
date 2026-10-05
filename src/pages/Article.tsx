@@ -1,18 +1,23 @@
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   ArrowLeft, ArrowRight, Quote, Info, CheckCircle2, Share2, MessageSquare, 
   ThumbsUp, Clock, Calendar, User, Eye, Send, Check, Copy, Heart
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
 import { blogStore, BlogPostItem, BlogComment, BlogAuthor } from '../lib/blogStore';
 import { communityStore, EnterpriseComment } from '../lib/communityStore';
+import { articleService } from '../services/articleService';
+import Helmet from '../components/Helmet';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Article() {
   const { slug } = useParams<{ slug: string }>();
+  const { user } = useAuth();
   const [currentPost, setCurrentPost] = useState<BlogPostItem | null>(null);
   const [comments, setComments] = useState<BlogComment[]>([]);
   const [author, setAuthor] = useState<BlogAuthor | null>(null);
   const [otherPosts, setOtherPosts] = useState<BlogPostItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Comment form state
   const [commentName, setCommentName] = useState('');
@@ -29,43 +34,58 @@ export default function Article() {
     window.scrollTo(0, 0);
     if (!slug) return;
 
-    const loadPost = () => {
-      const allPosts = blogStore.getPosts();
-      const found = allPosts.find(p => p.slug === slug);
+    let isMounted = true;
 
-      if (found && found.status !== 'Trash') {
-        setCurrentPost(found);
-        setPostLikes(found.likes || 12);
+    const loadPost = async () => {
+      setIsLoading(true);
+      try {
+        const found = await articleService.getArticleBySlug(slug);
 
-        // Fetch comments for this post from enterprise community store
-        const commComments = communityStore.getComments();
-        const approvedForPost = commComments.filter(c => (c.postSlug === slug || c.postTitle === found.title) && c.status === 'Approved');
-        
-        // Map to BlogComment compatibility format
-        setComments(approvedForPost.map(c => ({
-          id: c.id,
-          postSlug: c.postSlug,
-          postTitle: c.postTitle,
-          name: c.authorName,
-          email: c.authorEmail,
-          comment: c.content,
-          authorName: c.authorName,
-          authorEmail: c.authorEmail,
-          content: c.content,
-          status: c.status as any,
-          date: c.postedDate
-        })));
+        if (!isMounted) return;
 
-        // Fetch author details
-        const authors = blogStore.getAuthors();
-        const matchedAuthor = authors.find(a => a.id === found.authorId || a.name === found.authorName);
-        setAuthor(matchedAuthor || null);
+        // If article is Draft/Trash and visitor is not logged-in staff, hide it
+        const isStaff = Boolean(user && (user.role === 'Superadmin' || user.role === 'Content editor' || user.role === 'Administrator' || user.role === 'Reviewer' || user.role === 'Editor' || user.role === 'Author'));
+        const isAccessible = found && (found.status === 'Published' || (isStaff && found.status !== 'Trash'));
 
-        // Related posts
-        const related = allPosts.filter(p => p.slug !== slug && p.status === 'Published').slice(0, 3);
-        setOtherPosts(related);
-      } else {
-        setCurrentPost(null);
+        if (found && isAccessible) {
+          setCurrentPost(found);
+          setPostLikes(found.likes || 12);
+
+          // Fetch comments for this post from enterprise community store
+          const commComments = communityStore.getComments();
+          const approvedForPost = commComments.filter(c => (c.postSlug === slug || c.postTitle === found.title) && c.status === 'Approved');
+          
+          setComments(approvedForPost.map(c => ({
+            id: c.id,
+            postSlug: c.postSlug,
+            postTitle: c.postTitle,
+            name: c.authorName,
+            email: c.authorEmail,
+            comment: c.content,
+            authorName: c.authorName,
+            authorEmail: c.authorEmail,
+            content: c.content,
+            status: c.status as any,
+            date: c.postedDate
+          })));
+
+          // Fetch author details
+          const authors = blogStore.getAuthors();
+          const matchedAuthor = authors.find(a => a.id === found.authorId || a.name === found.authorName);
+          setAuthor(matchedAuthor || null);
+
+          // Related posts
+          const allPosts = blogStore.getPosts();
+          const related = allPosts.filter(p => p.slug !== slug && p.status === 'Published').slice(0, 3);
+          setOtherPosts(related);
+        } else {
+          setCurrentPost(null);
+        }
+      } catch (err) {
+        console.error('Error loading article:', err);
+        if (isMounted) setCurrentPost(null);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     };
 
@@ -73,15 +93,29 @@ export default function Article() {
 
     const handleUpdate = () => loadPost();
     window.addEventListener('neema_cms_posts_updated', handleUpdate);
-    return () => window.removeEventListener('neema_cms_posts_updated', handleUpdate);
-  }, [slug]);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('neema_cms_posts_updated', handleUpdate);
+    };
+  }, [slug, user]);
+
+  if (isLoading) {
+    return (
+      <div className="flex-grow flex items-center justify-center py-32 bg-[#f8faf8]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-[#074504]/20 border-t-[#074504] rounded-full animate-spin" />
+          <span className="text-xs font-black uppercase tracking-widest text-[#074504]">Loading Article...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (!currentPost) {
     return (
       <div className="flex-grow flex items-center justify-center py-32 bg-[#f8faf8]">
         <div className="text-center bg-white p-12 rounded-3xl border border-gray-200 shadow-xl max-w-md">
           <h2 className="text-3xl font-black text-[#074504] uppercase mb-4 tracking-tight">Article Not Found</h2>
-          <p className="text-gray-600 text-sm mb-6">The article you are looking for may have been moved or removed.</p>
+          <p className="text-gray-600 text-sm mb-6">The article you are looking for may have been moved, set to draft, or removed.</p>
           <Link to="/blog" className="px-6 py-3 bg-[#074504] text-white font-extrabold uppercase text-xs tracking-wider rounded-xl shadow-md inline-block">
             Return to Blog Journal
           </Link>
@@ -147,6 +181,16 @@ export default function Article() {
 
   return (
     <main className="flex-grow bg-[#f8faf8] pb-0">
+      <Helmet
+        title={currentPost.seo?.metaTitle || currentPost.title}
+        description={currentPost.seo?.metaDescription || currentPost.excerpt}
+        canonicalUrl={currentPost.seo?.canonicalUrl || `https://www.neemaheep.com/blog/${currentPost.slug}`}
+        ogTitle={currentPost.seo?.ogTitle || currentPost.title}
+        ogDescription={currentPost.seo?.metaDescription || currentPost.excerpt}
+        ogImage={currentPost.seo?.ogImage || currentPost.image}
+        publishedTime={currentPost.date}
+        author={currentPost.authorName}
+      />
       <article>
         {/* Hero Section */}
         <div className="relative h-[65vh] min-h-[500px] bg-[#074504] flex flex-col justify-end overflow-hidden">

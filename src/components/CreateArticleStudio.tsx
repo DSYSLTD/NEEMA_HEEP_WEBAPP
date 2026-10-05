@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ArticleRichTextToolbar from './ArticleRichTextToolbar';
 import { useAuth } from '../hooks/useAuth';
 import { blogStore } from '../lib/blogStore';
+import { articleService } from '../services/articleService';
 import { 
   PenTool, CheckCircle, ArrowLeft, Save, Eye, Plus, 
   Trash2, ArrowUp, ArrowDown, Image as ImageIcon, FileText, 
@@ -105,7 +106,9 @@ export default function CreateArticleStudio({
   const [damFolderFilter, setDamFolderFilter] = useState('All');
   const [damCollectionFilter, setDamCollectionFilter] = useState('All');
   
-  // Featured Media State
+  // Featured Media State & Supabase Storage
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadProgressText, setUploadProgressText] = useState('');
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
   const [videoUrl, setVideoUrl] = useState('');
   const [videoThumbnail, setVideoThumbnail] = useState('');
@@ -148,6 +151,12 @@ export default function CreateArticleStudio({
     return () => clearTimeout(timer);
   }, [editorTitle, editorExcerpt, editorBlocks, editorImage, editorCategory, editorTags, editorStatus]);
 
+  const handleSaveDraft = () => {
+    setEditorStatus('Draft');
+    (onSavePost as any)('Draft');
+    showToast('Saving draft article to Supabase...', 'info');
+  };
+
   const handlePublishNow = () => {
     let targetStatus = 'Published';
     if (expiryDate && new Date(expiryDate).getTime() <= Date.now() && autoArchive) {
@@ -155,7 +164,6 @@ export default function CreateArticleStudio({
     }
     setEditorStatus(targetStatus);
     (onSavePost as any)(targetStatus);
-    showToast(`Article published live!`, 'success');
   };
 
   const handleSaveScheduled = () => {
@@ -239,38 +247,60 @@ export default function CreateArticleStudio({
     }
   };
 
-  // Featured Media Upload handler with folder and collection storage
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Featured Media Upload handler directly with Supabase Storage
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        if (evt.target?.result) {
-          const imgUrl = evt.target.result as string;
-          setEditorImage(imgUrl);
+    if (!file) return;
 
-          // Store image in Media Library with selected folder & collection
-          const newMediaAsset = {
-            id: `media_${Date.now()}`,
-            url: imgUrl,
-            src: imgUrl,
-            thumbnailUrl: imgUrl,
-            displayName: file.name,
-            filename: file.name,
-            fileType: 'image',
-            folder: selectedFolder,
-            collection: selectedCollection,
-            size: `${Math.round(file.size / 1024)} KB`,
-            uploadDate: new Date().toISOString().split('T')[0],
-            date: new Date().toISOString().split('T')[0],
-          };
+    // Validate format
+    const validFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validFormats.includes(file.type.toLowerCase())) {
+      showToast('Invalid file format. Please upload JPG, PNG, or WebP.', 'error');
+      return;
+    }
 
-          const existingMedia = blogStore.getMedia() || [];
-          blogStore.saveMedia([newMediaAsset, ...existingMedia]);
-          showToast(`Image uploaded & stored in Media Library under folder "${selectedFolder}" & collection "${selectedCollection}"`, 'success');
-        }
+    // Validate size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('Image size exceeds 10MB limit. Please choose a smaller image.', 'error');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    setUploadProgressText('Uploading to Supabase Storage...');
+
+    // Set immediate client preview
+    const objectUrl = URL.createObjectURL(file);
+    setEditorImage(objectUrl);
+
+    try {
+      const uploadResult = await articleService.uploadFeaturedImage(file, editorSlug || editorTitle);
+      setEditorImage(uploadResult.url);
+      showToast('Featured image uploaded to Supabase Storage successfully!', 'success');
+
+      // Store image in Media Library with selected folder & collection
+      const newMediaAsset = {
+        id: `media_${Date.now()}`,
+        url: uploadResult.url,
+        src: uploadResult.url,
+        thumbnailUrl: uploadResult.url,
+        displayName: file.name,
+        filename: file.name,
+        fileType: 'image',
+        folder: selectedFolder,
+        collection: selectedCollection,
+        size: `${Math.round(file.size / 1024)} KB`,
+        uploadDate: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0],
       };
-      reader.readAsDataURL(file);
+
+      const existingMedia = blogStore.getMedia() || [];
+      blogStore.saveMedia([newMediaAsset, ...existingMedia]);
+    } catch (uploadErr: any) {
+      console.warn('[Storage notice]:', uploadErr);
+      showToast(`Storage Notice: ${uploadErr.message || 'Image loaded in preview.'}`, 'info');
+    } finally {
+      setIsUploadingImage(false);
+      setUploadProgressText('');
     }
   };
 
@@ -400,6 +430,14 @@ export default function CreateArticleStudio({
             className="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
           >
             <Eye className="w-4 h-4 text-[#074504]" /> Preview
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSaveDraft}
+            className="px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+          >
+            <Save className="w-4 h-4 text-gray-600" /> Save Draft
           </button>
 
           <button
@@ -686,9 +724,19 @@ export default function CreateArticleStudio({
                       <div className="grid grid-cols-3 gap-2 mb-2">
                         {/* 1. Upload File */}
                         <label className="px-3 py-2 bg-[#074504] hover:bg-[#053203] text-white rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-all">
-                          <Upload className="w-3.5 h-3.5 text-[#C0991B]" />
-                          <span>Upload</span>
-                          <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+                          {isUploadingImage ? (
+                            <RotateCw className="w-3.5 h-3.5 text-[#C0991B] animate-spin" />
+                          ) : (
+                            <Upload className="w-3.5 h-3.5 text-[#C0991B]" />
+                          )}
+                          <span>{isUploadingImage ? 'Uploading...' : 'Upload'}</span>
+                          <input 
+                            type="file" 
+                            accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" 
+                            onChange={handleFileUpload} 
+                            disabled={isUploadingImage}
+                            className="hidden" 
+                          />
                         </label>
 
                         {/* 2. DAM Media Library */}

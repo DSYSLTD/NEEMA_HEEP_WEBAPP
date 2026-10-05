@@ -146,500 +146,67 @@ const INITIAL_RULES: ModerationRules = {
   requireEmailVerification: false
 };
 
-const INITIAL_USERS: ModeratedUser[] = [
-  {
-    id: 'usr-1',
-    name: 'Dr. Samuel Maina',
-    email: 'samuel.maina@embucounty.go.ke',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-    status: 'Active',
-    reputationScore: 880,
-    reputationRank: 'Gold Ambassador',
-    badges: ['Top Contributor', 'Verified Scholar', 'Community Mentor'],
-    totalComments: 34,
-    approvedComments: 34,
-    rejectedComments: 0,
-    spamViolations: 0,
-    helpfulLikes: 142,
-    reportsReceived: 0,
-    ipAddress: '197.232.48.12',
-    notes: 'Respected agricultural officer in Manyatta Constituency.'
-  },
-  {
-    id: 'usr-2',
-    name: 'Mercy Wambui Gitonga',
-    email: 'mercy.wambui@gmail.com',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
-    status: 'Active',
-    reputationScore: 650,
-    reputationRank: 'Silver Contributor',
-    badges: ['Table Banking Leader', 'Helpful Member'],
-    totalComments: 18,
-    approvedComments: 17,
-    rejectedComments: 1,
-    spamViolations: 0,
-    helpfulLikes: 89,
-    reportsReceived: 0,
-    ipAddress: '102.222.144.5'
-  },
-  {
-    id: 'usr-3',
-    name: 'Jackson Kilonzo',
-    email: 'kilonzojackson@yahoo.com',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-    status: 'Warned',
-    reputationScore: 310,
-    reputationRank: 'New Contributor',
-    badges: [],
-    totalComments: 8,
-    approvedComments: 5,
-    rejectedComments: 3,
-    spamViolations: 1,
-    helpfulLikes: 12,
-    reportsReceived: 2,
-    ipAddress: '102.140.22.89',
-    notes: 'Warned for aggressive promotional link posting.'
-  },
-  {
-    id: 'usr-4',
-    name: 'Crypto Loans Bot',
-    email: 'fastcash247@disposablemail.org',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
-    status: 'Banned',
-    reputationScore: 0,
-    reputationRank: 'Flagged Account',
-    badges: ['Banned'],
-    totalComments: 12,
-    approvedComments: 0,
-    rejectedComments: 12,
-    spamViolations: 12,
-    helpfulLikes: 0,
-    reportsReceived: 9,
-    ipAddress: '41.203.210.4',
-    notes: 'Permanently banned for spamming external whatsapp telegram links.'
-  },
-  {
-    id: 'usr-5',
-    name: 'Peter Njiru Ndwiga',
-    email: 'peter.ndwiga@gmail.com',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
-    status: 'Active',
-    reputationScore: 520,
-    reputationRank: 'Bronze Advocate',
-    badges: ['Agripreneur'],
-    totalComments: 11,
-    approvedComments: 10,
-    rejectedComments: 1,
-    spamViolations: 0,
-    helpfulLikes: 44,
-    reportsReceived: 0,
-    ipAddress: '197.237.112.90'
-  }
-];
+const INITIAL_USERS: ModeratedUser[] = [];
 
-const INITIAL_COMMENTS: EnterpriseComment[] = [
-  {
-    id: 'comm-101',
-    postSlug: 'embu-youth-empowerment-fund-2026',
-    postTitle: 'Embu County Youth Empowerment Fund 2026 Disbursement Guidelines',
-    authorName: 'Dr. Samuel Maina',
-    authorEmail: 'samuel.maina@embucounty.go.ke',
-    authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-    authorId: 'usr-1',
-    content: 'This microfinance framework provides a vital bridge for young entrepreneurs in Runyenjes and Mbeere South. We encourage all youth-led agricultural cooperatives to submit their registration documents before the July deadline.',
-    status: 'Approved',
-    aiRiskScore: 4,
-    aiAnalysis: {
-      toxicity: 2,
-      spamProbability: 3,
-      profanityDetected: false,
-      hateSpeechDetected: false,
-      duplicateDetected: false,
-      sentiment: 'Positive',
-      language: 'English',
-      suggestedAction: 'Auto-Approve',
-      confidence: 98,
-      moderatorExplanation: 'Constructive community feedback from verified local agricultural officer.'
-    },
-    reportCount: 0,
-    reports: [],
-    likes: 28,
-    isPinned: true,
-    isModeratorReply: false,
-    ipAddress: '197.232.48.12',
-    browser: 'Chrome 124.0',
-    os: 'Windows 11',
-    country: 'Kenya (Nairobi)',
-    device: 'Desktop',
-    postedDate: '2026-07-28 09:14 AM',
-    lastUpdated: '2026-07-28 09:14 AM',
-    moderationHistory: [
-      { date: '2026-07-28 09:15 AM', action: 'Auto-Approved by AI Moderation System', moderator: 'AI Bot System' }
-    ],
-    replies: [
-      {
-        id: 'comm-101-r1',
-        postSlug: 'embu-youth-empowerment-fund-2026',
-        postTitle: 'Embu County Youth Empowerment Fund 2026 Disbursement Guidelines',
-        authorName: 'Mercy Wambui Gitonga',
-        authorEmail: 'mercy.wambui@gmail.com',
-        authorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
-        authorId: 'usr-2',
-        content: 'Thank you Dr. Maina! Does our poultry farming group in Mbeere North qualify under the Kilimo Imara agribusiness bracket?',
-        parentId: 'comm-101',
-        status: 'Approved',
-        aiRiskScore: 8,
-        aiAnalysis: {
-          toxicity: 3,
-          spamProbability: 5,
-          profanityDetected: false,
-          hateSpeechDetected: false,
-          duplicateDetected: false,
-          sentiment: 'Positive',
-          language: 'English',
-          suggestedAction: 'Auto-Approve',
-          confidence: 96,
-          moderatorExplanation: 'Inquisitive member comment.'
-        },
-        reportCount: 0,
-        reports: [],
-        likes: 12,
-        ipAddress: '102.222.144.5',
-        browser: 'Safari 17.4',
-        os: 'iOS 17',
-        country: 'Kenya (Embu)',
-        device: 'Mobile',
-        postedDate: '2026-07-28 10:02 AM',
-        lastUpdated: '2026-07-28 10:02 AM',
-        moderationHistory: [
-          { date: '2026-07-28 10:03 AM', action: 'Auto-Approved', moderator: 'AI Bot' }
-        ]
-      },
-      {
-        id: 'comm-101-r2',
-        postSlug: 'embu-youth-empowerment-fund-2026',
-        postTitle: 'Embu County Youth Empowerment Fund 2026 Disbursement Guidelines',
-        authorName: 'Patrick Munene (Neema HEEP Officer)',
-        authorEmail: 'admin@neemaheep.co.ke',
-        authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-        content: 'Yes Mercy! Poultry cooperatives with active group registration qualify for up to KES 350,000 under Kilimo Imara with grace periods.',
-        parentId: 'comm-101',
-        status: 'Approved',
-        aiRiskScore: 2,
-        aiAnalysis: {
-          toxicity: 1,
-          spamProbability: 1,
-          profanityDetected: false,
-          hateSpeechDetected: false,
-          duplicateDetected: false,
-          sentiment: 'Positive',
-          language: 'English',
-          suggestedAction: 'Auto-Approve',
-          confidence: 100,
-          moderatorExplanation: 'Official staff response.'
-        },
-        reportCount: 0,
-        reports: [],
-        likes: 19,
-        isModeratorReply: true,
-        ipAddress: '197.232.12.1',
-        browser: 'Edge 124.0',
-        os: 'MacOS Sonoma',
-        country: 'Kenya (Embu)',
-        device: 'Desktop',
-        postedDate: '2026-07-28 10:30 AM',
-        lastUpdated: '2026-07-28 10:30 AM',
-        moderationHistory: [
-          { date: '2026-07-28 10:30 AM', action: 'Staff Moderator Fast Track', moderator: 'System' }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'comm-102',
-    postSlug: 'financial-literacy-for-smes-kenya',
-    postTitle: 'Financial Literacy & Cashflow Mastery for Kenyan SMEs',
-    authorName: 'Jackson Kilonzo',
-    authorEmail: 'kilonzojackson@yahoo.com',
-    authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-    authorId: 'usr-3',
-    content: 'Get guaranteed instant loan without CRB check! Click www.fast-cash-embu-loans.click or whatsapp 0712345678 now for 50k cash!!!',
-    status: 'Spam',
-    aiRiskScore: 96,
-    aiAnalysis: {
-      toxicity: 15,
-      spamProbability: 98,
-      profanityDetected: false,
-      hateSpeechDetected: false,
-      duplicateDetected: true,
-      sentiment: 'Neutral',
-      language: 'English',
-      suggestedAction: 'Mark Spam',
-      confidence: 99,
-      moderatorExplanation: 'High spam probability: contains suspicious external link, instant loan promises, and whatsapp number stuffing.'
-    },
-    reportCount: 3,
-    reports: [
-      {
-        id: 'rep-1',
-        reason: 'Spam',
-        reporterName: 'Mercy Wambui',
-        reporterEmail: 'mercy.wambui@gmail.com',
-        date: '2026-07-29 11:20 AM',
-        moderatorNotes: 'Commercial loan phishing link.',
-        resolution: 'Removed'
-      },
-      {
-        id: 'rep-2',
-        reason: 'Scams',
-        reporterName: 'Dr. Samuel Maina',
-        reporterEmail: 'samuel.maina@embucounty.go.ke',
-        date: '2026-07-29 11:35 AM',
-        moderatorNotes: 'Fake loan link.',
-        resolution: 'Removed'
-      }
-    ],
-    likes: 0,
-    ipAddress: '102.140.22.89',
-    browser: 'Chrome 122.0',
-    os: 'Android 14',
-    country: 'Kenya (Mombasa)',
-    device: 'Mobile',
-    postedDate: '2026-07-29 11:10 AM',
-    lastUpdated: '2026-07-29 11:40 AM',
-    moderationHistory: [
-      { date: '2026-07-29 11:10 AM', action: 'Flagged by AI Spam Filter', moderator: 'AI Bot' },
-      { date: '2026-07-29 11:40 AM', action: 'Marked as Spam & Hidden', moderator: 'Admin Moderator' }
-    ]
-  },
-  {
-    id: 'comm-103',
-    postSlug: 'table-banking-success-stories',
-    postTitle: 'Transforming Rural Household Economies Through Table Banking',
-    authorName: 'Anonymized Member',
-    authorEmail: 'anon.user@gmail.com',
-    content: 'These politicians and microfinance managers are all corrupt frauds who steal our money! Fools!',
-    status: 'Pending',
-    aiRiskScore: 82,
-    aiAnalysis: {
-      toxicity: 88,
-      spamProbability: 12,
-      profanityDetected: true,
-      hateSpeechDetected: true,
-      duplicateDetected: false,
-      sentiment: 'Toxic',
-      language: 'English',
-      suggestedAction: 'Flag for Review',
-      confidence: 94,
-      moderatorExplanation: 'Profanity and insult keywords detected ("fools", "corrupt frauds"). Requires manual review for hostility.'
-    },
-    reportCount: 1,
-    reports: [
-      {
-        id: 'rep-3',
-        reason: 'Offensive Language',
-        reporterName: 'Peter Ndwiga',
-        reporterEmail: 'peter.ndwiga@gmail.com',
-        date: '2026-07-30 08:10 AM',
-        moderatorNotes: 'Abusive comment toward staff.',
-        resolution: 'Pending'
-      }
-    ],
-    likes: 1,
-    ipAddress: '41.89.22.10',
-    browser: 'Firefox 125.0',
-    os: 'Linux Ubuntu',
-    country: 'Kenya (Nairobi)',
-    device: 'Desktop',
-    postedDate: '2026-07-30 07:55 AM',
-    lastUpdated: '2026-07-30 07:55 AM',
-    moderationHistory: [
-      { date: '2026-07-30 07:55 AM', action: 'Held in Pending Queue for Admin Toxicity Review', moderator: 'AI System' }
-    ]
-  },
-  {
-    id: 'comm-104',
-    postSlug: 'agribusiness-financing-guide',
-    postTitle: 'Complete Agri-Business Financing Guide for Smallholder Farmers',
-    authorName: 'Peter Njiru Ndwiga',
-    authorEmail: 'peter.ndwiga@gmail.com',
-    authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
-    authorId: 'usr-5',
-    content: 'We implemented the drip irrigation schedule described in section 3. The yields for our French beans in Gachoka doubled this harvest season! Great article.',
-    status: 'Approved',
-    aiRiskScore: 3,
-    aiAnalysis: {
-      toxicity: 1,
-      spamProbability: 2,
-      profanityDetected: false,
-      hateSpeechDetected: false,
-      duplicateDetected: false,
-      sentiment: 'Positive',
-      language: 'English',
-      suggestedAction: 'Auto-Approve',
-      confidence: 99,
-      moderatorExplanation: 'Praiseworthy farmer testimonial.'
-    },
-    reportCount: 0,
-    reports: [],
-    likes: 15,
-    ipAddress: '197.237.112.90',
-    browser: 'Chrome 124.0',
-    os: 'Android 13',
-    country: 'Kenya (Embu)',
-    device: 'Mobile',
-    postedDate: '2026-07-31 02:15 PM',
-    lastUpdated: '2026-07-31 02:15 PM',
-    moderationHistory: [
-      { date: '2026-07-31 02:15 PM', action: 'Auto-Approved', moderator: 'AI System' }
-    ]
-  },
-  {
-    id: 'comm-105',
-    postSlug: 'agribusiness-financing-guide',
-    postTitle: 'Complete Agri-Business Financing Guide for Smallholder Farmers',
-    authorName: 'Ghost Account',
-    authorEmail: 'tempuser99@trashmail.com',
-    content: 'Nice post. Very informative. Check my bio.',
-    status: 'Hidden',
-    aiRiskScore: 65,
-    aiAnalysis: {
-      toxicity: 5,
-      spamProbability: 68,
-      profanityDetected: false,
-      hateSpeechDetected: false,
-      duplicateDetected: false,
-      sentiment: 'Neutral',
-      language: 'English',
-      suggestedAction: 'Flag for Review',
-      confidence: 85,
-      moderatorExplanation: 'Disposable email domain detected. Generic low-effort filler comment.'
-    },
-    reportCount: 0,
-    reports: [],
-    likes: 0,
-    ipAddress: '102.166.45.12',
-    browser: 'Chrome 120.0',
-    os: 'Windows 10',
-    country: 'Kenya (Nakuru)',
-    device: 'Desktop',
-    postedDate: '2026-08-01 10:05 AM',
-    lastUpdated: '2026-08-01 11:00 AM',
-    moderationHistory: [
-      { date: '2026-08-01 11:00 AM', action: 'Hidden from Public Stream by Moderator', moderator: 'Admin User' }
-    ]
-  },
-  {
-    id: 'comm-106',
-    postSlug: 'financial-literacy-for-smes-kenya',
-    postTitle: 'Financial Literacy & Cashflow Mastery for Kenyan SMEs',
-    authorName: 'Crypto Loans Bot',
-    authorEmail: 'fastcash247@disposablemail.org',
-    authorAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
-    authorId: 'usr-4',
-    content: 'DELETED SPAM: Buy bitcoin now! Call 0700000000',
-    status: 'Deleted',
-    aiRiskScore: 99,
-    aiAnalysis: {
-      toxicity: 10,
-      spamProbability: 99,
-      profanityDetected: false,
-      hateSpeechDetected: false,
-      duplicateDetected: true,
-      sentiment: 'Neutral',
-      language: 'English',
-      suggestedAction: 'Auto-Reject',
-      confidence: 99,
-      moderatorExplanation: 'Blacklisted banned user account and duplicate spam pattern.'
-    },
-    reportCount: 4,
-    reports: [],
-    likes: 0,
-    ipAddress: '41.203.210.4',
-    browser: 'Bot Script',
-    os: 'Linux',
-    country: 'Unknown',
-    device: 'Automated Bot',
-    postedDate: '2026-08-01 01:20 PM',
-    lastUpdated: '2026-08-01 01:30 PM',
-    moderationHistory: [
-      { date: '2026-08-01 01:30 PM', action: 'Permanently Soft-Deleted', moderator: 'Admin User' }
-    ]
-  }
-];
+const INITIAL_COMMENTS: EnterpriseComment[] = [];
 
-const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
-  {
-    id: 'aud-1',
-    timestamp: '2026-08-01 01:30 PM',
-    moderator: 'Admin Moderator',
-    action: 'Delete Comment',
-    targetId: 'comm-106',
-    targetType: 'Comment',
-    details: 'Moved duplicate crypto bot comment to Deleted queue.',
-    ipAddress: '197.232.12.1'
-  },
-  {
-    id: 'aud-2',
-    timestamp: '2026-08-01 11:00 AM',
-    moderator: 'Admin Moderator',
-    action: 'Hide Comment',
-    targetId: 'comm-105',
-    targetType: 'Comment',
-    details: 'Hidden low-quality disposable email comment from public view.'
-  },
-  {
-    id: 'aud-3',
-    timestamp: '2026-07-29 11:40 AM',
-    moderator: 'Admin Moderator',
-    action: 'Mark Spam & Ban User',
-    targetId: 'usr-4',
-    targetType: 'User',
-    details: 'Permanently banned Crypto Loans Bot (fastcash247@disposablemail.org).'
-  },
-  {
-    id: 'aud-4',
-    timestamp: '2026-07-28 09:15 AM',
-    moderator: 'AI Bot System',
-    action: 'Auto Approval',
-    targetId: 'comm-101',
-    targetType: 'Comment',
-    details: 'Auto-approved comment by Dr. Samuel Maina (Risk score: 4%).'
-  }
-];
 
-const INITIAL_NOTIFS: ModerationNotification[] = [
-  {
-    id: 'notif-1',
-    timestamp: '10 mins ago',
-    title: 'High AI Toxicity Risk Alert',
-    message: 'Comment comm-103 flagged with 82% risk score (profanity keywords detected).',
-    type: 'high_risk',
-    read: false,
-    linkTab: 'pending'
-  },
-  {
-    id: 'notif-2',
-    timestamp: '1 hour ago',
-    title: 'New Community Report Submitted',
-    message: 'User reported comment on "Financial Literacy" for Scam & Malicious links.',
-    type: 'new_report',
-    read: false,
-    linkTab: 'reported'
-  },
-  {
-    id: 'notif-3',
-    timestamp: 'Yesterday',
-    title: 'Spam Attack Mitigated',
-    message: 'AI Spam Filter blocked 12 bot postings from 41.203.210.4.',
-    type: 'spam_alert',
-    read: true,
-    linkTab: 'spam'
-  }
-];
+const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [];
+
+const INITIAL_NOTIFS: ModerationNotification[] = [];
 
 // COMMUNITY STORE ENGINE
 export const communityStore = {
+  // Fetch real comments directly from Supabase database
+  async fetchRemoteComments(): Promise<void> {
+    try {
+      const { data, error } = await supabase
+        .from('article_comments')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        const mapped: EnterpriseComment[] = data.map((d: any) => ({
+          id: d.id,
+          postSlug: d.post_slug || '',
+          postTitle: d.post_title || d.post_slug || 'Article Comment',
+          authorName: d.author_name || 'Reader',
+          authorEmail: d.author_email || '',
+          authorAvatar: d.author_avatar || undefined,
+          content: d.content || '',
+          status: d.status || 'Approved',
+          aiRiskScore: 0,
+          aiAnalysis: {
+            toxicity: 0,
+            spamProbability: 0,
+            profanityDetected: false,
+            hateSpeechDetected: false,
+            duplicateDetected: false,
+            sentiment: 'Positive',
+            language: 'English',
+            suggestedAction: 'Auto-Approve',
+            confidence: 100,
+            moderatorExplanation: 'Verified database comment'
+          },
+          reportCount: 0,
+          reports: [],
+          likes: Number(d.likes) || 0,
+          ipAddress: d.ip_address || '127.0.0.1',
+          browser: 'Browser',
+          os: 'OS',
+          country: 'Kenya',
+          device: 'Device',
+          postedDate: d.created_at ? new Date(d.created_at).toLocaleString() : new Date().toLocaleString(),
+          lastUpdated: d.created_at ? new Date(d.created_at).toLocaleString() : new Date().toLocaleString(),
+          moderationHistory: []
+        }));
+        this.saveComments(mapped);
+      }
+    } catch (err) {
+      console.warn('[communityStore] Notice fetching comments from Supabase:', err);
+    }
+  },
+
   // 1. Get Comments
   getComments(): EnterpriseComment[] {
     try {
@@ -648,8 +215,7 @@ export const communityStore = {
     } catch (e) {
       console.error('Failed to load community comments from storage', e);
     }
-    this.saveComments(INITIAL_COMMENTS);
-    return INITIAL_COMMENTS;
+    return [];
   },
 
   saveComments(comments: EnterpriseComment[]) {

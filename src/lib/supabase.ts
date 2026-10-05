@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const SUPABASE_PROJECT_NAME = 'NEEMA HEEP WEBSITE';
-export const SUPABASE_PROJECT_ID = 'dmuuflbtzxoverwvzlak';
-export const SUPABASE_DEFAULT_URL = 'https://dmuuflbtzxoverwvzlak.supabase.co';
-export const SUPABASE_DEFAULT_ANON_KEY = 'sb_publishable_EL84MrbhdL66KKNp5jCz6A_IKop7zdD';
+export const SUPABASE_PROJECT_NAME = 'NEEMA HEEP WEBAPP';
+export const SUPABASE_PROJECT_ID = 'xkigjrdvxnzvgpoubari';
+export const SUPABASE_DEFAULT_URL = 'https://xkigjrdvxnzvgpoubari.supabase.co';
+export const SUPABASE_DEFAULT_ANON_KEY = 'sb_publishable_0DmBbfMZLKF7Mh8Pyl9xPQ_qV0VYsVu';
 
 const env = (import.meta as any).env || {};
 
@@ -26,7 +26,7 @@ const rawKey = (env.VITE_SUPABASE_ANON_KEY || env.VITE_SUPABASE_KEY || env.VITE_
 // Ensure the provided key is valid (reject pure project ID or empty strings)
 const isKeyValid = (key: string): boolean => {
   if (!key) return false;
-  if (key === 'dmuuflbtzxoverwvzlak') return false; // Mistakenly entered project id
+  if (key === 'xkigjrdvxnzvgpoubari' || key === 'dmuuflbtzxoverwvzlak') return false; // Mistakenly entered project id
   return key.startsWith('sb_publishable_') || key.startsWith('ey') || key.length > 25;
 };
 

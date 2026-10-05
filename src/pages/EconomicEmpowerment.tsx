@@ -146,7 +146,7 @@ export default function EconomicEmpowerment() {
           Take the first step towards sustainable structural growth. Reach out for a specialized consultation or join our network today.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-          <Link to="/contact" className="w-full sm:w-auto bg-[#074504] hover:bg-[#052903] text-white font-black uppercase text-xs tracking-widest py-5 px-10 rounded-full transition-all shadow-xl hover:scale-105">
+          <Link to="/request-callback" className="w-full sm:w-auto bg-[#074504] hover:bg-[#052903] text-white font-black uppercase text-xs tracking-widest py-5 px-10 rounded-full transition-all shadow-xl hover:scale-105">
             Request a Call Back
           </Link>
           <Link to="/registration" className="w-full sm:w-auto border-2 border-[#074504] text-[#074504] font-black uppercase text-xs tracking-widest py-5 px-10 rounded-full hover:bg-[#074504] hover:text-white transition-all">

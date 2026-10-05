@@ -223,38 +223,77 @@ export default function JoinUs() {
   const handleSubmitRegistration = async () => {
     setIsSubmitting(true);
     try {
-      const payload = {
-        registration_type: regType,
-        full_name: regType === 'individual' ? `${formData.firstName} ${formData.lastName}`.trim() : formData.groupName,
-        phone: formData.phone || formData.repPhone || '',
-        id_number: formData.idNumber || formData.repIdNumber || '',
-        county: formData.county || '',
-        sub_county: formData.constituency || '',
-        ward: formData.ward || '',
-        payment_ref: manualTxId || '',
-        group_members: groupMembers || [],
-        details: formData,
-        status: 'Submitted',
-        signup_source: typeof window !== 'undefined' ? `Join Us Membership Portal (${window.location.pathname})` : 'Join Us Portal',
-        created_at: new Date().toISOString()
-      };
+      if (regType === 'individual') {
+        const individualPayload = {
+          first_name: formData.firstName || '',
+          middle_name: formData.middleName || '',
+          last_name: formData.lastName || '',
+          full_name: `${formData.firstName} ${formData.middleName ? formData.middleName + ' ' : ''}${formData.lastName}`.trim(),
+          gender: formData.gender || '',
+          dob: formData.dob || null,
+          id_number: formData.idNumber || '',
+          kra_pin: formData.kraPin || '',
+          phone: formData.phone || '',
+          alt_phone: formData.altPhone || '',
+          email: formData.email || '',
+          county: formData.county || '',
+          sub_county: formData.constituency || '',
+          ward: formData.ward || '',
+          physical_address: formData.physicalAddress || '',
+          passport_photo: previews.passportPhoto || '',
+          id_photo_front: previews.idFront || '',
+          id_photo_back: previews.idBack || '',
+          payment_ref: manualTxId || '',
+          payment_amount: INDIVIDUAL_FEE,
+          payment_status: 'Paid',
+          details: formData,
+          status: 'Submitted',
+          signup_source: typeof window !== 'undefined' ? `Individual Registration (${window.location.pathname})` : 'Individual Registration',
+          created_at: new Date().toISOString()
+        };
 
-      // Save to Supabase membership_registrations table
-      const { error } = await supabase.from('membership_registrations').insert([payload]);
-      if (error) {
-        console.warn('Supabase membership_registrations notice:', error);
-        // Fallback to leads
-        try {
-          await supabase.from('leads').insert([{
-            full_name: payload.full_name,
-            phone: payload.phone,
-            type: 'Registration',
-            details: payload,
-            status: 'New',
-            signup_source: 'Join Us Portal',
-            created_at: new Date().toISOString()
-          }]);
-        } catch {}
+        const { error } = await supabase.from('individual_registrations').insert([individualPayload]);
+        if (error) {
+          console.warn('Supabase individual_registrations insert notice:', error);
+          // Fallback to legacy members or leads if present
+          try {
+            await supabase.from('members').insert([{ ...individualPayload, registration_type: 'individual' }]);
+          } catch {}
+        }
+      } else {
+        const memberCountNum = parseInt(formData.memberCount, 10) || (groupMembers ? groupMembers.length : 1);
+        const groupPayload = {
+          group_name: formData.groupName || 'Unnamed Group',
+          group_type: formData.groupType || 'Chama / Self Help Group',
+          registration_certificate_no: formData.groupRegNumber || '',
+          formation_date: formData.yearFounded || null,
+          member_count: memberCountNum,
+          county: formData.county || '',
+          sub_county: formData.constituency || '',
+          ward: formData.ward || '',
+          physical_address: formData.physicalAddress || '',
+          representative_name: `${formData.repFirstName} ${formData.repMiddleName ? formData.repMiddleName + ' ' : ''}${formData.repLastName}`.trim() || 'Group Representative',
+          representative_role: formData.repPosition || 'Chairperson',
+          representative_id_number: formData.repIdNumber || '',
+          representative_phone: formData.repPhone || '',
+          group_members: groupMembers || [],
+          payment_ref: manualTxId || '',
+          payment_amount: memberCountNum * GROUP_FEE_PER_MEMBER,
+          payment_status: 'Paid',
+          details: formData,
+          status: 'Submitted',
+          signup_source: typeof window !== 'undefined' ? `Group Registration (${window.location.pathname})` : 'Group Registration',
+          created_at: new Date().toISOString()
+        };
+
+        const { error } = await supabase.from('group_registrations').insert([groupPayload]);
+        if (error) {
+          console.warn('Supabase group_registrations insert notice:', error);
+          // Fallback to legacy members or leads if present
+          try {
+            await supabase.from('members').insert([{ ...groupPayload, registration_type: 'group' }]);
+          } catch {}
+        }
       }
 
       const mockRegId = "REG-" + Date.now().toString(36).toUpperCase();

@@ -4,13 +4,16 @@ import {
   Search, Filter, RefreshCw, UserX, Ban, UserCheck, Flag, Download, 
   Printer, Plus, ChevronRight, ChevronDown, ChevronUp, Edit3, CornerDownRight, 
   Clock, Award, Activity, BarChart2, Shield, Settings, Sliders, Check, X, 
-  Info, Cpu, ExternalLink, ThumbsUp, Send, User, Layers, FileText, Globe, Smartphone, Monitor, Lock, Wand2
+  Info, Cpu, ExternalLink, ThumbsUp, Send, User, Layers, FileText, Globe, Smartphone, Monitor, Lock, Wand2,
+  FileSpreadsheet
 } from 'lucide-react';
 import { 
   communityStore, EnterpriseComment, ModeratedUser, ModerationRules, 
   AuditLogEntry, ModerationNotification, CommentReport 
 } from '../lib/communityStore';
 import { exportPdfReport, printHtmlReport } from '../lib/pdfPrintUtils';
+import { downloadExcel, ColumnDef } from '../lib/excelReportExport';
+import ReportModal from './ReportModal';
 
 export default function CommentsModerationModule({ className = '' }: { className?: string }) {
   // Store States
@@ -70,6 +73,7 @@ export default function CommentsModerationModule({ className = '' }: { className
     };
 
     loadData();
+    communityStore.fetchRemoteComments();
 
     window.addEventListener('neema_community_updated', loadData);
     return () => window.removeEventListener('neema_community_updated', loadData);
@@ -241,6 +245,34 @@ export default function CommentsModerationModule({ className = '' }: { className
     });
   };
 
+  const [showReportModal, setShowReportModal] = useState(false);
+
+  const commentColumns: ColumnDef[] = [
+    { key: 'id', label: 'Comment ID' },
+    { key: 'authorName', label: 'Author Name' },
+    { key: 'authorEmail', label: 'Author Email' },
+    { key: 'postTitle', label: 'Article Title' },
+    { key: 'content', label: 'Comment Content' },
+    { key: 'status', label: 'Status' },
+    { key: 'aiRiskScore', label: 'AI Risk Score' },
+    { key: 'reportCount', label: 'Reports' },
+    { key: 'likes', label: 'Likes' },
+    { key: 'postedDate', label: 'Date' },
+  ];
+
+  const handleDownloadExcel = async () => {
+    if (tabFilteredComments.length === 0) {
+      showToast('No comments match the current filters to export.');
+      return;
+    }
+    await downloadExcel(
+      `Neema_HEEP_Comments_${activeTab}`,
+      commentColumns,
+      tabFilteredComments
+    );
+    showToast('Downloaded Comments Excel Spreadsheet!');
+  };
+
   // AI Workbench Live Test
   const handleRunAiWorkbenchTest = () => {
     if (!aiTestInput.trim()) return;
@@ -289,6 +321,22 @@ export default function CommentsModerationModule({ className = '' }: { className
 
         {/* 3. CTA buttons */}
         <div className="pt-2 flex flex-wrap items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={handleDownloadExcel}
+            className="px-4 py-2.5 bg-[#C0991B] hover:bg-[#a98514] text-[#074504] font-black text-xs uppercase rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-[#074504]" />
+            <span>Download Excel</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowReportModal(true)}
+            className="px-4 py-2.5 bg-white/15 hover:bg-white/25 text-white border border-[#C0991B]/40 font-bold text-xs uppercase rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+          >
+            <FileText className="w-4 h-4 text-[#C0991B]" />
+            <span>Generate Report</span>
+          </button>
           <button
             type="button"
             onClick={handleExportPDF}
@@ -1014,6 +1062,24 @@ export default function CommentsModerationModule({ className = '' }: { className
           </div>
         </div>
       )}
+
+      {/* Formal Management Audit & Export Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        title={`Community Comments Moderation Audit Report (${activeTab.toUpperCase()})`}
+        moduleName="Blog Management"
+        submoduleName="Comments"
+        summaryMetrics={[
+          { label: 'Total Comments', value: stats.total, color: '#074504' },
+          { label: 'Pending Moderation', value: stats.pending, color: '#f59e0b' },
+          { label: 'Approved Live', value: stats.approved, color: '#16a34a' },
+          { label: 'Spam / Filtered', value: stats.spam, color: '#dc2626' },
+        ]}
+        columns={commentColumns}
+        data={tabFilteredComments}
+        filterDescription={`Tab: ${activeTab} | Search: "${searchQuery || 'All'}" | Article: ${articleFilter} | Status: ${statusFilter}`}
+      />
 
     </div>
   );

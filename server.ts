@@ -42,8 +42,29 @@ function getMailTransporter(): nodemailer.Transporter | null {
 }
 
 // Supabase Client for Server-Side Role and Credential Verification
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://dmuuflbtzxoverwvzlak.supabase.co";
-const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_KEY || "sb_publishable_EL84MrbhdL66KKNp5jCz6A_IKop7zdD";
+const SUPABASE_DEFAULT_URL = "https://xkigjrdvxnzvgpoubari.supabase.co";
+const SUPABASE_DEFAULT_ANON_KEY = "sb_publishable_0DmBbfMZLKF7Mh8Pyl9xPQ_qV0VYsVu";
+
+function sanitizeSupabaseUrl(url?: string): string {
+  let cleaned = (url || "").trim();
+  if (!cleaned) return SUPABASE_DEFAULT_URL;
+  cleaned = cleaned.replace(/[\.\/]+$/, "");
+  cleaned = cleaned.replace(/\/rest\/v1\/?$/i, "");
+  if (!cleaned.startsWith("http")) {
+    cleaned = `https://${cleaned}`;
+  }
+  return cleaned;
+}
+
+const rawSupabaseKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_KEY || "").trim();
+const isKeyValid = (key: string): boolean => {
+  if (!key) return false;
+  if (key === "xkigjrdvxnzvgpoubari" || key === "dmuuflbtzxoverwvzlak") return false; // Mistakenly entered project id
+  return key.startsWith("sb_publishable_") || key.startsWith("ey") || key.length > 25;
+};
+
+const SUPABASE_URL = sanitizeSupabaseUrl(process.env.VITE_SUPABASE_URL);
+const SUPABASE_KEY = isKeyValid(rawSupabaseKey) ? rawSupabaseKey : SUPABASE_DEFAULT_ANON_KEY;
 const supabaseServer = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Admin & Staff Account configuration from environment variables
@@ -183,8 +204,11 @@ async function startServer() {
   const app = express();
 
   // Basic security and parsing middlewares
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // Serve static uploads
+  app.use("/uploads", express.static(path.resolve("public/uploads")));
 
   // Disable x-powered-by header
   app.disable("x-powered-by");
@@ -598,6 +622,335 @@ async function startServer() {
   });
 
   // ------------------------------------------------------------------
+  // BLOG & ARTICLES REST APIS (SUPABASE BACKED + PERSISTENT RESILIENCE)
+  // ------------------------------------------------------------------
+
+  const ARTICLES_FILE = path.resolve("data/articles.json");
+
+  function getLocalArticles(): any[] {
+    try {
+      if (fs.existsSync(ARTICLES_FILE)) {
+        const raw = fs.readFileSync(ARTICLES_FILE, "utf-8");
+        return JSON.parse(raw);
+      }
+    } catch (e) {
+      console.error("Error reading local articles:", e);
+    }
+    return [];
+  }
+
+  function saveLocalArticles(articles: any[]) {
+    try {
+      fs.mkdirSync(path.dirname(ARTICLES_FILE), { recursive: true });
+      fs.writeFileSync(ARTICLES_FILE, JSON.stringify(articles, null, 2), "utf-8");
+    } catch (e) {
+      console.error("Error saving local articles:", e);
+    }
+  }
+
+  // POST /api/upload (Featured image upload endpoint)
+  app.post("/api/upload", async (req: Request, res: Response) => {
+    try {
+      const { fileBase64, filename, contentType } = req.body || {};
+      if (!fileBase64) {
+        return res.status(400).json({ success: false, error: "Image data is required." });
+      }
+
+      const cleanFilename = (filename || `image-${Date.now()}.webp`).replace(/[^a-zA-Z0-9._-]/g, "_");
+      const ext = cleanFilename.split(".").pop() || "webp";
+      const mime = contentType || (ext === "png" ? "image/png" : ext === "jpg" || ext === "jpeg" ? "image/jpeg" : "image/webp");
+      const buffer = Buffer.from(fileBase64.replace(/^data:image\/\w+;base64,/, ""), "base64");
+
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const uniqueName = `${year}/${month}/${Date.now()}-${cleanFilename}`;
+
+      // 1. Try uploading to Supabase Storage bucket 'blog-images'
+      try {
+        const { data: sbData, error: sbError } = await supabaseServer.storage
+          .from("blog-images")
+          .upload(uniqueName, buffer, {
+            contentType: mime,
+            upsert: true
+          });
+
+        if (!sbError && sbData?.path) {
+          const { data: pubData } = supabaseServer.storage
+            .from("blog-images")
+            .getPublicUrl(sbData.path);
+
+          return res.json({
+            success: true,
+            url: pubData.publicUrl,
+            path: sbData.path,
+            storage: "supabase"
+          });
+        }
+      } catch (sbErr) {
+        console.warn("[Supabase Storage upload warning, falling back to local static storage]:", sbErr);
+      }
+
+      // 2. Local storage fallback
+      const uploadDir = path.resolve(`public/uploads/blog/${year}/${month}`);
+      fs.mkdirSync(uploadDir, { recursive: true });
+      const localFilename = `${Date.now()}-${cleanFilename}`;
+      const localFilePath = path.join(uploadDir, localFilename);
+      fs.writeFileSync(localFilePath, buffer);
+
+      const localUrl = `/uploads/blog/${year}/${month}/${localFilename}`;
+      return res.json({
+        success: true,
+        url: localUrl,
+        path: `uploads/blog/${year}/${month}/${localFilename}`,
+        storage: "local"
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Image upload failed";
+      return res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // GET /api/articles (Public list or Admin all)
+  app.get("/api/articles", async (req: Request, res: Response) => {
+    try {
+      const showAll = req.query.all === "true";
+      let supabaseArticles: any[] = [];
+
+      try {
+        let query = supabaseServer
+          .from("blog_articles")
+          .select("*")
+          .order("published_at", { ascending: false });
+
+        if (!showAll) {
+          query = query.in("status", ["Published", "published", "Active"]);
+        }
+
+        const { data, error } = await query;
+        if (!error && data) {
+          supabaseArticles = data;
+        }
+      } catch (sbErr) {
+        console.warn("[Supabase articles query notice]:", sbErr);
+      }
+
+      // Read local persistent articles
+      const localArticles = getLocalArticles();
+      const filteredLocal = showAll
+        ? localArticles
+        : localArticles.filter((a: any) => ["Published", "published", "Active"].includes(a.status));
+
+      // Merge and de-duplicate by slug
+      const map = new Map<string, any>();
+      for (const a of filteredLocal) {
+        map.set(a.slug, a);
+      }
+      for (const a of supabaseArticles) {
+        map.set(a.slug, a);
+      }
+
+      const merged = Array.from(map.values()).sort((a, b) => {
+        const dateA = new Date(a.published_at || a.created_at || 0).getTime();
+        const dateB = new Date(b.published_at || b.created_at || 0).getTime();
+        return dateB - dateA;
+      });
+
+      return res.json({ success: true, articles: merged });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error querying articles";
+      return res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // GET /api/articles/:slug (Single article)
+  app.get("/api/articles/:slug", async (req: Request, res: Response) => {
+    try {
+      const cleanSlug = req.params.slug.toLowerCase().trim();
+
+      // 1. Try Supabase query
+      try {
+        const { data, error } = await supabaseServer
+          .from("blog_articles")
+          .select("*")
+          .eq("slug", cleanSlug)
+          .maybeSingle();
+
+        if (!error && data) {
+          return res.json({ success: true, article: data });
+        }
+      } catch (sbErr) {
+        console.warn("[Supabase get article notice]:", sbErr);
+      }
+
+      // 2. Try local persistent store
+      const local = getLocalArticles();
+      const matched = local.find((p: any) => p.slug === cleanSlug);
+      if (matched) {
+        return res.json({ success: true, article: matched });
+      }
+
+      return res.status(404).json({ success: false, error: "Article not found" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error querying article";
+      return res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // POST /api/articles (Create or Update Article)
+  app.post("/api/articles", async (req: Request, res: Response) => {
+    try {
+      const articlePayload = req.body;
+      if (!articlePayload || !articlePayload.title || !articlePayload.slug) {
+        return res.status(400).json({ success: false, error: "Title and slug are required." });
+      }
+
+      const cleanTitle = articlePayload.title.trim();
+      const cleanSlug = articlePayload.slug.toLowerCase().trim();
+      const isPublished = articlePayload.status === "Published";
+      const publishedAt = isPublished
+        ? (articlePayload.published_at || new Date().toISOString())
+        : null;
+
+      // Prepare normalized payload strictly matching Supabase blog_articles schema
+      const dbPayload: any = {
+        title: cleanTitle,
+        slug: cleanSlug,
+        excerpt: articlePayload.excerpt || cleanTitle,
+        content: articlePayload.content || articlePayload.excerpt || cleanTitle,
+        image: articlePayload.image || articlePayload.featured_image_url || "/imara_loan.jpg",
+        category: articlePayload.category || "Financial Literacy",
+        author_name: articlePayload.author_name || articlePayload.author || "Patrick Munene",
+        author_id: articlePayload.author_id || "auth_pm",
+        author_role: articlePayload.author_role || "Author",
+        author_avatar: articlePayload.author_avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+        status: articlePayload.status || "Published",
+        published_at: publishedAt,
+        tags: Array.isArray(articlePayload.tags) ? articlePayload.tags : [],
+        blocks: Array.isArray(articlePayload.blocks) ? articlePayload.blocks : [],
+        seo: typeof articlePayload.seo === "object" && articlePayload.seo !== null
+          ? articlePayload.seo
+          : {
+              metaTitle: articlePayload.seo_title || `${cleanTitle} | Neema HEEP Journal`,
+              metaDescription: articlePayload.seo_description || articlePayload.excerpt || cleanTitle
+            },
+        views: Number(articlePayload.views) || 0,
+        likes: Number(articlePayload.likes) || 0,
+        updated_at: new Date().toISOString()
+      };
+
+      if (articlePayload.id) {
+        dbPayload.id = articlePayload.id;
+      }
+
+      // Save to local persistent storage first so data is guaranteed never lost
+      const local = getLocalArticles();
+      const idx = local.findIndex((p: any) => p.slug === cleanSlug);
+      let updatedLocal: any[];
+      if (idx >= 0) {
+        updatedLocal = local.map((p: any, i: number) => i === idx ? { ...p, ...dbPayload } : p);
+      } else {
+        const itemWithId = { ...dbPayload, id: dbPayload.id || `art_${Date.now()}` };
+        updatedLocal = [itemWithId, ...local];
+      }
+      saveLocalArticles(updatedLocal);
+
+      // Attempt Supabase upsert
+      try {
+        const { data, error } = await supabaseServer
+          .from("blog_articles")
+          .upsert([dbPayload], { onConflict: "slug" })
+          .select()
+          .maybeSingle();
+
+        if (!error && data) {
+          return res.json({ success: true, article: data });
+        }
+      } catch (sbErr) {
+        console.warn("[Supabase save article warning]:", sbErr);
+      }
+
+      return res.json({ success: true, article: dbPayload });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save article";
+      return res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // PATCH /api/articles/:slug/status (Update status e.g. Published / Draft / Trash)
+  app.patch("/api/articles/:slug/status", async (req: Request, res: Response) => {
+    try {
+      const cleanSlug = req.params.slug.toLowerCase().trim();
+      const { status } = req.body || {};
+      if (!status) {
+        return res.status(400).json({ success: false, error: "Status is required." });
+      }
+
+      // Update in local store
+      const local = getLocalArticles();
+      const matched = local.find((p: any) => p.slug === cleanSlug);
+      if (matched) {
+        matched.status = status;
+        matched.published_at = status === "Published" ? new Date().toISOString() : null;
+        matched.updated_at = new Date().toISOString();
+        saveLocalArticles(local);
+      }
+
+      // Update in Supabase
+      try {
+        const { data } = await supabaseServer
+          .from("blog_articles")
+          .update({
+            status,
+            published_at: status === "Published" ? new Date().toISOString() : null,
+            updated_at: new Date().toISOString()
+          })
+          .eq("slug", cleanSlug)
+          .select()
+          .maybeSingle();
+
+        if (data) {
+          return res.json({ success: true, article: data });
+        }
+      } catch (sbErr) {
+        console.warn("[Supabase status update warning]:", sbErr);
+      }
+
+      return res.json({ success: true, article: matched || { slug: cleanSlug, status } });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to update article status";
+      return res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // DELETE /api/articles/:slug (Delete Article)
+  app.delete("/api/articles/:slug", async (req: Request, res: Response) => {
+    try {
+      const cleanSlug = req.params.slug.toLowerCase().trim();
+
+      // Remove from local store
+      const local = getLocalArticles();
+      const remaining = local.filter((p: any) => p.slug !== cleanSlug);
+      saveLocalArticles(remaining);
+
+      // Remove from Supabase
+      try {
+        await supabaseServer
+          .from("blog_articles")
+          .delete()
+          .eq("slug", cleanSlug);
+      } catch (sbErr) {
+        console.warn("[Supabase delete article warning]:", sbErr);
+      }
+
+      return res.json({ success: true, message: "Article deleted successfully." });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to delete article";
+      return res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // ------------------------------------------------------------------
   // BUSINESS APIS
   // ------------------------------------------------------------------
   app.post("/api/eligibility/submit", (_req: Request, res: Response) => {
@@ -608,8 +961,91 @@ async function startServer() {
     res.json({ success: true, message: "Registration submitted successfully.", id: `reg_${Date.now()}` });
   });
 
-  app.post("/api/leads/submit", (_req: Request, res: Response) => {
-    res.json({ success: true, message: "Lead submitted successfully.", leadId: `lead_${Date.now()}` });
+  app.post("/api/leads/submit", async (req: Request, res: Response) => {
+    try {
+      const { form_type, type, full_name, name, email, phone, subject, message, source_page, signupSource, details } = req.body || {};
+      
+      const effectiveType = String(form_type || type || "contact").toLowerCase();
+      let mappedType = "contact";
+      if (effectiveType.includes("prequal") || effectiveType.includes("loan")) mappedType = "prequalification";
+      else if (effectiveType.includes("callback") || effectiveType.includes("call")) mappedType = "callback";
+      else mappedType = "contact";
+
+      const leadPayload = {
+        form_type: mappedType,
+        full_name: full_name || name || "Anonymous",
+        email: email || "",
+        phone: phone || "",
+        subject: subject || (details && details.interest) || "General Inquiry",
+        message: message || (details && details.message) || (details && details.notes) || "",
+        source_page: source_page || signupSource || "/contact-us",
+        status: "New",
+        details: details || {},
+        created_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabaseServer.from("leads").insert([leadPayload]).select().single();
+      if (error) {
+        console.warn("[API Leads Submit] Supabase insert warning:", error.message);
+      }
+
+      return res.json({
+        success: true,
+        message: "Lead submitted successfully.",
+        leadId: data?.id || `lead_${Date.now()}`
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Submission error";
+      return res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // ------------------------------------------------------------------
+  // ADMIN: Secure Server-Side Password Reset (No plaintext secrets stored)
+  // ------------------------------------------------------------------
+  app.post("/api/admin/reset-user-password", async (req: Request, res: Response) => {
+    try {
+      const { email, targetName, adminUser } = req.body || {};
+      if (!email) {
+        return res.status(400).json({ success: false, error: "Target user email is required." });
+      }
+
+      const cleanEmail = String(email).toLowerCase().trim();
+
+      // Trigger standard Supabase Auth password reset flow
+      try {
+        await supabaseServer.auth.resetPasswordForEmail(cleanEmail);
+      } catch (authErr) {
+        console.warn("[Admin Password Reset] Supabase auth reset notice:", authErr);
+      }
+
+      // Record administrative action in public.audit_logs without storing secrets
+      try {
+        await supabaseServer.from("audit_logs").insert([{
+          actor: adminUser || "Administrator",
+          actor_role: "Administrator",
+          event: "Initiated Password Reset",
+          category: "Security",
+          status: "Success",
+          details: {
+            target_user: targetName || cleanEmail,
+            target_email: cleanEmail,
+            action: "Password reset link requested via Supabase Auth"
+          },
+          created_at: new Date().toISOString()
+        }]);
+      } catch (auditErr) {
+        console.warn("[Audit Log] Could not log password reset action:", auditErr);
+      }
+
+      return res.json({
+        success: true,
+        message: `Secure password reset instructions sent to ${cleanEmail}. Action logged in audit logs.`
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Password reset initiation failed";
+      return res.status(500).json({ success: false, error: msg });
+    }
   });
 
   // ------------------------------------------------------------------

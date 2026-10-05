@@ -3,6 +3,7 @@ import WhatsAppIcon from '../components/WhatsAppIcon';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import SmartLeadForm from '../components/SmartLeadForm';
+import { CALLBACK_FORM_FIELDS, CALLBACK_FORM_CTA, CALLBACK_FORM_TITLE, CALLBACK_FORM_DESC } from '../lib/callbackFields';
 
 const branches = [
   { county: 'EMBU COUNTY', name: 'Embu Branch (Main Office)', badge: 'Head Office', location: 'Neema Plaza, 3rd Floor, Mama Ngina Street, Embu Town', phone: '+254 705 759 365', email: 'info@neemaheep.com', coords: '-0.53882, 37.45477' },
@@ -124,28 +125,10 @@ export default function ContactUs() {
                 </div>
                 <SmartLeadForm 
                   type="Callback"
-                  title="Request a Call Back"
-                  description="Prefer to speak directly with an officer? Leave your phone number and preferred time slot, and our loan specialist will reach out to you."
-                  fields={[
-                    { name: 'name', label: 'Full Name', type: 'text', placeholder: 'e.g. Wanjiru Muthoni', required: true },
-                    { name: 'phone', label: 'Phone Number', type: 'tel', placeholder: '07XX XXX XXX', required: true },
-                    { name: 'email', label: 'Email Address', type: 'email', placeholder: 'yourname@email.com', required: true },
-                    { 
-                      name: 'interest', 
-                      label: 'I want to talk about', 
-                      type: 'select', 
-                      required: true,
-                      options: ['General Loan Inquiry', 'Mali Plus Loan', 'Jijenge Facility', 'Microfinance Credit Solutions', 'Arise & Shine Program', 'Careers']
-                    },
-                    { 
-                       name: 'preferredTime', 
-                       label: 'Preferred Callback Time', 
-                       type: 'select', 
-                       required: true,
-                       options: ['Morning (8am - 12pm)', 'Afternoon (1pm - 5pm)', 'Late Evening (5pm - 7pm)']
-                    }
-                  ]}
-                  ctaText="Confirm Callback Request"
+                  title={CALLBACK_FORM_TITLE}
+                  description={CALLBACK_FORM_DESC}
+                  fields={CALLBACK_FORM_FIELDS}
+                  ctaText={CALLBACK_FORM_CTA}
                 />
               </div>
             </div>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Phone, Mail, UserCheck, Calculator, MapPin } from 'lucide-react';
-import { HeaderSocialIcons } from './SocialIcons';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -51,14 +50,10 @@ export default function Header() {
               <span>info@neemaheep.com</span>
             </a>
             <span className="text-emerald-800/80 hidden lg:inline">|</span>
-            {/* Address placed before social media icons */}
+            {/* Address */}
             <div className="hidden lg:flex items-center gap-1.5 text-[11px] font-bold text-[#C0991B]">
               <MapPin className="w-3.5 h-3.5 text-[#C0991B] shrink-0" />
               <span>Neema Plaza, 3rd Floor, Mama Ngina Street, Embu</span>
-            </div>
-            <span className="text-emerald-800/80 hidden md:inline">|</span>
-            <div className="hidden md:flex items-center gap-2">
-              <HeaderSocialIcons />
             </div>
           </div>
 

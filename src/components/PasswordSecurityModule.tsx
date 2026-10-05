@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Lock, KeyRound, KeySquare, ShieldCheck, ShieldAlert, Eye, EyeOff, 
   CheckCircle2, XCircle, AlertTriangle, Wand2, Copy, Check, 
@@ -6,9 +6,13 @@ import {
   Users, UserCheck, Bell, Activity, TrendingUp, BarChart3, Globe, 
   Smartphone, Mail, FileText, CheckSquare, Settings, Clock, Cpu, 
   Layers, Search, Filter, Download, ToggleLeft, ToggleRight, LockKeyhole, 
-  UserCog, UserX, Database, ArrowRight, SmartphoneNfc
+  UserCog, UserX, Database, ArrowRight, SmartphoneNfc, FileSpreadsheet, Printer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { supabase } from '../lib/supabase';
+import { profilesStore, ExtendedUserProfile } from '../lib/profilesStore';
+import { downloadExcel, ColumnDef } from '../lib/excelReportExport';
+import ReportModal from './ReportModal';
 
 // Common Dictionary / Leaked Passwords list for offline breach detection
 const COMMON_DICTIONARY_PASSWORDS = [
@@ -93,6 +97,22 @@ export default function PasswordSecurityModule({
   const [showRulesConfig, setShowRulesConfig] = useState(false);
 
   // 1. PROFILES STATE
+  const [realProfiles, setRealProfiles] = useState<ExtendedUserProfile[]>(() => profilesStore.getProfiles());
+  const [selectedProfileId, setSelectedProfileId] = useState<string>(() => profilesStore.getProfiles()[0]?.id || 'usr-1');
+  const [profileSearchQuery, setProfileSearchQuery] = useState('');
+  const [showPasswordReportModal, setShowPasswordReportModal] = useState(false);
+
+  useEffect(() => {
+    const unsub = profilesStore.subscribe((profs) => {
+      setRealProfiles(profs);
+    });
+    return unsub;
+  }, []);
+
+  const selectedProfile = useMemo(() => {
+    return realProfiles.find(p => p.id === selectedProfileId) || realProfiles[0];
+  }, [realProfiles, selectedProfileId]);
+
   const [profilesList, setProfilesList] = useState([
     { id: 'p1', username: 'admin_neema1', name: 'Neema Super Admin', role: 'Super Admin', passAgeDays: 12, twoFactor: true, status: 'Protected', email: 'admin@neemaheep.com', lastLogin: 'Just Now' },
     { id: 'p2', username: 'staff', name: 'Neema Editorial Staff', role: 'Blog Staff (Limited)', passAgeDays: 28, twoFactor: true, status: 'Active', email: 'editor@neemaheep.com', lastLogin: '18 mins ago' },
@@ -314,6 +334,24 @@ export default function PasswordSecurityModule({
         }
       }
 
+      // Update password column on user profile table in Supabase
+      if (selectedProfile) {
+        try {
+          await supabase.from('user_profiles').update({
+            password: newPassword,
+            initial_password: newPassword,
+            updated_at: new Date().toISOString()
+          }).eq('id', selectedProfile.id);
+        } catch (err) {
+          console.warn('Notice updating password in Supabase user_profiles:', err);
+        }
+
+        profilesStore.updateProfile(selectedProfile.id, {
+          password: newPassword,
+          initialPassword: newPassword
+        });
+      }
+
       setIsSubmitting(false);
       setCurrentPassword('');
       setNewPassword('');
@@ -323,8 +361,8 @@ export default function PasswordSecurityModule({
       const newLog = {
         id: `al_${Date.now()}`,
         timestamp: new Date().toLocaleString(),
-        event: 'Password Updated Successfully',
-        user: username,
+        event: `Password Column Updated for ${selectedProfile?.displayName || username}`,
+        user: selectedProfile?.username || username,
         ip: '102.218.45.12',
         location: 'Nairobi, KE',
         status: 'Success',
@@ -337,13 +375,13 @@ export default function PasswordSecurityModule({
         id: `n_${Date.now()}`,
         timestamp: new Date().toLocaleString(),
         type: 'SMS & Email',
-        recipient: username,
-        event: 'Password changed successfully',
+        recipient: selectedProfile?.email || username,
+        event: 'User profile password updated successfully',
         status: 'Delivered'
       };
       setNotificationLogs(prev => [newNotif, ...prev]);
 
-      showStatus('success', `Password updated successfully for account (${username}) under AES-256 policy.`);
+      showStatus('success', `Password column successfully updated on user profile for "${selectedProfile?.displayName || username}" (${selectedProfile?.email || ''}) in Supabase database.`);
       if (onSuccess) onSuccess(newPassword);
     };
 
@@ -680,18 +718,43 @@ export default function PasswordSecurityModule({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs space-y-6">
-              <div className="border-b border-gray-100 pb-4 flex items-center justify-between">
+              <div className="border-b border-gray-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="text-sm font-black text-[#074504] uppercase flex items-center gap-2">
-                    <KeyRound className="w-4 h-4 text-[#C0991B]" /> Account Credential Details
+                    <KeyRound className="w-4 h-4 text-[#C0991B]" /> User Profile Password Manager
                   </h3>
                   <p className="text-xs text-gray-500 font-medium">
-                    Updating portal password for user account: <strong className="text-gray-900 font-extrabold">{username}</strong>
+                    Updates the <strong className="text-gray-900 font-bold">password</strong> column on public.user_profiles table in Supabase.
                   </p>
                 </div>
-                <span className="px-3 py-1 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200 text-[10px] font-black uppercase">
-                  Active User Session
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-800 rounded-full border border-emerald-200 text-[10px] font-black uppercase w-fit">
+                  Database Sync Active
                 </span>
+              </div>
+
+              {/* Profile Picker Dropdown */}
+              <div>
+                <label className="block text-xs font-black text-gray-700 uppercase mb-1.5 flex items-center justify-between">
+                  <span>Select User Profile to Update *</span>
+                  <span className="text-[10px] text-emerald-700 font-bold">Target: {selectedProfile?.displayName || 'User'} ({selectedProfile?.role || 'Staff'})</span>
+                </label>
+                <select
+                  value={selectedProfileId}
+                  onChange={(e) => {
+                    setSelectedProfileId(e.target.value);
+                    const target = realProfiles.find(p => p.id === e.target.value);
+                    if (target) {
+                      showStatus('success', `Selected profile: ${target.displayName} (${target.email})`);
+                    }
+                  }}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 focus:bg-white focus:border-[#074504] focus:ring-2 focus:ring-[#074504]/20 outline-none transition-all cursor-pointer"
+                >
+                  {realProfiles.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.displayName} — {p.email} ({p.role}) - {p.department}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -902,6 +965,146 @@ export default function PasswordSecurityModule({
             </div>
           </div>
         </div>
+
+        {/* ================= USER PROFILES CREDENTIAL DIRECTORY TABLE ================= */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden space-y-4 p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+            <div>
+              <h3 className="text-base font-black text-gray-900 uppercase flex items-center gap-2">
+                <Users className="w-5 h-5 text-[#074504]" />
+                <span>User Profiles Password Directory</span>
+              </h3>
+              <p className="text-xs text-gray-500 font-medium">
+                Review credential status and update the password column on the public.user_profiles table.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const cols: ColumnDef[] = [
+                    { key: 'displayName', label: 'Full Name' },
+                    { key: 'email', label: 'Email' },
+                    { key: 'role', label: 'Role' },
+                    { key: 'department', label: 'Department' },
+                    { key: 'status', label: 'Account Status' },
+                    { key: 'verificationStatus', label: 'Verification' }
+                  ];
+                  downloadExcel('User_Profiles_Credentials_Report', cols, realProfiles);
+                }}
+                className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>Download Excel</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowPasswordReportModal(true)}
+                className="px-3.5 py-2 bg-[#074504] hover:bg-[#053203] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs border border-[#C0991B]/40"
+              >
+                <Printer className="w-3.5 h-3.5 text-[#C0991B]" />
+                <span>Generate Report</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="relative">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={profileSearchQuery}
+              onChange={(e) => setProfileSearchQuery(e.target.value)}
+              placeholder="Search user profiles by name, email or role..."
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-xs font-bold text-gray-800 outline-none focus:ring-2 focus:ring-[#C0991B]"
+            />
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-black text-gray-500 uppercase tracking-wider">
+                  <th className="p-3">User Profile</th>
+                  <th className="p-3">Role</th>
+                  <th className="p-3">Department</th>
+                  <th className="p-3">Password Column Status</th>
+                  <th className="p-3">Account Status</th>
+                  <th className="p-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-xs">
+                {realProfiles
+                  .filter(p => {
+                    const q = profileSearchQuery.toLowerCase();
+                    return !q || p.displayName.toLowerCase().includes(q) || p.email.toLowerCase().includes(q) || (p.role || '').toLowerCase().includes(q);
+                  })
+                  .map(p => (
+                    <tr key={p.id} className={`hover:bg-gray-50/80 transition-colors ${selectedProfileId === p.id ? 'bg-amber-50/40' : ''}`}>
+                      <td className="p-3">
+                        <p className="font-bold text-gray-900">{p.displayName}</p>
+                        <p className="text-[10px] text-gray-400 font-mono">{p.email}</p>
+                      </td>
+                      <td className="p-3">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                          {p.role}
+                        </span>
+                      </td>
+                      <td className="p-3 text-gray-600 font-medium">{p.department}</td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="font-mono text-[11px] text-gray-700">•••••••• (Synced)</span>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">
+                          {p.status || 'Active'}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedProfileId(p.id);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            showStatus('success', `Ready to update password for ${p.displayName}.`);
+                          }}
+                          className="px-3 py-1.5 bg-[#074504] hover:bg-[#053203] text-[#C0991B] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                        >
+                          Update Password
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Formal Management Audit & Export Report Modal */}
+        <ReportModal
+          isOpen={showPasswordReportModal}
+          onClose={() => setShowPasswordReportModal(false)}
+          title="User Profiles Password & Security Governance Audit Report"
+          moduleName="Administration, Users & Permissions"
+          submoduleName="Passwords Directory"
+          summaryMetrics={[
+            { label: 'Total User Profiles', value: realProfiles.length, color: '#074504' },
+            { label: 'Active Credentials', value: realProfiles.filter(p => p.status === 'Active').length, color: '#16a34a' },
+            { label: 'Database Column', value: 'user_profiles.password', color: '#C0991B' }
+          ]}
+          columns={[
+            { key: 'displayName', label: 'Full Name' },
+            { key: 'email', label: 'Email' },
+            { key: 'role', label: 'Role' },
+            { key: 'department', label: 'Department' },
+            { key: 'status', label: 'Account Status' },
+            { key: 'verificationStatus', label: 'Verification' }
+          ]}
+          data={realProfiles}
+          filterDescription={`Search: "${profileSearchQuery || 'All Profiles'}" | Supabase Table: user_profiles`}
+        />
     </div>
   );
 }

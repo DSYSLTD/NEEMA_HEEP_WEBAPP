@@ -3,176 +3,16 @@ import {
   User, Users, Globe, CheckCircle2, X, Edit3, Trash2, 
   Search, Mail, Phone, ImageIcon, FileText, Briefcase, GraduationCap, 
   Award, TrendingUp, Eye, Grid, List, ShieldCheck, Check, Plus,
-  Lock, ArrowUpRight, ShieldAlert, BookOpen, Clock, HeartHandshake, Calculator, Layers
+  Lock, ArrowUpRight, ShieldAlert, BookOpen, Clock, HeartHandshake, Calculator, Layers,
+  FileSpreadsheet, Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { profilesStore, ExtendedUserProfile } from '../lib/profilesStore';
+import { downloadExcel, downloadCSV, ColumnDef } from '../lib/excelReportExport';
+import ReportModal from './ReportModal';
 export type { ExtendedUserProfile };
 
-// Initial mock dataset of profiles enriched for Neema HEEP Enterprise
-const INITIAL_PROFILES: ExtendedUserProfile[] = [
-  {
-    id: 'usr-1',
-    firstName: 'Patrick',
-    middleName: 'Munene',
-    lastName: 'Kinyua',
-    displayName: 'Patrick Munene',
-    username: 'pmunene',
-    email: 'ptrckmunene@gmail.com',
-    phone: '+254 712 345 678',
-    whatsApp: '+254 712 345 678',
-    gender: 'Male',
-    dateOfBirth: '1992-05-14',
-    jobTitle: 'Managing Director & Founder',
-    department: 'Executive Leadership',
-    employeeId: 'NH-EMP-2022-001',
-    departmentExtension: 'Ext. 101 (Executive)',
-    canCreateArticles: true,
-    physicalAddress: 'Neema Heep Plaza, Kimathi Way, Nyeri',
-    role: 'Editor',
-    status: 'Active',
-    verificationStatus: 'Verified',
-    profilePhoto: '/developer_teaching_coding.jpg',
-    coverPhoto: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=1200&q=80',
-    bio: 'Passionate about micro-financing innovation, financial inclusion, and community economic empowerment across Mt. Kenya region.',
-    shortBio: 'Founder & CEO at Neema HEEP Microfinance.',
-    levelOfEducation: "Master of Science in Finance (M.Sc. Finance)",
-    yearsOfExperience: '14+ Years Experience in Microfinance & SME Credit',
-    workExperience: [
-      'Managing Director & Founder - Neema HEEP Microfinance (2022-Present)',
-      'Senior Microfinance & Risk Specialist - Equity Bank Kenya (2016-2022)',
-      'SME Credit Analyst - KCB Bank Group (2012-2016)'
-    ],
-    publicHeadline: 'Managing Director & Microfinance Innovator',
-    publicBio: 'Leading micro-lending transformations and agricultural credit accessibility across Mount Kenya. Dedicated to empowering SMEs, female entrepreneurs, and smallholder farming groups.',
-    publicPagePublished: true,
-    showPublicContact: true,
-    preferredLanguage: 'English (UK)',
-    timezone: 'Africa/Nairobi (UTC+3)',
-    expertise: ['Mt. Kenya Microfinance', 'WASH Sanitation Loans', 'Imara Business Credit', 'Community Healthcare Pairing', 'SME Financial Advisory'],
-    certifications: ['Chartered Microfinance Executive (CME)', 'Certified Agribusiness Consultant'],
-    education: ['B.Sc. Financial Engineering - Strathmore University', 'M.Sc. Finance - University of Nairobi'],
-    memberships: ['Kenya Association of Microfinance Institutions (AMFI)', 'Association of Agribusiness Professionals'],
-    stats: {
-      articlesPublished: 24,
-      draftArticles: 3,
-      mediaUploaded: 86,
-      commentsModerated: 142,
-      communityImpactScore: 98,
-      readingCount: 48920,
-      guidedLoansCount: 1240,
-      lastLogin: '2026-07-24 08:30 AM',
-      memberSince: 'January 2022'
-    },
-    achievements: ['First Article', '100 Articles', 'Impact Champion', 'Verified Author', 'Featured Writer', 'Top Editor']
-  },
-  {
-    id: 'usr-2',
-    firstName: 'Jane',
-    middleName: 'Wanjiku',
-    lastName: 'Muturi',
-    displayName: 'Dr. Jane Muturi',
-    username: 'jmuturi',
-    email: 'jane@neemaheep.co.ke',
-    phone: '+254 722 987 654',
-    whatsApp: '+254 722 987 654',
-    gender: 'Female',
-    dateOfBirth: '1988-11-20',
-    jobTitle: 'Head of Community Health & Welfare',
-    department: 'Social Impact & Healthcare',
-    employeeId: 'NH-EMP-2023-014',
-    departmentExtension: 'Ext. 204 (Community Health)',
-    canCreateArticles: true,
-    physicalAddress: 'Neema Heep Hub, Nanyuki Town',
-    role: 'Editor',
-    status: 'Active',
-    verificationStatus: 'Verified',
-    profilePhoto: '/Grace Wanjiku.jpeg',
-    coverPhoto: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80',
-    bio: 'Medical doctor dedicated to pairing preventive healthcare initiatives with micro-loans for rural women entrepreneurs.',
-    shortBio: 'Community Health Lead & Preventive Medicine Specialist.',
-    levelOfEducation: 'Bachelor of Medicine & Surgery (MBChB), Master of Public Health (MPH)',
-    yearsOfExperience: '10+ Years in Community Health & Rural Health Finance',
-    workExperience: [
-      'Head of Community Health & Welfare - Neema HEEP (2023-Present)',
-      'Medical Officer & Public Health Coordinator - Nyeri County Referral Hospital (2018-2023)'
-    ],
-    publicHeadline: 'Head of Community Health & Preventive Care',
-    publicBio: 'Pioneering healthcare financing models and WASH sanitation credits for rural women cooperatives across Laikipia and Nyeri.',
-    publicPagePublished: true,
-    showPublicContact: true,
-    preferredLanguage: 'English (US)',
-    timezone: 'Africa/Nairobi (UTC+3)',
-    expertise: ['Maternal Health Loans', 'Clean Water & Hygiene (WASH)', 'Rural Healthcare Financing', 'Community Mobilization'],
-    certifications: ['MBChB - University of Nairobi', 'MPH - Johns Hopkins University'],
-    education: ['Bachelor of Medicine & Surgery - UoN', 'MPH - Johns Hopkins University'],
-    memberships: ['Kenya Medical Association (KMA)', 'Global Health Council'],
-    stats: {
-      articlesPublished: 14,
-      draftArticles: 2,
-      mediaUploaded: 42,
-      commentsModerated: 89,
-      communityImpactScore: 95,
-      readingCount: 31200,
-      guidedLoansCount: 860,
-      lastLogin: '2026-07-23 04:15 PM',
-      memberSince: 'March 2023'
-    },
-    achievements: ['First Article', 'Impact Champion', 'Verified Author', 'Community Contributor', 'Featured Writer']
-  },
-  {
-    id: 'usr-3',
-    firstName: 'Samuel',
-    middleName: 'Auma',
-    lastName: 'Ochieng',
-    displayName: 'Samuel Ochieng',
-    username: 'sochieng',
-    email: 'samuel@neemaheep.co.ke',
-    phone: '+254 733 456 789',
-    gender: 'Male',
-    dateOfBirth: '1985-03-08',
-    jobTitle: 'Senior Credit & Risk Manager',
-    department: 'Risk & Compliance',
-    employeeId: 'NH-EMP-2023-022',
-    departmentExtension: 'Ext. 308 (Risk & Compliance)',
-    canCreateArticles: false, // Site admin restricted for demonstration
-    role: 'Author',
-    status: 'Active',
-    verificationStatus: 'Verified',
-    profilePhoto: '/Antony Kinyua.jpeg',
-    coverPhoto: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
-    bio: 'Over 12 years of experience in credit risk modeling, portfolio quality control, and micro-business advisory.',
-    shortBio: 'Risk & Credit Structuring Specialist.',
-    levelOfEducation: 'Bachelor of Commerce in Finance (B.Com Finance)',
-    yearsOfExperience: '12+ Years in Credit Risk & Musoni Core Banking',
-    workExperience: [
-      'Senior Credit & Risk Manager - Neema HEEP (2023-Present)',
-      'Risk & Portfolio Quality Analyst - Faulu Microfinance Bank (2015-2023)'
-    ],
-    publicHeadline: 'Senior Credit Risk & Audit Specialist',
-    publicBio: 'Specializing in portfolio risk reduction, Musoni core banking integration, and group-guaranteed loan underwriting.',
-    publicPagePublished: true,
-    showPublicContact: false,
-    preferredLanguage: 'English (UK)',
-    timezone: 'Africa/Nairobi (UTC+3)',
-    expertise: ['Risk Mitigation', 'Group Guaranteed Lending', 'Musoni Core Banking', 'Portfolio Quality Control'],
-    certifications: ['Certified Credit Analyst (CCA)', 'PRM - Professional Risk Manager'],
-    education: ['B.Com Finance - Kenyatta University'],
-    memberships: ['Global Association of Risk Professionals (GARP)'],
-    stats: {
-      articlesPublished: 8,
-      draftArticles: 1,
-      mediaUploaded: 19,
-      commentsModerated: 210,
-      communityImpactScore: 92,
-      readingCount: 19400,
-      guidedLoansCount: 540,
-      lastLogin: '2026-07-23 11:00 AM',
-      memberSince: 'June 2023'
-    },
-    achievements: ['First Article', 'Verified Author', 'Top Editor']
-  }
-];
+
 
 export default function UserProfileManager() {
   // Submodule Tabs strictly limited to:
@@ -391,6 +231,47 @@ export default function UserProfileManager() {
       return matchSearch && matchRole;
     });
   }, [profiles, searchQuery, selectedRoleFilter]);
+
+  const [showProfilesReportModal, setShowProfilesReportModal] = useState(false);
+
+  const profileColumns: ColumnDef[] = [
+    { key: 'employeeId', label: 'Employee ID' },
+    { key: 'displayName', label: 'Full Name' },
+    { key: 'username', label: 'Username' },
+    { key: 'email', label: 'Email Address' },
+    { key: 'phone', label: 'Phone Number' },
+    { key: 'jobTitle', label: 'Job Title' },
+    { key: 'department', label: 'Department' },
+    { key: 'role', label: 'Assigned Role' },
+    { key: 'status', label: 'Status' },
+    { key: 'verificationStatus', label: 'Verification' },
+  ];
+
+  const handleDownloadProfilesExcel = async () => {
+    if (filteredOtherProfiles.length === 0) {
+      triggerToast('No profiles match current filters.');
+      return;
+    }
+    await downloadExcel(
+      `Neema_HEEP_Staff_Profiles`,
+      profileColumns,
+      filteredOtherProfiles
+    );
+    triggerToast('Downloaded Staff Profiles Excel Spreadsheet!');
+  };
+
+  const handleDownloadProfilesCSV = async () => {
+    if (filteredOtherProfiles.length === 0) {
+      triggerToast('No profiles match current filters.');
+      return;
+    }
+    await downloadCSV(
+      `Neema_HEEP_Staff_Profiles`,
+      profileColumns,
+      filteredOtherProfiles
+    );
+    triggerToast('Downloaded Staff Profiles CSV Data!');
+  };
 
   return (
     <div className="space-y-6 pb-12 font-sans text-gray-900">
@@ -1130,24 +1011,51 @@ export default function UserProfileManager() {
                 </p>
               </div>
 
-              {/* View mode toggle */}
-              <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
-                <button 
-                  onClick={() => setOtherProfilesViewMode('grid')}
-                  className={`p-2 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-all ${
-                    otherProfilesViewMode === 'grid' ? 'bg-white text-[#074504] shadow-2xs' : 'text-gray-500 hover:text-gray-900'
-                  }`}
+              {/* Actions & View mode toggle */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleDownloadProfilesExcel}
+                  className="px-3.5 py-2 bg-[#074504] hover:bg-[#053203] text-[#C0991B] font-black text-xs uppercase rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
-                  <Grid className="w-4 h-4" /> Grid
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-[#C0991B]" />
+                  <span>Download Excel</span>
                 </button>
-                <button 
-                  onClick={() => setOtherProfilesViewMode('list')}
-                  className={`p-2 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-all ${
-                    otherProfilesViewMode === 'list' ? 'bg-white text-[#074504] shadow-2xs' : 'text-gray-500 hover:text-gray-900'
-                  }`}
+                <button
+                  type="button"
+                  onClick={handleDownloadProfilesCSV}
+                  className="px-3.5 py-2 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs uppercase rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-gray-200"
                 >
-                  <List className="w-4 h-4" /> List
+                  <Download className="w-3.5 h-3.5 text-[#C0991B]" />
+                  <span>Export CSV</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setShowProfilesReportModal(true)}
+                  className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs uppercase rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-gray-200"
+                >
+                  <FileText className="w-3.5 h-3.5 text-[#074504]" />
+                  <span>Generate Report</span>
+                </button>
+
+                <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
+                  <button 
+                    onClick={() => setOtherProfilesViewMode('grid')}
+                    className={`p-2 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-all ${
+                      otherProfilesViewMode === 'grid' ? 'bg-white text-[#074504] shadow-2xs' : 'text-gray-500 hover:text-gray-900'
+                    }`}
+                  >
+                    <Grid className="w-4 h-4" /> Grid
+                  </button>
+                  <button 
+                    onClick={() => setOtherProfilesViewMode('list')}
+                    className={`p-2 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-all ${
+                      otherProfilesViewMode === 'list' ? 'bg-white text-[#074504] shadow-2xs' : 'text-gray-500 hover:text-gray-900'
+                    }`}
+                  >
+                    <List className="w-4 h-4" /> List
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -2130,6 +2038,24 @@ export default function UserProfileManager() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Formal Staff Profiles Management Audit & Directory Report Modal */}
+      <ReportModal
+        isOpen={showProfilesReportModal}
+        onClose={() => setShowProfilesReportModal(false)}
+        title="Institutional Staff & Author Profiles Directory Report"
+        moduleName="Administration & Users"
+        submoduleName="User Profiles"
+        summaryMetrics={[
+          { label: 'Total Profiles', value: profiles.length, color: '#074504' },
+          { label: 'Filtered Profiles', value: filteredOtherProfiles.length, color: '#16a34a' },
+          { label: 'Active Staff', value: profiles.filter(p => p.status === 'Active').length, color: '#C0991B' },
+          { label: 'Verified Authors', value: profiles.filter(p => p.verificationStatus === 'Verified').length, color: '#2563eb' }
+        ]}
+        columns={profileColumns}
+        data={filteredOtherProfiles}
+        filterDescription={`Role Filter: ${selectedRoleFilter} | Search Query: "${searchQuery || 'All Records'}"`}
+      />
 
     </div>
   );

@@ -1,9 +1,10 @@
-import { ArrowLeft, Search, GraduationCap, School, MapPin, Download, Award, Users, Calendar, Filter } from 'lucide-react';
+import { ArrowLeft, Search, GraduationCap, School, MapPin, Download, Award, Users, Calendar, Filter, Printer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { beneficiariesStore, maskBeneficiaryName } from '../lib/beneficiariesStore';
 import { beneficiaryService, DEFAULT_PUBLISHED_COHORTS, PublishedCohortItem } from '../services/beneficiaryService';
+import { exportPdfReport, printHtmlReport } from '../lib/pdfPrintUtils';
 
 export default function Beneficiaries() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -76,6 +77,73 @@ export default function Beneficiaries() {
   })).filter(yearGroup => yearGroup.students.length > 0);
 
   const totalStudentsCount = publishedData.reduce((acc, curr) => acc + curr.students.length, 0);
+
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+  const handleDownloadRosterPdf = async () => {
+    setIsDownloadingPdf(true);
+    try {
+      const scholarsList: (string | number)[][] = [];
+      filteredData.forEach(yg => {
+        yg.students.forEach((s) => {
+          scholarsList.push([
+            scholarsList.length + 1,
+            yg.year,
+            maskBeneficiaryName(s.name),
+            s.school,
+            'Active / Supported'
+          ]);
+        });
+      });
+
+      await exportPdfReport({
+        title: activeYear === 'All' ? 'Arise & Shine Beneficiaries - Complete Historic Roster' : `Arise & Shine Beneficiaries - ${activeYear} Cohort`,
+        subtitle: `Official Publication • Total Scholars: ${scholarsList.length} • Secondary Education Scholarship Programme`,
+        columns: ['#', 'Cohort Year', 'Beneficiary Scholar', 'Secondary School Attending', 'Scholarship Status'],
+        rows: scholarsList,
+        filename: `Neema_HEEP_Beneficiaries_Roster_${activeYear}.pdf`,
+        issuingDepartment: 'Arise & Shine Education Scholarship Board',
+        summaryMetrics: [
+          { label: 'Active Cohort', value: activeYear === 'All' ? '2011 - 2026' : `Year ${activeYear}` },
+          { label: 'Total Scholars', value: scholarsList.length },
+          { label: 'Partner Schools', value: `${allSchools.length - 1} Schools` },
+          { label: 'Scholarship Grant', value: '100% Secondary' }
+        ],
+        showSignatureBlock: true
+      });
+    } catch (err) {
+      console.error('Failed to export roster PDF:', err);
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
+  const handlePrintRoster = () => {
+    const scholarsList: (string | number)[][] = [];
+    filteredData.forEach(yg => {
+      yg.students.forEach((s) => {
+        scholarsList.push([
+          scholarsList.length + 1,
+          yg.year,
+          maskBeneficiaryName(s.name),
+          s.school,
+          'Active / Supported'
+        ]);
+      });
+    });
+
+    printHtmlReport({
+      title: activeYear === 'All' ? 'Arise & Shine Beneficiaries - Complete Historic Roster' : `Arise & Shine Beneficiaries - ${activeYear} Cohort`,
+      subtitle: `Total Scholars: ${scholarsList.length} • Neema HEEP Secondary Scholarship Programme`,
+      columns: ['#', 'Cohort Year', 'Beneficiary Scholar', 'Secondary School Attending', 'Scholarship Status'],
+      rows: scholarsList,
+      issuingDepartment: 'Arise & Shine Education Scholarship Board',
+      summaryMetrics: [
+        { label: 'Active Cohort', value: activeYear === 'All' ? '2011 - 2026' : `Year ${activeYear}` },
+        { label: 'Total Scholars', value: scholarsList.length }
+      ]
+    });
+  };
 
   return (
     <main className="flex-grow bg-[#f8faf8] pb-20 font-sans">
@@ -261,6 +329,40 @@ export default function Beneficiaries() {
              </div>
            </div>
          )}
+
+         {/* Quick Roster Actions (Print & Download Official Letterhead PDF) */}
+         <div className="mb-8 flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs">
+           <div className="flex items-center gap-2.5">
+             <div className="w-8 h-8 rounded-lg bg-[#074504] flex items-center justify-center text-[#C0991B]">
+               <Award className="w-4 h-4" />
+             </div>
+             <div>
+               <p className="text-xs font-black uppercase text-[#074504]">Official Scholarship Registry</p>
+               <p className="text-[10px] text-gray-500 font-medium">Verified Neema HEEP Secondary School Beneficiaries ({filteredData.reduce((acc, y) => acc + y.students.length, 0)} Listed)</p>
+             </div>
+           </div>
+
+           <div className="flex items-center gap-2">
+             <button
+               onClick={handlePrintRoster}
+               className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-black text-xs uppercase rounded-xl transition-all flex items-center gap-1.5 cursor-pointer border border-gray-200"
+               title="Print Official Roster on Letterhead"
+             >
+               <Printer className="w-3.5 h-3.5 text-[#074504]" />
+               <span>Print Roster</span>
+             </button>
+
+             <button
+               onClick={handleDownloadRosterPdf}
+               disabled={isDownloadingPdf}
+               className="px-4 py-2 bg-[#074504] hover:bg-[#053203] text-[#C0991B] font-black text-xs uppercase rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+               title="Download Official Letterhead PDF Roster"
+             >
+               <Download className="w-3.5 h-3.5 text-[#C0991B]" />
+               <span>{isDownloadingPdf ? 'Generating...' : 'Download PDF Roster'}</span>
+             </button>
+           </div>
+         </div>
 
          {filteredData.length > 0 ? (
            <div className="space-y-16">

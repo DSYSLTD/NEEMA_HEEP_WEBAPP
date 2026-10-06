@@ -216,9 +216,14 @@ export default function CommentsModerationModule({ className = '' }: { className
       columns,
       rows,
       filename: `Neema_HEEP_Comments_${activeTab}_${new Date().toISOString().split('T')[0]}.pdf`,
-      orientation: 'landscape'
+      orientation: 'landscape',
+      issuingDepartment: 'Community & Digital Media Moderation',
+      summaryMetrics: [
+        { label: 'Active Category', value: activeTab.toUpperCase() },
+        { label: 'Total Comments', value: tabFilteredComments.length }
+      ]
     });
-    showToast('Downloaded Community Moderation PDF Report!');
+    showToast('Downloaded Community Moderation PDF Report on Official Letterhead!');
   };
 
   // Print Report
@@ -241,7 +246,8 @@ export default function CommentsModerationModule({ className = '' }: { className
       title: `Neema HEEP - Community Moderation Audit Roster (${activeTab.toUpperCase()})`,
       subtitle: `Total Filtered Comments: ${tabFilteredComments.length} | Generated: ${new Date().toLocaleString()}`,
       columns,
-      rows
+      rows,
+      issuingDepartment: 'Community & Digital Media Moderation'
     });
   };
 

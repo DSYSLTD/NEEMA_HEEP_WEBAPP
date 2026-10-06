@@ -370,10 +370,17 @@ export default function BeneficiariesAdminModule({
     ]);
     exportPdfReport({
       title: `Beneficiary Roster Report - ${currentList?.title || 'Annual List'}`,
-      subtitle: `Container: ${currentList?.yearIdentifier || 'NH-BEN'} | Total Scholars: ${listRecs.length} | Official Audit Record`,
+      subtitle: `Container: ${currentList?.yearIdentifier || 'NH-BEN'} | Cohort Year: ${currentList?.year || 'All'} | Official Audit Record`,
       columns,
       rows,
-      filename: `Neema_HEEP_Beneficiaries_${currentList?.year || 'Roster'}.pdf`
+      filename: `Neema_HEEP_Beneficiaries_${currentList?.year || 'Roster'}.pdf`,
+      issuingDepartment: 'Arise & Shine Education Scholarship Board',
+      summaryMetrics: [
+        { label: 'Cohort Year', value: currentList?.year || 'All' },
+        { label: 'Enrolled Scholars', value: listRecs.length },
+        { label: 'Status', value: currentList?.status || 'Published' },
+        { label: 'Container Ref', value: currentList?.yearIdentifier || 'NH-BEN' }
+      ]
     });
     beneficiariesStore.addLog('Export Completed', `Exported PDF report for ${currentList?.yearIdentifier || 'All'}.`, userName);
     showToast('Downloaded PDF beneficiary roster report.');
@@ -399,7 +406,13 @@ export default function BeneficiariesAdminModule({
       title: `Beneficiary Roster - ${currentList?.title || 'Annual List'}`,
       subtitle: `Container: ${currentList?.yearIdentifier || 'NH-BEN'} | Total Scholars: ${listRecs.length} | Neema HEEP Secondary Scholarship Program`,
       columns,
-      rows
+      rows,
+      issuingDepartment: 'Arise & Shine Education Scholarship Board',
+      summaryMetrics: [
+        { label: 'Cohort Year', value: currentList?.year || 'All' },
+        { label: 'Enrolled Scholars', value: listRecs.length },
+        { label: 'Status', value: currentList?.status || 'Published' }
+      ]
     });
   };
 

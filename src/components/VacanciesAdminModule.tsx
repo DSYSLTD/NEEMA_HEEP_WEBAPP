@@ -497,7 +497,12 @@ export default function VacanciesAdminModule({ className = '' }: { className?: s
       columns,
       rows,
       filename: `Neema_HEEP_Vacancies_${new Date().toISOString().split('T')[0]}.pdf`,
-      orientation: 'landscape'
+      orientation: 'landscape',
+      issuingDepartment: 'Human Resources & Talent Management',
+      summaryMetrics: [
+        { label: 'Published Openings', value: vacancies.length },
+        { label: 'Department Coverage', value: 'All Branches' }
+      ]
     });
     showToast('Downloaded Vacancies PDF Report!');
   };
@@ -523,7 +528,8 @@ export default function VacanciesAdminModule({ className = '' }: { className?: s
       title: 'Published Vacancies & Positions Audit Roster',
       subtitle: `Total Active Positions: ${vacancies.length} | HR Management System`,
       columns,
-      rows
+      rows,
+      issuingDepartment: 'Human Resources & Talent Management'
     });
   };
 
@@ -550,7 +556,12 @@ export default function VacanciesAdminModule({ className = '' }: { className?: s
       columns,
       rows,
       filename: `Neema_HEEP_Job_Applications_${new Date().toISOString().split('T')[0]}.pdf`,
-      orientation: 'landscape'
+      orientation: 'landscape',
+      issuingDepartment: 'Human Resources & Talent Management',
+      summaryMetrics: [
+        { label: 'Received Candidates', value: applications.length },
+        { label: 'Recruitment Cycle', value: `${new Date().getFullYear()}` }
+      ]
     });
     showToast('Downloaded Job Applications PDF Report!');
   };
@@ -573,10 +584,11 @@ export default function VacanciesAdminModule({ className = '' }: { className?: s
       a.submissionDate
     ]);
     printHtmlReport({
-      title: 'Job Applications Audit Report',
-      subtitle: `Total Submitted Applications: ${applications.length} | Recruitment & Selection Pipeline`,
+      title: 'Job Applications & Candidate Evaluation Report',
+      subtitle: `Total Applications: ${applications.length} | HR Recruitment Portal`,
       columns,
-      rows
+      rows,
+      issuingDepartment: 'Human Resources & Talent Management'
     });
   };
 

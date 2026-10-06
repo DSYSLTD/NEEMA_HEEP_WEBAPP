@@ -16,6 +16,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Papa from 'papaparse';
 import writeXlsxFile from 'write-excel-file/browser';
+import { exportPdfReport } from '../lib/pdfPrintUtils';
 import { BlogPostItem, blogStore, TrackingPixelItem } from '../lib/blogStore';
 import { getPixelLogs, PixelLogEntry } from '../services/trackingService';
 
@@ -654,31 +655,37 @@ export function AnalyticsModule({ showToast = (msg) => console.log(msg) }: Analy
     }
   };
 
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Executive Analytics Report', 14, 20);
-    doc.setFontSize(10);
-    doc.text(`Generated: ${new Date().toLocaleString()} | Scope: ${dateFilter} | Role: ${roleView}`, 14, 28);
+  const exportToPDF = async () => {
+    try {
+      const totalViews = filteredArticles.reduce((acc, a) => acc + (a.views || 0), 0);
+      const tableData = filteredArticles.map(a => [
+        a.title.slice(0, 35) + (a.title.length > 35 ? '...' : ''),
+        a.author,
+        a.category,
+        a.views.toLocaleString(),
+        a.avgReadTime
+      ]);
 
-    const tableData = filteredArticles.map(a => [
-      a.title.slice(0, 30) + '...',
-      a.author,
-      a.category,
-      a.views.toLocaleString(),
-      a.avgReadTime
-    ]);
-
-    autoTable(doc, {
-      startY: 35,
-      head: [['Article Title', 'Author', 'Category', 'Views', 'Avg Time']],
-      body: tableData,
-      theme: 'grid',
-      headStyles: { fillColor: [7, 69, 4] }
-    });
-
-    doc.save(`Executive_Report_${dateFilter}.pdf`);
-    showToast('PDF Executive Report Downloaded!');
+      await exportPdfReport({
+        title: 'Executive Analytics & Performance Report',
+        subtitle: `Timeframe Scope: ${dateFilter.toUpperCase()} | Role Audit: ${roleView} | Dimension: ${activeSubmodule.toUpperCase()}`,
+        columns: ['Article Title', 'Author', 'Category', 'Total Views', 'Avg Read Time'],
+        rows: tableData,
+        filename: `Neema_HEEP_Executive_Analytics_${dateFilter}.pdf`,
+        issuingDepartment: 'Executive Business Intelligence & Analytics',
+        summaryMetrics: [
+          { label: 'Audited Content', value: filteredArticles.length },
+          { label: 'Cumulative Views', value: totalViews.toLocaleString() },
+          { label: 'Timeframe Scope', value: dateFilter.toUpperCase() },
+          { label: 'Access Role', value: roleView }
+        ],
+        showSignatureBlock: true
+      });
+      showToast('Official PDF Executive Report Downloaded!');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to generate PDF report.');
+    }
   };
 
   return (

@@ -342,9 +342,15 @@ export default function MessagesFolderView() {
       subtitle: `Active Filter: ${activeTab} Folder | Total Records: ${filteredMessages.length}`,
       columns,
       rows,
-      filename: `Neema_HEEP_Leads_Report_${activeTab}.pdf`
+      filename: `Neema_HEEP_Leads_Report_${activeTab}.pdf`,
+      issuingDepartment: 'Client Inquiries & Credit Origination',
+      summaryMetrics: [
+        { label: 'Folder Scope', value: activeTab },
+        { label: 'Total Inquiries', value: filteredMessages.length },
+        { label: 'Unread Status', value: unreadCount }
+      ]
     });
-    triggerToast('PDF Report downloaded with official Neema HEEP Logo.');
+    triggerToast('PDF Report downloaded on official Neema HEEP Letterhead.');
   };
 
   const handlePrintBulkReport = () => {

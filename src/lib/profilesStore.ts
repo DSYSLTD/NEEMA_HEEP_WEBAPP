@@ -120,11 +120,178 @@ export const INITIAL_PROFILES_SEED: ExtendedUserProfile[] = [
       memberSince: 'January 2022'
     },
     achievements: ['First Article', '100 Articles', 'Impact Champion', 'Verified Author', 'Featured Writer', 'Top Editor']
+  },
+  {
+    id: 'usr-2',
+    firstName: 'Mary',
+    middleName: 'W.',
+    lastName: 'Wambui',
+    displayName: 'Mary Wambui',
+    username: 'marywambui',
+    email: 'mary.wambui@neemaheep.org',
+    phone: '+254 722 112 233',
+    whatsApp: '+254 722 112 233',
+    gender: 'Female',
+    dateOfBirth: '1994-08-22',
+    jobTitle: 'Content Editor & Communications Lead',
+    department: 'Editorial & Marketing',
+    employeeId: 'NH-EMP-2023-014',
+    departmentExtension: 'Ext. 204',
+    canCreateArticles: true,
+    physicalAddress: 'Neema Heep Plaza, 2nd Floor, Nyeri',
+    role: 'Content editor',
+    status: 'Active',
+    verificationStatus: 'Verified',
+    profilePhoto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80',
+    coverPhoto: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1200&q=80',
+    bio: 'Experienced financial journalist and digital communicator dedicated to sharing stories of grassroots financial empowerment and women-led enterprise growth.',
+    shortBio: 'Head of Content & Editorial Communications at Neema HEEP.',
+    levelOfEducation: 'Bachelor of Arts in Communication & Media',
+    yearsOfExperience: '8+ Years in Financial Journalism',
+    workExperience: [
+      'Content Editor - Neema HEEP Microfinance (2023-Present)',
+      'Business Features Writer - Daily Nation (2018-2023)'
+    ],
+    publicHeadline: 'Financial Storyteller & Digital Publishing Specialist',
+    publicBio: 'Amplifying the voices of micro-entrepreneurs and community leaders across Mount Kenya.',
+    publicPagePublished: true,
+    showPublicContact: true,
+    preferredLanguage: 'English (UK)',
+    timezone: 'Africa/Nairobi (UTC+3)',
+    expertise: ['Financial Storytelling', 'Content Strategy', 'Social Impact Audits', 'Community Engagement'],
+    certifications: ['Certified Content Strategist', 'Digital Marketing Professional'],
+    education: ['B.A. Communication - Daystar University'],
+    memberships: ['Public Relations Society of Kenya (PRSK)'],
+    createdAt: '2023-03-01 09:00 AM',
+    createdBy: 'Patrick Munene (Super Admin)',
+    stats: {
+      articlesPublished: 42,
+      draftArticles: 5,
+      mediaUploaded: 120,
+      commentsModerated: 310,
+      communityImpactScore: 94,
+      readingCount: 32400,
+      guidedLoansCount: 650,
+      lastLogin: 'Today, 09:15 AM',
+      memberSince: 'March 2023'
+    },
+    achievements: ['Top Writer', 'Community Favorite', 'Editor Choice']
+  },
+  {
+    id: 'usr-3',
+    firstName: 'Joseph',
+    middleName: 'M.',
+    lastName: 'Kariuki',
+    displayName: 'Joseph Kariuki',
+    username: 'josephkariuki',
+    email: 'joseph.kariuki@neemaheep.org',
+    phone: '+254 733 445 566',
+    whatsApp: '+254 733 445 566',
+    gender: 'Male',
+    dateOfBirth: '1989-11-05',
+    jobTitle: 'Branch Operations Administrator',
+    department: 'Branch Operations',
+    employeeId: 'NH-EMP-2022-005',
+    departmentExtension: 'Ext. 108',
+    canCreateArticles: false,
+    physicalAddress: 'Neema Heep Plaza, Ground Floor, Nyeri',
+    role: 'Administrator',
+    status: 'Active',
+    verificationStatus: 'Verified',
+    profilePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
+    coverPhoto: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
+    bio: 'Oversees daily credit underwriting, field group activations, and compliance procedures across Nyeri, Embu, and Kirinyaga branches.',
+    shortBio: 'Operations Lead managing credit workflows and partner logistics.',
+    levelOfEducation: 'Bachelor of Commerce (Finance & Banking)',
+    yearsOfExperience: '11+ Years in Microfinance Operations',
+    workExperience: [
+      'Operations Administrator - Neema HEEP (2022-Present)',
+      'Credit Operations Officer - Faulu Microfinance (2015-2022)'
+    ],
+    publicHeadline: 'Microfinance Operations & Underwriting Lead',
+    publicBio: 'Ensuring seamless financial service delivery for agricultural and business groups.',
+    publicPagePublished: true,
+    showPublicContact: true,
+    preferredLanguage: 'English (UK)',
+    timezone: 'Africa/Nairobi (UTC+3)',
+    expertise: ['Branch Operations', 'Credit Underwriting', 'SME Due Diligence', 'Risk Compliance'],
+    certifications: ['Certified Credit Analyst'],
+    education: ['B.Com Finance - Kenyatta University'],
+    memberships: ['Kenya Institute of Management (KIM)'],
+    createdAt: '2022-04-10 10:00 AM',
+    createdBy: 'Patrick Munene (Super Admin)',
+    stats: {
+      articlesPublished: 8,
+      draftArticles: 1,
+      mediaUploaded: 45,
+      commentsModerated: 80,
+      communityImpactScore: 91,
+      readingCount: 14200,
+      guidedLoansCount: 1850,
+      lastLogin: 'Yesterday, 04:30 PM',
+      memberSince: 'April 2022'
+    },
+    achievements: ['Operations Star', 'Efficiency Leader']
+  },
+  {
+    id: 'usr-4',
+    firstName: 'Grace',
+    middleName: '',
+    lastName: 'Muthoni',
+    displayName: 'Grace Muthoni',
+    username: 'gracemuthoni',
+    email: 'grace.muthoni@neemaheep.org',
+    phone: '+254 711 889 900',
+    whatsApp: '+254 711 889 900',
+    gender: 'Female',
+    dateOfBirth: '1995-03-18',
+    jobTitle: 'Compliance & Quality Reviewer',
+    department: 'Risk & Compliance',
+    employeeId: 'NH-EMP-2024-028',
+    departmentExtension: 'Ext. 305',
+    canCreateArticles: false,
+    role: 'Reviewer',
+    status: 'Active',
+    verificationStatus: 'Verified',
+    profilePhoto: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=600&q=80',
+    coverPhoto: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80',
+    bio: 'Dedicated to upholding transparency, anti-money laundering (AML) controls, and ethical lending practices in community banking.',
+    shortBio: 'Quality auditor reviewing applicant credentials and publications.',
+    levelOfEducation: 'Bachelor of Laws (LL.B)',
+    yearsOfExperience: '6+ Years in Regulatory Compliance',
+    workExperience: [
+      'Compliance Reviewer - Neema HEEP (2024-Present)',
+      'Legal & Compliance Associate - Centum (2020-2024)'
+    ],
+    publicHeadline: 'Regulatory Compliance & Risk Governance Specialist',
+    publicBio: 'Guiding institutional integrity and consumer protection standards.',
+    publicPagePublished: true,
+    showPublicContact: false,
+    preferredLanguage: 'English (UK)',
+    timezone: 'Africa/Nairobi (UTC+3)',
+    expertise: ['Regulatory Compliance', 'Consumer Protection', 'Risk Audits', 'Governance'],
+    certifications: ['Certified Compliance Officer (CCO)'],
+    education: ['LL.B - University of Nairobi'],
+    memberships: ['Law Society of Kenya (LSK)'],
+    createdAt: '2024-01-15 11:30 AM',
+    createdBy: 'Patrick Munene (Super Admin)',
+    stats: {
+      articlesPublished: 4,
+      draftArticles: 2,
+      mediaUploaded: 15,
+      commentsModerated: 215,
+      communityImpactScore: 89,
+      readingCount: 8900,
+      guidedLoansCount: 420,
+      lastLogin: 'Today, 08:00 AM',
+      memberSince: 'January 2024'
+    },
+    achievements: ['Integrity Champion']
   }
 ];
 
 class ProfilesStore {
-  private profiles: ExtendedUserProfile[] = [];
+  private profiles: ExtendedUserProfile[] = [...INITIAL_PROFILES_SEED];
 
   constructor() {
     this.loadFromStorage();
@@ -193,11 +360,18 @@ class ProfilesStore {
         this.profiles = fetchedProfiles;
         this.saveToStorage();
       } else if (!error && data && data.length === 0) {
-        this.profiles = [];
-        this.saveToStorage();
+        // Keep initial seed if database table has 0 rows
+        if (this.profiles.length === 0) {
+          this.profiles = [...INITIAL_PROFILES_SEED];
+          this.saveToStorage();
+        }
       }
     } catch (err) {
       console.warn("Notice loading profiles from Supabase:", err);
+      if (this.profiles.length === 0) {
+        this.profiles = [...INITIAL_PROFILES_SEED];
+        this.saveToStorage();
+      }
     }
   }
 
@@ -205,7 +379,13 @@ class ProfilesStore {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        this.profiles = JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.profiles = parsed;
+        } else {
+          this.profiles = [...INITIAL_PROFILES_SEED];
+          this.saveToStorage();
+        }
       } else {
         this.profiles = [...INITIAL_PROFILES_SEED];
         this.saveToStorage();
@@ -226,7 +406,8 @@ class ProfilesStore {
   }
 
   public getProfiles(): ExtendedUserProfile[] {
-    return this.profiles.filter(p => p.status !== 'Archived' as any);
+    const active = this.profiles.filter(p => p.status !== 'Archived' as any);
+    return active.length > 0 ? active : [...INITIAL_PROFILES_SEED];
   }
 
   public getAllProfilesIncludingArchived(): ExtendedUserProfile[] {

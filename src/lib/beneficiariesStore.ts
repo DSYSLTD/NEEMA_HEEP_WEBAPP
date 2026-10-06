@@ -144,6 +144,30 @@ export const DEFAULT_INITIAL_LISTS: AnnualBeneficiaryList[] = [
     recordsCount: 3
   },
   {
+    id: 'list_2019',
+    year: '2019',
+    title: 'Arise & Shine Beneficiaries - Selected 2019',
+    description: 'Secondary school scholarship beneficiaries selected in 2019 across Embu County.',
+    status: 'Published',
+    yearIdentifier: 'NH-BEN-2019',
+    dateCreated: '2019-01-10',
+    createdBy: 'Neema HEEP Education Board',
+    lastModified: '2019-01-15',
+    recordsCount: 4
+  },
+  {
+    id: 'list_2018',
+    year: '2018',
+    title: 'Arise & Shine Beneficiaries - Selected 2018',
+    description: 'Secondary school scholarship beneficiaries selected in 2018 across Embu County.',
+    status: 'Published',
+    yearIdentifier: 'NH-BEN-2018',
+    dateCreated: '2018-01-10',
+    createdBy: 'Neema HEEP Education Board',
+    lastModified: '2018-01-15',
+    recordsCount: 4
+  },
+  {
     id: 'list_2017',
     year: '2017',
     title: 'Arise & Shine Beneficiaries - Selected 2017',
@@ -189,6 +213,30 @@ export const DEFAULT_INITIAL_LISTS: AnnualBeneficiaryList[] = [
     dateCreated: '2014-01-10',
     createdBy: 'Neema HEEP Education Board',
     lastModified: '2014-01-15',
+    recordsCount: 3
+  },
+  {
+    id: 'list_2013',
+    year: '2013',
+    title: 'Arise & Shine Beneficiaries - Selected 2013',
+    description: 'Secondary school scholarship beneficiaries supported under the 2013 intake.',
+    status: 'Published',
+    yearIdentifier: 'NH-BEN-2013',
+    dateCreated: '2013-01-10',
+    createdBy: 'Neema HEEP Education Board',
+    lastModified: '2013-01-15',
+    recordsCount: 3
+  },
+  {
+    id: 'list_2012',
+    year: '2012',
+    title: 'Arise & Shine Beneficiaries - Selected 2012',
+    description: 'Secondary school scholarship beneficiaries supported under the 2012 cohort intake.',
+    status: 'Published',
+    yearIdentifier: 'NH-BEN-2012',
+    dateCreated: '2012-01-10',
+    createdBy: 'Neema HEEP Education Board',
+    lastModified: '2012-01-15',
     recordsCount: 3
   },
   {
@@ -255,6 +303,18 @@ export const DEFAULT_INITIAL_RECORDS: BeneficiaryRecord[] = [
   { id: 'rec_2020_2', listId: 'list_2020', serialNumber: 2, fullName: 'JOHN MUGENDI KARIUKI', maskedName: 'JOHN M***** K*****', school: 'KANGARU SCHOOL EMBU', year: '2020', dateAdded: '2020-01-10', status: 'Active' },
   { id: 'rec_2020_3', listId: 'list_2020', serialNumber: 3, fullName: 'BEATRICE MUTHOI', maskedName: 'BEATRICE M*****', school: 'NGUVIU GIRLS HIGH SCHOOL', year: '2020', dateAdded: '2020-01-10', status: 'Active' },
 
+  // 2019
+  { id: 'rec_2019_1', listId: 'list_2019', serialNumber: 1, fullName: 'ALICE WANJIRU NJERU', maskedName: 'ALICE W***** N*****', school: 'KANGARU GIRLS HIGH SCHOOL', year: '2019', dateAdded: '2019-01-10', status: 'Active' },
+  { id: 'rec_2019_2', listId: 'list_2019', serialNumber: 2, fullName: 'KENNEDY MUTUA MWANGI', maskedName: 'KENNEDY M***** M*****', school: 'KANGARU SCHOOL EMBU', year: '2019', dateAdded: '2019-01-10', status: 'Active' },
+  { id: 'rec_2019_3', listId: 'list_2019', serialNumber: 3, fullName: 'TERESIA NYAWIRA GICHOVI', maskedName: 'TERESIA N***** G*****', school: "ST. ANNE'S KIRIARI GIRLS HIGH SCHOOL", year: '2019', dateAdded: '2019-01-10', status: 'Active' },
+  { id: 'rec_2019_4', listId: 'list_2019', serialNumber: 4, fullName: 'COLLINS MUGAMBI NJUE', maskedName: 'COLLINS M***** N*****', school: 'MOI HIGH SCHOOL MBIRURI', year: '2019', dateAdded: '2019-01-10', status: 'Active' },
+
+  // 2018
+  { id: 'rec_2018_1', listId: 'list_2018', serialNumber: 1, fullName: 'PURITY MUTHONI KARIUKI', maskedName: 'PURITY M***** K*****', school: 'KYENI GIRLS HIGH SCHOOL', year: '2018', dateAdded: '2018-01-10', status: 'Active' },
+  { id: 'rec_2018_2', listId: 'list_2018', serialNumber: 2, fullName: 'SAMMY NYAGA MUTEGI', maskedName: 'SAMMY N***** M*****', school: 'NGUVIU BOYS HIGH SCHOOL', year: '2018', dateAdded: '2018-01-10', status: 'Active' },
+  { id: 'rec_2018_3', listId: 'list_2018', serialNumber: 3, fullName: 'DOROTHY WAWIRA NJUE', maskedName: 'DOROTHY W***** N*****', school: 'SIAKAGO GIRLS HIGH SCHOOL', year: '2018', dateAdded: '2018-01-10', status: 'Active' },
+  { id: 'rec_2018_4', listId: 'list_2018', serialNumber: 4, fullName: 'GEOFFREY MUNENE KINYUA', maskedName: 'GEOFFREY M***** K*****', school: 'KANGARU SCHOOL EMBU', year: '2018', dateAdded: '2018-01-10', status: 'Active' },
+
   // 2017
   { id: 'rec_2017_1', listId: 'list_2017', serialNumber: 1, fullName: 'KEVIN MURIUKI', maskedName: 'KEVIN M*****', school: 'KANGARU SCHOOL EMBU', year: '2017', dateAdded: '2017-01-10', status: 'Active' },
   { id: 'rec_2017_2', listId: 'list_2017', serialNumber: 2, fullName: 'RACHAEL WANGARI', maskedName: 'RACHAEL W*****', school: "ST. ANNE'S KIRIARI GIRLS HIGH SCHOOL", year: '2017', dateAdded: '2017-01-10', status: 'Active' },
@@ -275,6 +335,16 @@ export const DEFAULT_INITIAL_RECORDS: BeneficiaryRecord[] = [
   { id: 'rec_2014_1', listId: 'list_2014', serialNumber: 1, fullName: 'GEORGE MUKUNDI', maskedName: 'GEORGE M*****', school: 'KANGARU SCHOOL EMBU', year: '2014', dateAdded: '2014-01-10', status: 'Active' },
   { id: 'rec_2014_2', listId: 'list_2014', serialNumber: 2, fullName: 'MARY WANJIKU', maskedName: 'MARY W*****', school: 'KANGARU GIRLS HIGH SCHOOL', year: '2014', dateAdded: '2014-01-10', status: 'Active' },
   { id: 'rec_2014_3', listId: 'list_2014', serialNumber: 3, fullName: 'SIMON KARIUKI', maskedName: 'SIMON K*****', school: 'NGUVIU BOYS HIGH SCHOOL', year: '2014', dateAdded: '2014-01-10', status: 'Active' },
+
+  // 2013
+  { id: 'rec_2013_1', listId: 'list_2013', serialNumber: 1, fullName: 'EMILY WANJA NJERU', maskedName: 'EMILY W***** N*****', school: 'KANGARU GIRLS HIGH SCHOOL', year: '2013', dateAdded: '2013-01-10', status: 'Active' },
+  { id: 'rec_2013_2', listId: 'list_2013', serialNumber: 2, fullName: 'BENSON MURIITHI MBOGO', maskedName: 'BENSON M***** M*****', school: 'NGUVIU BOYS HIGH SCHOOL', year: '2013', dateAdded: '2013-01-10', status: 'Active' },
+  { id: 'rec_2013_3', listId: 'list_2013', serialNumber: 3, fullName: 'CATHERINE MAKENA NYAGA', maskedName: 'CATHERINE M***** N*****', school: "ST. ANNE'S KIRIARI GIRLS HIGH SCHOOL", year: '2013', dateAdded: '2013-01-10', status: 'Active' },
+
+  // 2012
+  { id: 'rec_2012_1', listId: 'list_2012', serialNumber: 1, fullName: 'DENNIS MUTUGI NJIRU', maskedName: 'DENNIS M***** N*****', school: 'KANGARU SCHOOL EMBU', year: '2012', dateAdded: '2012-01-10', status: 'Active' },
+  { id: 'rec_2012_2', listId: 'list_2012', serialNumber: 2, fullName: 'ANN WAMBUI KARIUKI', maskedName: 'ANN W***** K*****', school: 'KANGARU GIRLS HIGH SCHOOL', year: '2012', dateAdded: '2012-01-10', status: 'Active' },
+  { id: 'rec_2012_3', listId: 'list_2012', serialNumber: 3, fullName: 'ERIC MUGAMBI NYAGA', maskedName: 'ERIC M***** N*****', school: 'NGUVIU BOYS HIGH SCHOOL', year: '2012', dateAdded: '2012-01-10', status: 'Active' },
 
   // 2011
   { id: 'rec_2011_1', listId: 'list_2011', serialNumber: 1, fullName: 'MOSES NJERU', maskedName: 'MOSES N*****', school: 'KANGARU SCHOOL EMBU', year: '2011', dateAdded: '2011-01-10', status: 'Active' },

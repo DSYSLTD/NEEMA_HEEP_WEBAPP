@@ -7,7 +7,7 @@ import {
   FileSpreadsheet, Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { profilesStore, ExtendedUserProfile } from '../lib/profilesStore';
+import { profilesStore, ExtendedUserProfile, INITIAL_PROFILES_SEED } from '../lib/profilesStore';
 import { downloadExcel, downloadCSV, ColumnDef } from '../lib/excelReportExport';
 import ReportModal from './ReportModal';
 export type { ExtendedUserProfile };
@@ -25,18 +25,21 @@ export default function UserProfileManager() {
   const loggedUserId = 'usr-1';
 
   // Profiles State (synced with profilesStore)
-  const [profiles, setProfiles] = useState<ExtendedUserProfile[]>(() => profilesStore.getProfiles());
+  const [profiles, setProfiles] = useState<ExtendedUserProfile[]>(() => {
+    const list = profilesStore.getProfiles();
+    return list.length > 0 ? list : [...INITIAL_PROFILES_SEED];
+  });
 
   useEffect(() => {
     const unsubscribe = profilesStore.subscribe((updatedProfiles) => {
-      setProfiles(updatedProfiles);
+      setProfiles(updatedProfiles && updatedProfiles.length > 0 ? updatedProfiles : [...INITIAL_PROFILES_SEED]);
     });
     return unsubscribe;
   }, []);
 
   // Authenticated Personal Profile object
   const loggedProfile = useMemo(() => {
-    return profiles.find(p => p.id === loggedUserId) || profiles[0];
+    return profiles.find(p => p.id === loggedUserId) || profiles[0] || INITIAL_PROFILES_SEED[0];
   }, [profiles]);
 
   // Selected Profile state when inspecting another user in "Other Profiles"
@@ -109,7 +112,7 @@ export default function UserProfileManager() {
   const [tempCoverUrl, setTempCoverUrl] = useState(loggedProfile?.coverPhoto || '');
 
   // Form State for Editing Own Profile
-  const [editFormData, setEditFormData] = useState<ExtendedUserProfile>(loggedProfile);
+  const [editFormData, setEditFormData] = useState<ExtendedUserProfile>(loggedProfile || INITIAL_PROFILES_SEED[0]);
 
   // New Inputs inside Edit Modal
   const [newExpertiseTag, setNewExpertiseTag] = useState('');
@@ -117,11 +120,26 @@ export default function UserProfileManager() {
 
   // Form State for Editing Own Public Page
   const [publicPageFormData, setPublicPageFormData] = useState({
-    publicHeadline: loggedProfile.publicHeadline || '',
-    publicBio: loggedProfile.publicBio || loggedProfile.bio,
-    showPublicContact: loggedProfile.showPublicContact ?? true,
-    coverPhoto: loggedProfile.coverPhoto
+    publicHeadline: loggedProfile?.publicHeadline || '',
+    publicBio: loggedProfile?.publicBio || loggedProfile?.bio || '',
+    showPublicContact: loggedProfile?.showPublicContact ?? true,
+    coverPhoto: loggedProfile?.coverPhoto || ''
   });
+
+  // Keep form data synced when loggedProfile changes
+  useEffect(() => {
+    if (loggedProfile) {
+      setEditFormData(loggedProfile);
+      setTempPhotoUrl(loggedProfile.profilePhoto || '');
+      setTempCoverUrl(loggedProfile.coverPhoto || '');
+      setPublicPageFormData({
+        publicHeadline: loggedProfile.publicHeadline || '',
+        publicBio: loggedProfile.publicBio || loggedProfile.bio || '',
+        showPublicContact: loggedProfile.showPublicContact ?? true,
+        coverPhoto: loggedProfile.coverPhoto || ''
+      });
+    }
+  }, [loggedProfile]);
 
   // Helper Toast
   const triggerToast = (msg: string) => {
@@ -456,7 +474,7 @@ export default function UserProfileManager() {
                 <span>Articles Published</span>
                 <FileText className="w-4 h-4 text-[#C0991B]" />
               </div>
-              <div className="text-2xl font-black text-[#074504]">{loggedProfile.stats.articlesPublished}</div>
+              <div className="text-2xl font-black text-[#074504]">{loggedProfile.stats?.articlesPublished ?? 0}</div>
               <span className="text-[10px] font-extrabold text-[#7a600d] bg-amber-50 px-2 py-0.5 rounded-full inline-block border border-[#C0991B]/30">
                 Editorial Contributions
               </span>
@@ -467,7 +485,7 @@ export default function UserProfileManager() {
                 <span>Total Readers Reached</span>
                 <Eye className="w-4 h-4 text-[#C0991B]" />
               </div>
-              <div className="text-2xl font-black text-[#074504]">{loggedProfile.stats.readingCount.toLocaleString()}</div>
+              <div className="text-2xl font-black text-[#074504]">{(loggedProfile.stats?.readingCount ?? 0).toLocaleString()}</div>
               <span className="text-[10px] font-extrabold text-[#7a600d] bg-amber-50 px-2 py-0.5 rounded-full inline-block border border-[#C0991B]/30">
                 Community Engagement
               </span>
@@ -478,7 +496,7 @@ export default function UserProfileManager() {
                 <span>Community Impact Score</span>
                 <Award className="w-4 h-4 text-[#C0991B]" />
               </div>
-              <div className="text-2xl font-black text-[#074504]">{loggedProfile.stats.communityImpactScore}%</div>
+              <div className="text-2xl font-black text-[#074504]">{loggedProfile.stats?.communityImpactScore ?? 0}%</div>
               <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full inline-block">
                 High Editorial Trust
               </span>
@@ -489,7 +507,7 @@ export default function UserProfileManager() {
                 <span>Editorial Reviews</span>
                 <CheckCircle2 className="w-4 h-4 text-[#C0991B]" />
               </div>
-              <div className="text-2xl font-black text-[#074504]">{loggedProfile.stats.guidedLoansCount}+</div>
+              <div className="text-2xl font-black text-[#074504]">{loggedProfile.stats?.guidedLoansCount ?? 0}+</div>
               <span className="text-[10px] font-extrabold text-[#7a600d] bg-amber-50 px-2 py-0.5 rounded-full inline-block border border-[#C0991B]/30">
                 Verified Peer Submissions
               </span>
@@ -544,13 +562,13 @@ export default function UserProfileManager() {
                   </button>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {loggedProfile.expertise.map((exp, idx) => (
-                    <span key={idx} className="px-3.5 py-1.5 bg-amber-50 text-[#826507] border border-[#C0991B]/40 text-xs font-bold rounded-xl flex items-center gap-2 shadow-2xs">
-                      <span>{exp}</span>
-                    </span>
-                  ))}
-                </div>
+                    <div className="flex flex-wrap gap-2">
+                      {(loggedProfile.expertise || []).map((exp, idx) => (
+                        <span key={idx} className="px-3.5 py-1.5 bg-amber-50 text-[#826507] border border-[#C0991B]/40 text-xs font-bold rounded-xl flex items-center gap-2 shadow-2xs">
+                          <span>{exp}</span>
+                        </span>
+                      ))}
+                    </div>
               </div>
 
               {/* Education & Experience Section */}
@@ -738,18 +756,18 @@ export default function UserProfileManager() {
                       <p className="text-xs font-bold text-amber-300 uppercase tracking-wider">
                         {loggedProfile.publicHeadline || `${loggedProfile.jobTitle}`}
                       </p>
-                      <p className="text-xs text-amber-100/90">Verified Neema HEEP Author • Member since {loggedProfile.stats.memberSince}</p>
+                      <p className="text-xs text-amber-100/90">Verified Neema HEEP Author • Member since {loggedProfile.stats?.memberSince || '2022'}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20 text-white text-xs font-bold">
                     <div>
-                      <span className="text-amber-300 font-black block text-base">{loggedProfile.stats.articlesPublished}</span>
+                      <span className="text-amber-300 font-black block text-base">{loggedProfile.stats?.articlesPublished ?? 0}</span>
                       <span className="text-[10px] text-gray-200 uppercase">Articles</span>
                     </div>
                     <div className="w-px h-8 bg-white/20"></div>
                     <div>
-                      <span className="text-amber-300 font-black block text-base">{loggedProfile.stats.readingCount.toLocaleString()}</span>
+                      <span className="text-amber-300 font-black block text-base">{(loggedProfile.stats?.readingCount ?? 0).toLocaleString()}</span>
                       <span className="text-[10px] text-gray-200 uppercase">Reads</span>
                     </div>
                   </div>
@@ -810,7 +828,7 @@ export default function UserProfileManager() {
                       <Award className="w-4 h-4 text-[#C0991B]" /> Area of Expertise
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {loggedProfile.expertise.map((exp, idx) => (
+                      {(loggedProfile.expertise || []).map((exp, idx) => (
                         <span key={idx} className="px-3 py-1.5 bg-amber-50 text-[#826507] border border-[#C0991B]/40 rounded-xl text-xs font-bold">
                           {exp}
                         </span>

@@ -86,6 +86,26 @@ export const DEFAULT_PUBLISHED_COHORTS: PublishedCohortItem[] = [
     ]
   },
   {
+    year: '2019',
+    title: 'Arise & Shine Beneficiaries - 2019 Cohort',
+    students: [
+      { id: '001', name: 'ALICE W***** N*****', school: 'KANGARU GIRLS HIGH SCHOOL' },
+      { id: '002', name: 'KENNEDY M***** M*****', school: 'KANGARU SCHOOL EMBU' },
+      { id: '003', name: 'TERESIA N***** G*****', school: "ST. ANNE'S KIRIARI GIRLS HIGH SCHOOL" },
+      { id: '004', name: 'COLLINS M***** N*****', school: 'MOI HIGH SCHOOL MBIRURI' }
+    ]
+  },
+  {
+    year: '2018',
+    title: 'Arise & Shine Beneficiaries - 2018 Cohort',
+    students: [
+      { id: '001', name: 'PURITY M***** K*****', school: 'KYENI GIRLS HIGH SCHOOL' },
+      { id: '002', name: 'SAMMY N***** M*****', school: 'NGUVIU BOYS HIGH SCHOOL' },
+      { id: '003', name: 'DOROTHY W***** N*****', school: 'SIAKAGO GIRLS HIGH SCHOOL' },
+      { id: '004', name: 'GEOFFREY M***** K*****', school: 'KANGARU SCHOOL EMBU' }
+    ]
+  },
+  {
     year: '2017',
     title: 'Arise & Shine Beneficiaries - 2017 Cohort',
     students: [
@@ -120,6 +140,24 @@ export const DEFAULT_PUBLISHED_COHORTS: PublishedCohortItem[] = [
       { id: '001', name: 'GEORGE M*****', school: 'KANGARU SCHOOL EMBU' },
       { id: '002', name: 'MARY W*****', school: 'KANGARU GIRLS HIGH SCHOOL' },
       { id: '003', name: 'SIMON K*****', school: 'NGUVIU BOYS HIGH SCHOOL' }
+    ]
+  },
+  {
+    year: '2013',
+    title: 'Arise & Shine Beneficiaries - 2013 Cohort',
+    students: [
+      { id: '001', name: 'EMILY W***** N*****', school: 'KANGARU GIRLS HIGH SCHOOL' },
+      { id: '002', name: 'BENSON M***** M*****', school: 'NGUVIU BOYS HIGH SCHOOL' },
+      { id: '003', name: 'CATHERINE M***** N*****', school: "ST. ANNE'S KIRIARI GIRLS HIGH SCHOOL" }
+    ]
+  },
+  {
+    year: '2012',
+    title: 'Arise & Shine Beneficiaries - 2012 Cohort',
+    students: [
+      { id: '001', name: 'DENNIS M***** N*****', school: 'KANGARU SCHOOL EMBU' },
+      { id: '002', name: 'ANN W***** K*****', school: 'KANGARU GIRLS HIGH SCHOOL' },
+      { id: '003', name: 'ERIC M***** N*****', school: 'NGUVIU BOYS HIGH SCHOOL' }
     ]
   },
   {

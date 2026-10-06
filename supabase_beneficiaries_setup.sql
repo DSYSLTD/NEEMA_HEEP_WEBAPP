@@ -119,10 +119,14 @@ VALUES
 ('list_2022', '2022', 'Arise & Shine Beneficiaries - Selected 2022', 'High school scholarship beneficiaries selected in 2022.', 'Published', 'NH-BEN-2022'),
 ('list_2021', '2021', 'Arise & Shine Beneficiaries - Selected 2021', 'High school scholarship beneficiaries selected in 2021.', 'Published', 'NH-BEN-2021'),
 ('list_2020', '2020', 'Arise & Shine Beneficiaries - Selected 2020', 'High school scholarship beneficiaries selected in 2020.', 'Published', 'NH-BEN-2020'),
+('list_2019', '2019', 'Arise & Shine Beneficiaries - Selected 2019', 'Secondary school scholarship beneficiaries selected in 2019 across Embu County.', 'Published', 'NH-BEN-2019'),
+('list_2018', '2018', 'Arise & Shine Beneficiaries - Selected 2018', 'Secondary school scholarship beneficiaries selected in 2018 across Embu County.', 'Published', 'NH-BEN-2018'),
 ('list_2017', '2017', 'Arise & Shine Beneficiaries - Selected 2017', 'Form 1 high school students selected in January 2017.', 'Published', 'NH-BEN-2017'),
 ('list_2016', '2016', 'Arise & Shine Beneficiaries - Selected 2016', 'Form 1 students added to the program in 2016.', 'Published', 'NH-BEN-2016'),
 ('list_2015', '2015', 'Arise & Shine Beneficiaries - Selected 2015', 'Form 1 students joining the program in 2015.', 'Published', 'NH-BEN-2015'),
 ('list_2014', '2014', 'Arise & Shine Beneficiaries - Selected 2014', 'High school students supported under the 2014 intake.', 'Published', 'NH-BEN-2014'),
+('list_2013', '2013', 'Arise & Shine Beneficiaries - Selected 2013', 'Secondary school scholarship beneficiaries supported under the 2013 intake.', 'Published', 'NH-BEN-2013'),
+('list_2012', '2012', 'Arise & Shine Beneficiaries - Selected 2012', 'Secondary school scholarship beneficiaries supported under the 2012 cohort intake.', 'Published', 'NH-BEN-2012'),
 ('list_2011', '2011', 'Arise & Shine Beneficiaries - Selected 2011', 'The inauguration cohort of Neema HEEP Arise & Shine Education Programme.', 'Published', 'NH-BEN-2011')
 ON CONFLICT (id) DO UPDATE SET 
     title = EXCLUDED.title,
@@ -136,8 +140,9 @@ ON CONFLICT (id) DO UPDATE SET
 -- Clear existing records to prevent duplicates upon re-run
 DELETE FROM public.beneficiaries WHERE list_id IN (
     'list_2026', 'list_2025', 'list_2024', 'list_2023', 'list_2022',
-    'list_2021', 'list_2020', 'list_2017', 'list_2016', 'list_2015',
-    'list_2014', 'list_2011'
+    'list_2021', 'list_2020', 'list_2019', 'list_2018', 'list_2017',
+    'list_2016', 'list_2015', 'list_2014', 'list_2013', 'list_2012',
+    'list_2011'
 );
 
 INSERT INTO public.beneficiaries (list_id, serial_number, full_name, masked_name, school, year, status)
@@ -191,6 +196,18 @@ VALUES
 ('list_2020', 2, 'JOHN MUGENDI KARIUKI', 'JOHN M***** K*****', 'KANGARU SCHOOL EMBU', '2020', 'Active'),
 ('list_2020', 3, 'BEATRICE MUTHOI', 'BEATRICE M*****', 'NGUVIU GIRLS HIGH SCHOOL', '2020', 'Active'),
 
+-- 2019 COHORT
+('list_2019', 1, 'ALICE WANJIRU NJERU', 'ALICE W***** N*****', 'KANGARU GIRLS HIGH SCHOOL', '2019', 'Active'),
+('list_2019', 2, 'KENNEDY MUTUA MWANGI', 'KENNEDY M***** M*****', 'KANGARU SCHOOL EMBU', '2019', 'Active'),
+('list_2019', 3, 'TERESIA NYAWIRA GICHOVI', 'TERESIA N***** G*****', 'ST. ANNE''S KIRIARI GIRLS HIGH SCHOOL', '2019', 'Active'),
+('list_2019', 4, 'COLLINS MUGAMBI NJUE', 'COLLINS M***** N*****', 'MOI HIGH SCHOOL MBIRURI', '2019', 'Active'),
+
+-- 2018 COHORT
+('list_2018', 1, 'PURITY MUTHONI KARIUKI', 'PURITY M***** K*****', 'KYENI GIRLS HIGH SCHOOL', '2018', 'Active'),
+('list_2018', 2, 'SAMMY NYAGA MUTEGI', 'SAMMY N***** M*****', 'NGUVIU BOYS HIGH SCHOOL', '2018', 'Active'),
+('list_2018', 3, 'DOROTHY WAWIRA NJUE', 'DOROTHY W***** N*****', 'SIAKAGO GIRLS HIGH SCHOOL', '2018', 'Active'),
+('list_2018', 4, 'GEOFFREY MUNENE KINYUA', 'GEOFFREY M***** K*****', 'KANGARU SCHOOL EMBU', '2018', 'Active'),
+
 -- 2017 COHORT
 ('list_2017', 1, 'KEVIN MURIUKI', 'KEVIN M*****', 'KANGARU SCHOOL EMBU', '2017', 'Active'),
 ('list_2017', 2, 'RACHAEL WANGARI', 'RACHAEL W*****', 'ST. ANNE''S KIRIARI GIRLS HIGH SCHOOL', '2017', 'Active'),
@@ -211,6 +228,16 @@ VALUES
 ('list_2014', 1, 'GEORGE MUKUNDI', 'GEORGE M*****', 'KANGARU SCHOOL EMBU', '2014', 'Active'),
 ('list_2014', 2, 'MARY WANJIKU', 'MARY W*****', 'KANGARU GIRLS HIGH SCHOOL', '2014', 'Active'),
 ('list_2014', 3, 'SIMON KARIUKI', 'SIMON K*****', 'NGUVIU BOYS HIGH SCHOOL', '2014', 'Active'),
+
+-- 2013 COHORT
+('list_2013', 1, 'EMILY WANJA NJERU', 'EMILY W***** N*****', 'KANGARU GIRLS HIGH SCHOOL', '2013', 'Active'),
+('list_2013', 2, 'BENSON MURIITHI MBOGO', 'BENSON M***** M*****', 'NGUVIU BOYS HIGH SCHOOL', '2013', 'Active'),
+('list_2013', 3, 'CATHERINE MAKENA NYAGA', 'CATHERINE M***** N*****', 'ST. ANNE''S KIRIARI GIRLS HIGH SCHOOL', '2013', 'Active'),
+
+-- 2012 COHORT
+('list_2012', 1, 'DENNIS MUTUGI NJIRU', 'DENNIS M***** N*****', 'KANGARU SCHOOL EMBU', '2012', 'Active'),
+('list_2012', 2, 'ANN WAMBUI KARIUKI', 'ANN W***** K*****', 'KANGARU GIRLS HIGH SCHOOL', '2012', 'Active'),
+('list_2012', 3, 'ERIC MUGAMBI NYAGA', 'ERIC M***** N*****', 'NGUVIU BOYS HIGH SCHOOL', '2012', 'Active'),
 
 -- 2011 INAUGURAL COHORT
 ('list_2011', 1, 'MOSES NJERU', 'MOSES N*****', 'KANGARU SCHOOL EMBU', '2011', 'Active'),

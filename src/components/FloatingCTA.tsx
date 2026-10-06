@@ -58,8 +58,13 @@ export default function FloatingCTA() {
                         location.pathname === '/contact-us' || 
                         location.pathname.startsWith('/contact-us') || 
                         location.pathname === '/talk-to-us';
+  const isRegistrationPage = location.pathname === '/join' || 
+                             location.pathname === '/registration' || 
+                             location.pathname.startsWith('/join') || 
+                             location.pathname.startsWith('/registration') ||
+                             location.pathname === '/portal-activation';
 
-  if (isDashboardOrPortal || isContactPage) return null;
+  if (isDashboardOrPortal || isContactPage || isRegistrationPage) return null;
 
   const positionClass = waPosition === 'bottom-left' 
     ? 'left-3 sm:left-6' 

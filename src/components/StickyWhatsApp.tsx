@@ -75,8 +75,13 @@ export default function StickyWhatsApp() {
                         location.pathname === '/contact-us' || 
                         location.pathname.startsWith('/contact-us') || 
                         location.pathname === '/talk-to-us';
+  const isRegistrationPage = location.pathname === '/join' || 
+                             location.pathname === '/registration' || 
+                             location.pathname.startsWith('/join') || 
+                             location.pathname.startsWith('/registration') ||
+                             location.pathname === '/portal-activation';
 
-  if (isDashboardOrPortal || isContactPage || !waSettings.floatingButtonEnabled) return null;
+  if (isDashboardOrPortal || isContactPage || isRegistrationPage || !waSettings.floatingButtonEnabled) return null;
 
   const getMessageContext = () => {
     if (waSettings.prefilledTextEnabled && waSettings.prefilledText.trim()) {

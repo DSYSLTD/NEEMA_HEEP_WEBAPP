@@ -1087,7 +1087,7 @@ export default function PasswordSecurityModule({
           isOpen={showPasswordReportModal}
           onClose={() => setShowPasswordReportModal(false)}
           title="User Profiles Password & Security Governance Audit Report"
-          moduleName="Administration, Users & Permissions"
+          moduleName="Site Administration"
           submoduleName="Passwords Directory"
           summaryMetrics={[
             { label: 'Total User Profiles', value: realProfiles.length, color: '#074504' },

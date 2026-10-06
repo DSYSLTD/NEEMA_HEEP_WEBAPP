@@ -72,7 +72,7 @@ export default function AdminDashboard() {
     | 'apps_job_applications'
     | 'apps_volunteer'
     | 'apps_newsletter'
-    // 7. Administration, users and permissions
+    // 7. Site Administration
     | 'admin_profiles'
     | 'admin_roles'
     | 'admin_custom_roles'
@@ -91,8 +91,8 @@ export default function AdminDashboard() {
       if (tab === 'beneficiaries') return 'beneficiary_entries';
       if (tab === 'vacancies' || tab === 'jobs') return 'apps_jobs';
       if (tab === 'messages' || tab === 'leads') return 'lead_prequal';
-      if (tab === 'authors' || tab === 'profile') return 'admin_profiles';
-      if (tab === 'roles_manager' || tab === 'roles') return 'admin_roles';
+      if (tab === 'authors' || tab === 'profile' || tab === 'profiles') return 'admin_profiles';
+      if (tab === 'roles_manager' || tab === 'roles' || tab === 'custom_roles' || tab === 'admin_custom_roles') return 'admin_roles';
       if (tab === 'password_manager' || tab === 'passwords') return 'admin_passwords';
       return tab as any;
     }
@@ -1367,10 +1367,10 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* 7. ADMINISTRATION, USERS AND PERMISSIONS */}
+          {/* 7. SITE ADMINISTRATION */}
           <div>
             <div className={`px-3 py-1 text-[10px] font-extrabold text-[#C0991B] uppercase tracking-wider ${!sidebarOpen && 'hidden'}`}>
-              Administration, Users &amp; Permissions
+              Site Administration
             </div>
             <div className="space-y-1 mt-1">
               <button
@@ -1394,30 +1394,12 @@ export default function AdminDashboard() {
                       }
                     }}
                     className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      activeNav === 'admin_roles' || activeNav === 'roles_manager' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
+                      activeNav === 'admin_roles' || activeNav === 'roles_manager' || activeNav === 'admin_custom_roles' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <Sliders className={`w-4 h-4 shrink-0 ${activeNav === 'admin_roles' || activeNav === 'roles_manager' ? 'text-[#C0991B]' : ''}`} />
+                      <Sliders className={`w-4 h-4 shrink-0 ${activeNav === 'admin_roles' || activeNav === 'roles_manager' || activeNav === 'admin_custom_roles' ? 'text-[#C0991B]' : ''}`} />
                       {sidebarOpen && <span>User Roles</span>}
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      if (isSuperAdmin || isAdministrator) {
-                        setActiveNav('admin_custom_roles');
-                      } else {
-                        showToast('Access Restricted: Administrator privilege required for Custom Roles.');
-                      }
-                    }}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      activeNav === 'admin_custom_roles' ? 'bg-white/10 text-white shadow-md border-l-4 border-[#C0991B]' : 'text-white/80 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Shield className={`w-4 h-4 shrink-0 ${activeNav === 'admin_custom_roles' ? 'text-[#C0991B]' : ''}`} />
-                      {sidebarOpen && <span>Custom Roles</span>}
                     </div>
                   </button>
 

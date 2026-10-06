@@ -324,7 +324,7 @@ export const AuditLogsAdminModule: React.FC<{ showToast?: (msg: string) => void 
         isOpen={showReportModal}
         onClose={() => setShowReportModal(false)}
         title="Enterprise System Governance Audit Trail Report"
-        moduleName="Administration, Users & Permissions"
+        moduleName="Site Administration"
         submoduleName="Audit Logs"
         summaryMetrics={summaryMetrics}
         columns={columns}

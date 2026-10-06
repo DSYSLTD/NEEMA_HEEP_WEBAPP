@@ -96,8 +96,13 @@ function AppContent() {
                     location.pathname === '/contact-us' || 
                     location.pathname.startsWith('/contact-us') || 
                     location.pathname === '/talk-to-us';
+  const isRegistration = location.pathname === '/join' || 
+                         location.pathname === '/registration' || 
+                         location.pathname.startsWith('/join') || 
+                         location.pathname.startsWith('/registration') ||
+                         location.pathname === '/portal-activation';
   const isDashboardOrPortal = isAdmin || isPortal;
-  const hideFloatingButtons = isDashboardOrPortal || isBlog || isVolunteer || isContact;
+  const hideFloatingButtons = isDashboardOrPortal || isBlog || isVolunteer || isContact || isRegistration;
 
   return (
     <div className={`min-h-screen flex flex-col font-sans bg-[#f8faf8] relative overflow-hidden md:overflow-visible ${isAdmin ? 'pt-0' : 'pt-[88px]'}`}>

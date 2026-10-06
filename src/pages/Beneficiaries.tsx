@@ -3,18 +3,12 @@ import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { beneficiariesStore, maskBeneficiaryName } from '../lib/beneficiariesStore';
-import { beneficiaryService } from '../services/beneficiaryService';
-
-interface PublishedCohort {
-  year: string;
-  title: string;
-  students: { id: string; name: string; school: string }[];
-}
+import { beneficiaryService, DEFAULT_PUBLISHED_COHORTS, PublishedCohortItem } from '../services/beneficiaryService';
 
 export default function Beneficiaries() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSchool, setSelectedSchool] = useState('All');
-  const [publishedData, setPublishedData] = useState<PublishedCohort[]>([]);
+  const [publishedData, setPublishedData] = useState<PublishedCohortItem[]>(DEFAULT_PUBLISHED_COHORTS);
 
   // Determine available years and the most current year (highest numerical year)
   const availableYears = Array.from(new Set(publishedData.map(d => d.year)))
@@ -22,7 +16,7 @@ export default function Beneficiaries() {
     .sort((a, b) => Number(b) - Number(a));
   const mostCurrentYear = availableYears[0] || '2026';
 
-  // Active year defaults to the most current year dynamically
+  // Active year defaults to All Years
   const [activeYear, setActiveYear] = useState<string>('All');
 
   useEffect(() => {
@@ -32,10 +26,6 @@ export default function Beneficiaries() {
       if (isMounted && data && data.length > 0) {
         const cleanData = data.filter(d => d.year !== '2027');
         setPublishedData(cleanData);
-        const topYear = cleanData.map(d => d.year).sort((a, b) => Number(b) - Number(a))[0];
-        if (topYear) {
-          setActiveYear(prev => prev || topYear);
-        }
       }
     };
 
@@ -52,7 +42,7 @@ export default function Beneficiaries() {
     };
   }, []);
 
-  // Year options for dropdown (no duplicate "Most Current" option)
+  // Year options for dropdown
   const yearOptions = [
     { id: 'All', label: 'All Years' },
     ...availableYears.map(y => ({ id: y, label: `Year ${y}` }))
@@ -65,7 +55,8 @@ export default function Beneficiaries() {
 
   const isSchoolPicked = selectedSchool !== 'All';
   const isSearchPicked = searchTerm.trim().length > 0;
-  const isMostCurrentDefault = activeYear === mostCurrentYear && !isSchoolPicked && !isSearchPicked;
+  const isYearPicked = activeYear !== 'All';
+  const hasActiveFilters = isYearPicked || isSchoolPicked || isSearchPicked;
 
   // Filter Data Logic: Display matching beneficiaries according to activeYear, selectedSchool, and searchTerm
   const filteredData = publishedData.filter(yearGroup => {
@@ -222,14 +213,16 @@ export default function Beneficiaries() {
       {/* Beneficiaries List */}
       <section className="max-w-7xl mx-auto px-6 py-12">
          {/* Status & Filter Indicator Banner (Shown when non-default filters or search terms are applied) */}
-         {!isMostCurrentDefault && (
+         {hasActiveFilters && (
            <div className="mb-8 p-4 bg-[#C0991B]/10 border border-[#C0991B]/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
              <div className="flex flex-wrap items-center gap-2 text-[#074504] font-bold">
                <Filter className="w-4 h-4 text-[#C0991B] shrink-0" />
                <span className="uppercase font-black text-[10px] tracking-wider">Active Filter:</span>
-               <span className="bg-white px-2.5 py-1 rounded-lg border border-gray-200 text-[#074504] uppercase font-black text-[10px]">
-                 {activeYear === 'All' ? 'All Years' : `Year ${activeYear}`}
-               </span>
+               {isYearPicked && (
+                 <span className="bg-white px-2.5 py-1 rounded-lg border border-gray-200 text-[#074504] uppercase font-black text-[10px]">
+                   Year {activeYear}
+                 </span>
+               )}
                {isSchoolPicked && (
                  <span className="bg-white px-2.5 py-1 rounded-lg border border-gray-200 text-[#074504] uppercase font-black text-[10px]">
                    School: {selectedSchool}
@@ -244,16 +237,28 @@ export default function Beneficiaries() {
                  ({filteredData.reduce((acc, y) => acc + y.students.length, 0)} Scholars listed)
                </span>
              </div>
-             <button
-               onClick={() => {
-                 setActiveYear(mostCurrentYear);
-                 setSelectedSchool('All');
-                 setSearchTerm('');
-               }}
-               className="text-[10px] font-black uppercase text-[#074504] hover:bg-[#074504] hover:text-white transition-all cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-2xs shrink-0"
-             >
-               Reset to Most Current Only
-             </button>
+             <div className="flex items-center gap-2">
+               <button
+                 onClick={() => {
+                   setActiveYear('All');
+                   setSelectedSchool('All');
+                   setSearchTerm('');
+                 }}
+                 className="text-[10px] font-black uppercase text-[#074504] hover:bg-[#074504] hover:text-white transition-all cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-2xs shrink-0"
+               >
+                 Show All Years
+               </button>
+               <button
+                 onClick={() => {
+                   setActiveYear(mostCurrentYear);
+                   setSelectedSchool('All');
+                   setSearchTerm('');
+                 }}
+                 className="text-[10px] font-black uppercase text-[#074504] hover:bg-[#C0991B] hover:text-white transition-all cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-[#C0991B]/40 shadow-2xs shrink-0"
+               >
+                 Most Current ({mostCurrentYear})
+               </button>
+             </div>
            </div>
          )}
 

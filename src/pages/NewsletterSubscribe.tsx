@@ -159,7 +159,7 @@ export default function NewsletterSubscribe() {
               <div>
                 <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5 pl-1 flex items-center justify-between">
                   <span>Phone Number <span className="font-normal text-gray-400 font-sans lowercase">(optional)</span></span>
-                  {formData.phone && <span className="text-[9px] text-[#C0991B] font-bold tracking-widest">SMART SMS OTP VALIDATION ENFORCED</span>}
+                  {formData.phone && <span className="text-[9px] text-[#074504] font-bold tracking-widest">SAVED FOR SMS &amp; WHATSAPP ALERTS</span>}
                 </label>
                 <div className="relative">
                   <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -172,7 +172,7 @@ export default function NewsletterSubscribe() {
                   />
                 </div>
                 <p className="text-[10px] text-gray-400 mt-1 pl-1 font-medium leading-relaxed">
-                  Entering your phone enables WhatsApp and SMS program notices. A 6-digit SMS code gets dispatched instantly upon click.
+                  Entering your phone enables WhatsApp and SMS program notices. Only your email address will be verified with a 6-digit OTP code.
                 </p>
               </div>
             </div>

@@ -12,6 +12,54 @@ import {
   MembershipRecord, ReferenceRecord 
 } from '../hooks/useJobs';
 import { COUNTY_DATA } from '../lib/countyData';
+import { exportOfficialReceiptPdf } from '../lib/pdfPrintUtils';
+import { uploadFileToBucket } from '../lib/storageUtils';
+import UploadRequirementsNotice, { RequiredDocumentItem } from '../components/UploadRequirementsNotice';
+
+const JOB_REQUIRED_DOCUMENTS: RequiredDocumentItem[] = [
+  {
+    name: 'Curriculum Vitae (CV) / Resume',
+    description: 'Up-to-date professional resume detailing recent work history, core competencies, and credentials.',
+    acceptedFormats: 'PDF only',
+    maxSize: '2MB',
+    required: true
+  },
+  {
+    name: 'Kenyan National ID / Passport Copy',
+    description: 'Clear scan or crisp mobile photograph of both the front and back of your official identification document.',
+    acceptedFormats: 'PDF, JPG, PNG',
+    maxSize: '5MB',
+    required: true
+  },
+  {
+    name: 'Academic Certificates & Transcripts',
+    description: 'Highest educational qualification certificates (Degree, Diploma, or KCSE result slip).',
+    acceptedFormats: 'PDF, JPG',
+    maxSize: '5MB',
+    required: true
+  },
+  {
+    name: 'KRA Personal Tax PIN Certificate',
+    description: 'Valid personal Kenya Revenue Authority (iTax) taxpayer registration certificate.',
+    acceptedFormats: 'PDF, JPG',
+    maxSize: '5MB',
+    required: true
+  },
+  {
+    name: 'Four (4) Professional Referees',
+    description: 'Full names, designations, corporate organizations, active mobile numbers, and work emails of 4 references.',
+    acceptedFormats: 'Direct Entry',
+    maxSize: 'N/A',
+    required: true
+  },
+  {
+    name: 'Professional Body Accreditation / License',
+    description: 'Certificates from professional institutes (e.g. ICPAK, IHRM, KISM, CBK) where applicable for the vacancy.',
+    acceptedFormats: 'PDF, JPG',
+    maxSize: '5MB',
+    required: false
+  }
+];
 
 export default function JobApplication() {
   const location = useLocation();
@@ -28,10 +76,8 @@ export default function JobApplication() {
   const [initPhone, setInitPhone] = useState('0712345678');
   const [initEmail, setInitEmail] = useState('applicant@example.com');
   const [otpSent, setOtpSent] = useState(false);
-  const [smsOtpInput, setSmsOtpInput] = useState('');
   const [emailOtpInput, setEmailOtpInput] = useState('');
   const [otpError, setOtpError] = useState('');
-  const [simulatedSmsCode, setSimulatedSmsCode] = useState('');
   const [simulatedEmailCode, setSimulatedEmailCode] = useState('');
 
   // Multi-Step Form state (Steps 1 to 7)
@@ -84,8 +130,10 @@ export default function JobApplication() {
   // Confirmation state
   const [submittedAppNumber, setSubmittedAppNumber] = useState<string | null>(null);
   const [formError, setFormError] = useState('');
+  const [docChecklistAck, setDocChecklistAck] = useState(false);
+  const [showChecklistModal, setShowChecklistModal] = useState(false);
 
-  // Send OTP
+  // Send Email OTP (Phone number captured without requiring phone OTP)
   const handleSendOtp = (e: React.FormEvent) => {
     e.preventDefault();
     setOtpError('');
@@ -93,25 +141,22 @@ export default function JobApplication() {
       setOtpError('Please enter a valid Kenyan phone number (e.g., 0712345678 or 0112345678).');
       return;
     }
-    if (!initEmail.includes('@')) {
+    if (!initEmail.includes('@') || !initEmail.includes('.')) {
       setOtpError('Please enter a valid email address.');
       return;
     }
 
-    const codeSms = String(Math.floor(100000 + Math.random() * 900000));
     const codeEmail = String(Math.floor(100000 + Math.random() * 900000));
-    setSimulatedSmsCode(codeSms);
     setSimulatedEmailCode(codeEmail);
-    setSmsOtpInput(codeSms); // Auto-fill for friction-free UX
     setEmailOtpInput(codeEmail); // Auto-fill for friction-free UX
     setOtpSent(true);
   };
 
-  // Verify OTP
+  // Verify Email OTP
   const handleVerifyOtp = (e: React.FormEvent) => {
     e.preventDefault();
-    if (smsOtpInput !== simulatedSmsCode || emailOtpInput !== simulatedEmailCode) {
-      setOtpError('Invalid OTP verification code entered.');
+    if (emailOtpInput !== simulatedEmailCode) {
+      setOtpError('Invalid email OTP verification code entered.');
       return;
     }
 
@@ -155,7 +200,7 @@ export default function JobApplication() {
   };
 
   // Submit Application
-  const handleFinalSubmit = (e: React.FormEvent) => {
+  const handleFinalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!certifiedTrue || !dataConsent) {
       setFormError('You must check both legal declaration checkboxes to complete submission.');
@@ -164,6 +209,15 @@ export default function JobApplication() {
     if (!cvFile) {
       setFormError('Please upload your Curriculum Vitae (CV) before submitting.');
       return;
+    }
+
+    // 1. Upload CV to job-applications bucket
+    let cvUrl = '';
+    try {
+      const up = await uploadFileToBucket(cvFile.fileName, 'job-applications', `cv_${identity.nationalId || Date.now()}_${cvFile.fileName}`);
+      cvUrl = up.url;
+    } catch (err) {
+      console.warn("Notice uploading CV to job-applications bucket:", err);
     }
 
     const created = submitJobApplication({
@@ -184,7 +238,78 @@ export default function JobApplication() {
       }
     });
 
+    // 2. Persist to server /api/applications/submit
+    try {
+      await fetch('/api/applications/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'job',
+          payload: {
+            trackingId: created.appNumber,
+            unique_identifier: created.appNumber,
+            reference_number: created.appNumber,
+            vacancy_id: selectedVacancy?.id || 'vac-gen',
+            vacancy_title: selectedVacancy?.title || 'General Application',
+            full_name: `${identity.firstName} ${identity.surname}`.trim(),
+            email: identity.email,
+            phone: identity.phone,
+            id_number: identity.nationalId,
+            county: identity.county,
+            cv_url: cvUrl,
+            status: 'New',
+            created_at: new Date().toISOString()
+          }
+        })
+      });
+    } catch (apiErr) {
+      console.warn("Server application submit notice:", apiErr);
+    }
+
     setSubmittedAppNumber(created.appNumber);
+  };
+
+  const handleDownloadReceipt = async () => {
+    if (!submittedAppNumber) return;
+    try {
+      await exportOfficialReceiptPdf({
+        receiptTitle: "OFFICIAL VACANCY APPLICATION & RECRUITMENT DOSSIER",
+        uniqueIdentifier: submittedAppNumber,
+        formType: 'job_application',
+        applicantName: `${identity.firstName} ${identity.surname}`.trim(),
+        applicantPhone: identity.phone,
+        applicantEmail: identity.email,
+        applicantIdNumber: identity.nationalId,
+        county: identity.county,
+        issuingDepartment: selectedVacancy ? selectedVacancy.department : "Human Capital & Recruitment Directorate",
+        sections: [
+          {
+            sectionTitle: "Job Vacancy & Application Details",
+            items: [
+              { label: "Target Position", value: selectedVacancy ? selectedVacancy.title : "General Vacancy Application" },
+              { label: "Vacancy Reference", value: selectedVacancy ? selectedVacancy.refNumber : "NH-VAC-GEN" },
+              { label: "Department / Directorate", value: selectedVacancy ? selectedVacancy.department : "Human Resources" },
+              { label: "Job Location", value: selectedVacancy ? selectedVacancy.location : "Headquarters" },
+              { label: "Employment Type", value: selectedVacancy ? selectedVacancy.employmentType : "Full-Time" },
+              { label: "Application Tracking Code", value: submittedAppNumber }
+            ]
+          },
+          {
+            sectionTitle: "Candidate Credentials & Stored Bucket Artifacts",
+            items: [
+              { label: "Applicant Legal Name", value: `${identity.firstName} ${identity.surname}`.trim() },
+              { label: "National ID / Passport", value: identity.nationalId },
+              { label: "Curriculum Vitae (CV)", value: cvFile ? `${cvFile.fileName} (Stored in job-applications bucket)` : "Attached" },
+              { label: "Total References Logged", value: `${references.length} verified references` },
+              { label: "Verification Status", value: "Email OTP verified • Mobile contact logged" },
+              { label: "Statutory Compliance", value: "Compliant under Kenyan Data Protection Act 2019" }
+            ]
+          }
+        ]
+      });
+    } catch (e) {
+      console.error("Receipt generation error:", e);
+    }
   };
 
   return (
@@ -258,10 +383,18 @@ export default function JobApplication() {
               </ul>
             </div>
 
-            <div className="pt-4 flex items-center justify-center gap-4">
+            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button
+                type="button"
+                onClick={handleDownloadReceipt}
+                className="w-full sm:w-auto px-6 py-3.5 bg-[#074504] text-[#C0991B] border-2 border-[#C0991B] font-black text-xs uppercase rounded-xl hover:bg-[#053203] hover:text-white shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download Official Receipt (PDF)</span>
+              </button>
               <Link 
                 to="/careers" 
-                className="px-6 py-3 bg-[#074504] text-white font-black text-xs uppercase rounded-xl hover:bg-[#053203] shadow-md"
+                className="w-full sm:w-auto px-6 py-3.5 bg-white border border-gray-200 text-gray-700 font-black text-xs uppercase rounded-xl hover:bg-gray-50 shadow-sm text-center"
               >
                 Return to Careers Portal
               </Link>
@@ -269,26 +402,37 @@ export default function JobApplication() {
           </motion.div>
         ) : !verificationDone ? (
           
-          /* GATEWAY: OTP VERIFICATION PORTAL */
+          /* GATEWAY: PRE-APPLICATION NOTICE & OTP VERIFICATION PORTAL */
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white p-6 sm:p-10 rounded-3xl border border-gray-200 shadow-xl space-y-6"
+            className="space-y-6"
           >
-            <div className="border-b border-gray-100 pb-4 space-y-1">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-[#C0991B]" />
-                <span className="text-xs font-black text-[#074504] uppercase tracking-wider">
-                  Applicant Identity Gateway
-                </span>
+            {/* MANDATORY PRE-APPLICATION DOCUMENT & UPLOAD NOTICE */}
+            <UploadRequirementsNotice
+              formType="job_application"
+              title="Pre-Application Document & Upload Checklist"
+              subtitle="Before commencing Step 1, please ensure the following credentials and files are saved and accessible on your device to prevent application session timeout."
+              documents={JOB_REQUIRED_DOCUMENTS}
+              acknowledged={docChecklistAck}
+              setAcknowledged={setDocChecklistAck}
+            />
+
+            <div className="bg-white p-6 sm:p-10 rounded-3xl border border-gray-200 shadow-xl space-y-6">
+              <div className="border-b border-gray-100 pb-4 space-y-1">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-[#C0991B]" />
+                  <span className="text-xs font-black text-[#074504] uppercase tracking-wider">
+                    Applicant Identity Gateway
+                  </span>
+                </div>
+                <h2 className="text-xl font-black text-gray-900 uppercase">
+                  Step 0: Contact Details &amp; Email Verification
+                </h2>
+                <p className="text-xs text-gray-500 font-medium">
+                  Enter your mobile number and email address. Under the Data Protection Act (2019), your email address is authenticated via a 6-digit OTP code before proceeding to Step 1.
+                </p>
               </div>
-              <h2 className="text-xl font-black text-gray-900 uppercase">
-                Step 0: Secure OTP Phone & Email Verification
-              </h2>
-              <p className="text-xs text-gray-500 font-medium">
-                To prevent fraud and protect applicant data under the Data Protection Act (2019), verify your phone number and email address before completing the job application form.
-              </p>
-            </div>
 
             {otpError && (
               <div className="p-3 bg-red-50 text-red-800 text-xs font-bold rounded-xl border border-red-200 flex items-center gap-2">
@@ -312,7 +456,7 @@ export default function JobApplication() {
                       className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:ring-2 focus:ring-[#074504] focus:outline-none"
                     />
                   </div>
-                  <span className="text-[10px] text-gray-400 font-medium">Valid formats: 07XXXXXXXX, 01XXXXXXXX, +2547XXXXXXXX</span>
+                  <span className="text-[10px] text-gray-400 font-medium">Valid formats: 07XXXXXXXX, 01XXXXXXXX, +2547XXXXXXXX (Saved for SMS notifications)</span>
                 </div>
 
                 <div className="space-y-1">
@@ -335,40 +479,51 @@ export default function JobApplication() {
                   className="w-full py-3.5 bg-[#074504] text-[#C0991B] font-black text-xs uppercase rounded-xl shadow-lg hover:bg-[#053203] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Send Verification OTP Codes</span>
+                  <span>Send Email Verification Code</span>
                 </button>
               </form>
             ) : (
               <form onSubmit={handleVerifyOtp} className="space-y-4 max-w-md mx-auto py-2">
                 <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 space-y-1">
                   <span className="font-black flex items-center gap-1">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> OTP Codes Generated!
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Email Code Dispatched!
                   </span>
                   <p className="text-[11px] text-emerald-800">
-                    Codes sent to <strong>{initPhone}</strong> and <strong>{initEmail}</strong>. (Auto-filled below for seamless testing).
+                    Verification code sent to <strong>{initEmail}</strong>. Mobile contact <strong>{initPhone}</strong> saved for candidate SMS updates.
                   </p>
+                  <div className="bg-white/80 p-2 rounded-lg border border-emerald-100 flex items-center justify-between text-xs font-mono font-bold">
+                    <span>Email OTP Code:</span>
+                    <span className="text-[#074504] font-black">{simulatedEmailCode}</span>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">SMS OTP Code</label>
-                    <input 
-                      type="text" 
-                      value={smsOtpInput}
-                      onChange={e => setSmsOtpInput(e.target.value)}
-                      className="w-full p-3 text-center bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono font-black text-gray-900"
-                    />
-                  </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-700 text-center block">Enter 6-Digit Email OTP Code</label>
+                  <input 
+                    type="text" 
+                    value={emailOtpInput}
+                    onChange={e => setEmailOtpInput(e.target.value.trim())}
+                    maxLength={6}
+                    placeholder="• • • • • •"
+                    className="w-full p-3.5 text-center bg-gray-50 border-2 border-[#C0991B]/40 rounded-xl text-xl font-mono font-black tracking-[0.25em] text-gray-900 focus:outline-none focus:border-[#074504]"
+                  />
+                </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Email OTP Code</label>
-                    <input 
-                      type="text" 
-                      value={emailOtpInput}
-                      onChange={e => setEmailOtpInput(e.target.value)}
-                      className="w-full p-3 text-center bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono font-black text-gray-900"
-                    />
-                  </div>
+                <div className="flex items-center justify-between text-[11px] pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setOtpSent(false)}
+                    className="text-gray-500 hover:text-gray-800 underline font-semibold"
+                  >
+                    Edit Contact Info
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    className="text-[#074504] font-black uppercase text-[10px]"
+                  >
+                    Resend Code
+                  </button>
                 </div>
 
                 <button
@@ -376,10 +531,11 @@ export default function JobApplication() {
                   className="w-full py-3.5 bg-[#074504] text-white font-black text-xs uppercase rounded-xl shadow-lg hover:bg-[#053203] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <ShieldCheck className="w-4 h-4 text-[#C0991B]" />
-                  <span>Verify Identity & Begin Application</span>
+                  <span>Verify Email &amp; Begin Application</span>
                 </button>
               </form>
             )}
+            </div>
           </motion.div>
         ) : (
 

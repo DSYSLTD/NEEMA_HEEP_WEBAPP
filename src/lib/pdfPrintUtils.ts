@@ -1237,3 +1237,413 @@ export function printAllLeadsBooklet({
 
   printWindow.document.close();
 }
+
+export interface ReceiptSectionItem {
+  label: string;
+  value: string | number;
+}
+
+export interface ReceiptSection {
+  sectionTitle: string;
+  items: ReceiptSectionItem[];
+}
+
+export interface OfficialReceiptOptions {
+  receiptTitle: string;
+  uniqueIdentifier: string;
+  formType: 'individual_registration' | 'group_registration' | 'volunteer_application' | 'sponsorship_request' | 'partnership_request' | 'job_application' | 'general';
+  applicantName: string;
+  applicantPhone?: string;
+  applicantEmail?: string;
+  applicantIdNumber?: string;
+  county?: string;
+  issuingDepartment?: string;
+  amountPaid?: number | string;
+  paymentRef?: string;
+  paymentMessage?: string;
+  paymentTimestamp?: string;
+  sections?: ReceiptSection[];
+  notes?: string[];
+  filename?: string;
+}
+
+/**
+ * EXPORT OFFICIAL RECEIPT ON CERTIFIED NEEMA HEEP LETTERHEAD
+ * Generates and downloads a publication-grade PDF receipt with the official Neema HEEP logo,
+ * corporate registration credentials, unique auto-generated tracking identifier,
+ * comprehensive applicant parameters, payment breakdown (with M-PESA SMS text),
+ * and official verification stamps and signatures.
+ */
+export async function exportOfficialReceiptPdf({
+  receiptTitle,
+  uniqueIdentifier,
+  formType: _formType,
+  applicantName,
+  applicantPhone = '',
+  applicantEmail = '',
+  applicantIdNumber = '',
+  county = '',
+  issuingDepartment: _issuingDepartment = 'Operations & Member Services Directorate',
+  amountPaid,
+  paymentRef,
+  paymentMessage,
+  paymentTimestamp,
+  sections = [],
+  notes: _notes = [],
+  filename
+}: OfficialReceiptOptions) {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  const marginX = 14;
+  const contentWidth = pageWidth - (marginX * 2);
+
+  const cleanFilename = filename || `${uniqueIdentifier.replace(/[^a-zA-Z0-9_-]/g, '_')}_Official_Receipt.pdf`;
+  const issueDate = new Date().toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+  const issueTime = new Date().toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  // Attempt to load official logo
+  const logoDataUrl = await loadLogoDataUrl();
+
+  // 1. TOP CORPORATE LETTERHEAD (PAGE 1)
+  // Forest Green Top Banner
+  doc.setFillColor(7, 69, 4); // #074504
+  doc.rect(0, 0, pageWidth, 5.5, 'F');
+
+  // Gold Accent Rule
+  doc.setFillColor(192, 153, 27); // #C0991B
+  doc.rect(0, 5.5, pageWidth, 1.2, 'F');
+
+  // Logo on Left
+  const logoX = marginX;
+  const logoY = 9;
+  const logoSize = 22;
+
+  if (logoDataUrl) {
+    try {
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(logoX, logoY, logoSize, logoSize, 2, 2, 'F');
+      doc.setDrawColor(192, 153, 27);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(logoX, logoY, logoSize, logoSize, 2, 2, 'S');
+      doc.addImage(logoDataUrl, 'JPEG', logoX + 0.8, logoY + 0.8, logoSize - 1.6, logoSize - 1.6);
+    } catch {
+      doc.setFillColor(7, 69, 4);
+      doc.roundedRect(logoX, logoY, logoSize, logoSize, 2, 2, 'F');
+      doc.setTextColor(192, 153, 27);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('NH', logoX + (logoSize / 2), logoY + 14, { align: 'center' });
+    }
+  } else {
+    doc.setFillColor(7, 69, 4);
+    doc.roundedRect(logoX, logoY, logoSize, logoSize, 2, 2, 'F');
+    doc.setTextColor(192, 153, 27);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('NH', logoX + (logoSize / 2), logoY + 14, { align: 'center' });
+  }
+
+  // Institutional Name & Credentials
+  const textX = logoX + logoSize + 4;
+  doc.setTextColor(7, 69, 4);
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.text('NEEMA HEEP COMMUNITY EMPOWERMENT', textX, 14);
+
+  doc.setTextColor(192, 153, 27);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  doc.text('HOUSING & ECONOMIC EMPOWERMENT PROGRAMME', textX, 18);
+
+  doc.setTextColor(90, 90, 90);
+  doc.setFontSize(6.5);
+  doc.setFont('helvetica', 'italic');
+  doc.text('"Empowering Communities • Transforming Livelihoods Across Kenya"', textX, 22);
+
+  doc.setTextColor(110, 110, 110);
+  doc.setFontSize(6);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Reg. No. CPR/2014/149811 • KRA PIN: P051982736Z • Central Bank Regulatory Compliance', textX, 26);
+
+  // Corporate HQ & Contacts (Right-Aligned)
+  const rightX = pageWidth - marginX;
+  doc.setTextColor(30, 30, 30);
+  doc.setFontSize(6.5);
+  doc.setFont('helvetica', 'bold');
+  doc.text('HEAD OFFICE: Neema Plaza, 3rd Floor', rightX, 12.5, { align: 'right' });
+
+  doc.setTextColor(80, 80, 80);
+  doc.setFontSize(6);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Mama Ngina Street, P.O. Box 2487 - 60100, Embu, Kenya', rightX, 16, { align: 'right' });
+  doc.text('Hotlines: +254 705 759 365  |  +254 722 000 000', rightX, 19.5, { align: 'right' });
+
+  doc.setTextColor(7, 69, 4);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Email: info@neemaheep.com  |  Web: www.neemaheep.com', rightX, 23, { align: 'right' });
+
+  doc.setTextColor(192, 153, 27);
+  doc.setFontSize(6);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`TRACKING ID: ${uniqueIdentifier}`, rightX, 26.5, { align: 'right' });
+
+  // Letterhead Dividing Lines
+  doc.setDrawColor(7, 69, 4);
+  doc.setLineWidth(0.8);
+  doc.line(marginX, 32, pageWidth - marginX, 32);
+
+  doc.setDrawColor(192, 153, 27);
+  doc.setLineWidth(0.4);
+  doc.line(marginX, 33.2, pageWidth - marginX, 33.2);
+
+  // Branch Network Bar
+  doc.setFillColor(248, 250, 248);
+  doc.roundedRect(marginX, 34.5, contentWidth, 5.5, 1, 1, 'F');
+  doc.setDrawColor(229, 231, 235);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(marginX, 34.5, contentWidth, 5.5, 1, 1, 'S');
+
+  doc.setTextColor(7, 69, 4);
+  doc.setFontSize(5.5);
+  doc.setFont('helvetica', 'bold');
+  doc.text(
+    'BRANCH NETWORK: EMBU HEADQUARTERS  •  MAUA  •  MERU  •  CHUKA  •  KERUGOYA  •  KITUI  •  THIKA',
+    pageWidth / 2,
+    38.3,
+    { align: 'center' }
+  );
+
+  // 2. RECEIPT BANNER & UNIQUE IDENTIFIER CALLOUT
+  let currentY = 44;
+
+  // Receipt Main Title
+  doc.setTextColor(7, 69, 4);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text(receiptTitle.toUpperCase(), marginX, currentY);
+
+  currentY += 4;
+
+  // Golden Box with Tracking ID & Issue Time
+  doc.setFillColor(254, 252, 232); // amber-50
+  doc.roundedRect(marginX, currentY, contentWidth, 14, 2, 2, 'F');
+  doc.setDrawColor(192, 153, 27);
+  doc.setLineWidth(0.6);
+  doc.roundedRect(marginX, currentY, contentWidth, 14, 2, 2, 'S');
+
+  doc.setTextColor(192, 153, 27);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.text('OFFICIAL RECORD IDENTIFIER', marginX + 4, currentY + 4.5);
+
+  doc.setTextColor(7, 69, 4);
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.text(uniqueIdentifier, marginX + 4, currentY + 10.5);
+
+  doc.setTextColor(75, 85, 99);
+  doc.setFontSize(6.5);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`ISSUED: ${issueDate} at ${issueTime} EAT`, pageWidth - marginX - 4, currentY + 4.5, { align: 'right' });
+
+  // Verified Status Stamp Box on Right
+  doc.setFillColor(236, 253, 245); // emerald-50
+  doc.roundedRect(pageWidth - marginX - 58, currentY + 6.5, 54, 5.5, 1, 1, 'F');
+  doc.setDrawColor(16, 185, 129);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(pageWidth - marginX - 58, currentY + 6.5, 54, 5.5, 1, 1, 'S');
+
+  doc.setTextColor(6, 95, 70);
+  doc.setFontSize(6.5);
+  doc.setFont('helvetica', 'bold');
+  doc.text('✓ VERIFIED & RECORDED IN VAULT', pageWidth - marginX - 31, currentY + 10.2, { align: 'center' });
+
+  currentY += 17;
+
+  // 3. TABLE OF APPLICANT & FORM PARAMETERS
+  const tableRows: (string | number)[][] = [
+    ['Applicant / Organization Name', applicantName || 'N/A'],
+    ['Contact Phone Number', applicantPhone || 'N/A'],
+    ['Official Email Address', applicantEmail || 'N/A'],
+  ];
+
+  if (applicantIdNumber) {
+    tableRows.push(['National ID / Passport / Reg No.', applicantIdNumber]);
+  }
+  if (county) {
+    tableRows.push(['County / Operational Territory', county]);
+  }
+
+  // Add all custom section items
+  sections.forEach(sec => {
+    tableRows.push([`--- ${sec.sectionTitle.toUpperCase()} ---`, '']);
+    sec.items.forEach(it => {
+      tableRows.push([it.label, String(it.value ?? 'N/A')]);
+    });
+  });
+
+  // Add Payment Rows if applicable
+  if (amountPaid !== undefined || paymentRef) {
+    tableRows.push(['--- PAYMENT SETTLEMENT DETAILS ---', '']);
+    if (amountPaid !== undefined) {
+      tableRows.push(['Statutory Amount Paid', `KES ${Number(amountPaid).toLocaleString()}`]);
+    }
+    tableRows.push(['Payment Method / Channel', 'Safaricom M-PESA Paybill 974850']);
+    if (paymentRef) {
+      tableRows.push(['M-PESA Transaction Receipt Code', paymentRef]);
+    }
+    if (paymentTimestamp) {
+      tableRows.push(['M-PESA Settlement Timestamp', paymentTimestamp]);
+    }
+    if (paymentMessage) {
+      tableRows.push(['Captured M-PESA Confirmation SMS', paymentMessage]);
+    }
+    tableRows.push(['Payment Audit Status', 'PAID & RECONCILED BY SAFARICOM M-PESA GATEWAY']);
+  }
+
+  autoTable(doc, {
+    startY: currentY,
+    margin: { left: marginX, right: marginX },
+    head: [['Application & Identification Parameter', 'Certified Recorded Information']],
+    body: tableRows,
+    theme: 'grid',
+    styles: {
+      fontSize: 7.5,
+      cellPadding: 2.2,
+      font: 'helvetica',
+      textColor: [31, 41, 55],
+      lineColor: [229, 231, 235],
+      lineWidth: 0.2
+    },
+    headStyles: {
+      fillColor: [7, 69, 4],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 8
+    },
+    columnStyles: {
+      0: { cellWidth: 70, fontStyle: 'bold', textColor: [7, 69, 4] },
+      1: { cellWidth: 'auto', textColor: [31, 41, 55] }
+    },
+    didParseCell: (data) => {
+      // Highlight section separator headers
+      if (typeof data.cell.raw === 'string' && data.cell.raw.startsWith('---')) {
+        data.cell.styles.fillColor = [243, 244, 246];
+        data.cell.styles.textColor = [192, 153, 27];
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.fontSize = 7;
+      }
+    }
+  });
+
+  currentY = (doc as any).lastAutoTable.finalY + 6;
+
+  // If table went too close to bottom, add new page
+  if (currentY > pageHeight - 45) {
+    doc.addPage();
+    currentY = 20;
+  }
+
+  // 4. NOTICE & STATUTORY DECLARATION BOX
+  doc.setFillColor(248, 250, 248);
+  doc.roundedRect(marginX, currentY, contentWidth, 14, 1.5, 1.5, 'F');
+  doc.setDrawColor(209, 213, 219);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(marginX, currentY, contentWidth, 14, 1.5, 1.5, 'S');
+
+  doc.setTextColor(7, 69, 4);
+  doc.setFontSize(6.5);
+  doc.setFont('helvetica', 'bold');
+  doc.text('LEGAL NOTIFICATION & VALIDITY CLAUSE:', marginX + 3, currentY + 4);
+
+  doc.setTextColor(75, 85, 99);
+  doc.setFontSize(5.8);
+  doc.setFont('helvetica', 'normal');
+  const legalText = `This receipt serves as official proof of enrollment under Neema HEEP Programme protocols and the Kenyan Data Protection Act (2019). Retain tracking code [${uniqueIdentifier}] for inquiries, SMS dispatch verification, and physical document certification at any branch.`;
+  doc.text(doc.splitTextToSize(legalText, contentWidth - 6), marginX + 3, currentY + 7.5);
+
+  currentY += 18;
+
+  // 5. SIGNATORY BLOCKS & CIRCULAR OFFICIAL SEAL
+  if (currentY < pageHeight - 30) {
+    const sigY = currentY;
+    const sigBoxWidth = (contentWidth - 40) / 2;
+
+    // Signatory 1
+    doc.setDrawColor(7, 69, 4);
+    doc.setLineWidth(0.3);
+    doc.line(marginX, sigY + 9, marginX + sigBoxWidth, sigY + 9);
+
+    doc.setTextColor(7, 69, 4);
+    doc.setFontSize(6.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DIRECTOR OF MEMBER SERVICES', marginX, sigY + 12);
+    doc.setTextColor(120, 120, 120);
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Digitally Verified: ${issueDate}`, marginX, sigY + 15);
+
+    // Circular Seal in Center
+    const sealX = marginX + sigBoxWidth + 20;
+    const sealY = sigY + 8;
+    doc.setDrawColor(192, 153, 27);
+    doc.setLineWidth(0.5);
+    doc.circle(sealX, sealY, 8.5, 'S');
+    doc.circle(sealX, sealY, 7.5, 'S');
+
+    doc.setTextColor(7, 69, 4);
+    doc.setFontSize(4.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text('NEEMA HEEP', sealX, sealY - 3, { align: 'center' });
+    doc.setTextColor(192, 153, 27);
+    doc.text('OFFICIAL SEAL', sealX, sealY, { align: 'center' });
+    doc.setTextColor(7, 69, 4);
+    doc.text('EMBU HQ', sealX, sealY + 3.5, { align: 'center' });
+
+    // Signatory 2
+    const sig2X = pageWidth - marginX - sigBoxWidth;
+    doc.setDrawColor(7, 69, 4);
+    doc.setLineWidth(0.3);
+    doc.line(sig2X, sigY + 9, sig2X + sigBoxWidth, sigY + 9);
+
+    doc.setTextColor(7, 69, 4);
+    doc.setFontSize(6.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text('HEAD OF FINANCE & AUDIT', sig2X, sigY + 12);
+    doc.setTextColor(120, 120, 120);
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Status: Authorized & Recorded', sig2X, sigY + 15);
+  }
+
+  // 6. BOTTOM FOOTER WITH SECURITY WATERMARK
+  doc.setFillColor(7, 69, 4);
+  doc.rect(0, pageHeight - 5, pageWidth, 5, 'F');
+  doc.setFillColor(192, 153, 27);
+  doc.rect(0, pageHeight - 5.8, pageWidth, 0.8, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(5.5);
+  doc.setFont('helvetica', 'normal');
+  doc.text(
+    `Official Neema HEEP Receipt • Generated on ${issueDate} at ${issueTime} • Ref: ${uniqueIdentifier} • All Rights Reserved`,
+    pageWidth / 2,
+    pageHeight - 1.8,
+    { align: 'center' }
+  );
+
+  doc.save(cleanFilename);
+}

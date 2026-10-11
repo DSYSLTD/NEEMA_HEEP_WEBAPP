@@ -191,33 +191,45 @@ UPDATE public.user_roles SET role = 'Administrator' WHERE role ILIKE '%admin%' A
 UPDATE public.user_roles SET role = 'Reviewer' WHERE role ILIKE '%reviewer%' OR role ILIKE '%webmaster%' OR role ILIKE '%web master%';
 
 -- Seed / Ensure Superadmin (Patrick Munene) & Primary Content Editor (Charity Muthoni)
-INSERT INTO public.user_roles (user_name, email, role, department, status, initial_password, password, assigned_by)
+ALTER TABLE public.user_roles ADD COLUMN IF NOT EXISTS phone VARCHAR(100);
+
+INSERT INTO public.user_roles (user_name, email, phone, role, department, status, initial_password, password, assigned_by)
 VALUES
-    ('Patrick Munene', 'ptrckmunene@gmail.com', 'Superadmin', 'Web Development', 'Active', '@super123#', '@super123#', 'System Initializer'),
-    ('Charity Muthoni', 'muthonichar12@gmail.com', 'Content editor', 'CMS Editorial', 'Active', '@Cham123#', '@Cham123#', 'Patrick Munene (Superadmin)')
+    ('Patrick Munene', 'ptrckmunene@gmail.com', '+254 725 789 086', 'Superadmin', 'Web Development', 'Active', '@super123#', '@super123#', 'System Initializer'),
+    ('Charity Muthoni', 'muthonichar12@gmail.com', '+254 724 389 949', 'Content editor', 'CMS Editorial', 'Active', '@Cham123#', '@Cham123#', 'Patrick Munene (Superadmin)')
 ON CONFLICT (email) DO UPDATE SET
     role = EXCLUDED.role,
+    phone = EXCLUDED.phone,
     password = EXCLUDED.password,
     initial_password = EXCLUDED.initial_password,
     status = 'Active';
 
 -- Also ensure user_profiles records exist for the seed users
-INSERT INTO public.user_profiles (first_name, last_name, display_name, username, email, role, department, status, initial_password, password, job_title)
+ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS phone VARCHAR(100);
+ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(100);
+
+INSERT INTO public.user_profiles (first_name, last_name, display_name, username, email, phone, whatsapp, role, department, status, initial_password, password, job_title)
 VALUES
-    ('Patrick', 'Munene', 'Patrick Munene', 'ptrckmunene', 'ptrckmunene@gmail.com', 'Superadmin', 'Web Development', 'Active', '@super123#', '@super123#', 'Superadmin - Web Development'),
-    ('Charity', 'Muthoni', 'Charity Muthoni', 'muthonichar12', 'muthonichar12@gmail.com', 'Content editor', 'CMS Editorial', 'Active', '@Cham123#', '@Cham123#', 'Content editor - CMS Editorial')
+    ('Patrick', 'Munene', 'Patrick Munene', 'ptrckmunene', 'ptrckmunene@gmail.com', '+254 725 789 086', '+254 725 789 086', 'Superadmin', 'Web Development', 'Active', '@super123#', '@super123#', 'Superadmin - Web Development'),
+    ('Charity', 'Muthoni', 'Charity Muthoni', 'muthonichar12', 'muthonichar12@gmail.com', '+254 724 389 949', '+254 724 389 949', 'Content editor', 'CMS Editorial', 'Active', '@Cham123#', '@Cham123#', 'Content editor - CMS Editorial')
 ON CONFLICT (email) DO UPDATE SET
     role = EXCLUDED.role,
+    phone = EXCLUDED.phone,
+    whatsapp = EXCLUDED.whatsapp,
     password = EXCLUDED.password,
     initial_password = EXCLUDED.initial_password;
 
 -- Ensure custom_roles catalog table reflects the 4 authorized roles
 CREATE TABLE IF NOT EXISTS public.custom_roles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL UNIQUE,
+    role_key VARCHAR(255),
+    role_name VARCHAR(255),
+    name VARCHAR(255),
     description TEXT,
     category VARCHAR(100) DEFAULT 'System',
     color VARCHAR(50) DEFAULT '#074504',
+    permissions JSONB DEFAULT '[]'::jsonb,
+    is_system BOOLEAN DEFAULT false,
     can_manage_users BOOLEAN DEFAULT false,
     can_manage_roles BOOLEAN DEFAULT false,
     can_manage_security BOOLEAN DEFAULT false,
@@ -227,20 +239,123 @@ CREATE TABLE IF NOT EXISTS public.custom_roles (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-INSERT INTO public.custom_roles (name, description, category, color, can_manage_users, can_manage_roles, can_manage_security, can_manage_content)
-VALUES
-    ('Superadmin', 'Full system administration', 'System', '#074504', true, true, true, true),
-    ('Content editor', 'Manage public website content', 'Editorial', '#C0991B', false, false, false, true),
-    ('Administrator', 'Administrative access', 'System', '#2563EB', true, false, true, true),
-    ('Reviewer', 'Review applications and submissions', 'Operations', '#059669', false, false, false, false)
-ON CONFLICT (name) DO UPDATE SET
-    description = EXCLUDED.description,
-    category = EXCLUDED.category,
-    color = EXCLUDED.color,
-    can_manage_users = EXCLUDED.can_manage_users,
-    can_manage_roles = EXCLUDED.can_manage_roles,
-    can_manage_security = EXCLUDED.can_manage_security,
-    can_manage_content = EXCLUDED.can_manage_content;
+ALTER TABLE public.custom_roles ADD COLUMN IF NOT EXISTS role_key VARCHAR(255);
+ALTER TABLE public.custom_roles ADD COLUMN IF NOT EXISTS role_name VARCHAR(255);
+ALTER TABLE public.custom_roles ADD COLUMN IF NOT EXISTS name VARCHAR(255);
+ALTER TABLE public.custom_roles ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE public.custom_roles ADD COLUMN IF NOT EXISTS category VARCHAR(100) DEFAULT 'System';
+ALTER TABLE public.custom_roles ADD COLUMN IF NOT EXISTS color VARCHAR(50) DEFAULT '#074504';
+ALTER TABLE public.custom_roles ADD COLUMN IF NOT EXISTS permissions JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.custom_roles ADD COLUMN IF NOT EXISTS is_system BOOLEAN DEFAULT false;
+ALTER TABLE public.custom_roles ADD COLUMN IF NOT EXISTS can_manage_users BOOLEAN DEFAULT false;
+ALTER TABLE public.custom_roles ADD COLUMN IF NOT EXISTS can_manage_roles BOOLEAN DEFAULT false;
+ALTER TABLE public.custom_roles ADD COLUMN IF NOT EXISTS can_manage_security BOOLEAN DEFAULT false;
+ALTER TABLE public.custom_roles ADD COLUMN IF NOT EXISTS can_manage_content BOOLEAN DEFAULT false;
+ALTER TABLE public.custom_roles ADD COLUMN IF NOT EXISTS created_by VARCHAR(255) DEFAULT 'Superadmin';
+
+-- Drop any restrictive NOT NULL constraints that would break execution
+ALTER TABLE public.custom_roles ALTER COLUMN role_key DROP NOT NULL;
+ALTER TABLE public.custom_roles ALTER COLUMN role_name DROP NOT NULL;
+ALTER TABLE public.custom_roles ALTER COLUMN name DROP NOT NULL;
+ALTER TABLE public.custom_roles ALTER COLUMN role_key SET DEFAULT '';
+
+-- Safely populate empty values across all column naming variants
+UPDATE public.custom_roles 
+SET role_key = LOWER(REPLACE(COALESCE(role_name, name, 'role_' || id::text), ' ', '_')) 
+WHERE role_key IS NULL OR role_key = '';
+
+UPDATE public.custom_roles 
+SET role_name = COALESCE(name, INITCAP(REPLACE(role_key, '_', ' ')), 'Custom Role') 
+WHERE role_name IS NULL OR role_name = '';
+
+UPDATE public.custom_roles 
+SET name = COALESCE(role_name, INITCAP(REPLACE(role_key, '_', ' ')), 'Custom Role') 
+WHERE name IS NULL OR name = '';
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_custom_roles_role_name ON public.custom_roles (role_name);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_custom_roles_role_key ON public.custom_roles (role_key);
+
+-- Synchronize existing rows
+UPDATE public.custom_roles 
+SET 
+    role_key = 'superadmin',
+    name = 'Superadmin',
+    description = 'Full system administration, user governance, backups, website publishing, and all privileges',
+    permissions = '["all"]'::jsonb,
+    color = '#074504',
+    category = 'System',
+    is_system = true,
+    can_manage_users = true,
+    can_manage_roles = true,
+    can_manage_security = true,
+    can_manage_content = true,
+    updated_at = NOW()
+WHERE role_name = 'Superadmin' OR name = 'Superadmin' OR role_key = 'superadmin';
+
+UPDATE public.custom_roles 
+SET 
+    role_key = 'content_editor',
+    name = 'Content editor',
+    description = 'Manage and update website content: blog articles, media gallery, categories, tags, comments and social links',
+    permissions = '["mod_articles:View", "mod_articles:Create", "mod_articles:Edit", "mod_articles:Publish", "mod_media:View", "mod_media:Create", "mod_media:Edit", "mod_media:Publish", "mod_categories:View", "mod_categories:Create", "mod_categories:Edit", "mod_comments:View", "mod_comments:Moderate"]'::jsonb,
+    color = '#C0991B',
+    category = 'Editorial',
+    is_system = false,
+    can_manage_users = false,
+    can_manage_roles = false,
+    can_manage_security = false,
+    can_manage_content = true,
+    updated_at = NOW()
+WHERE role_name = 'Content editor' OR name = 'Content editor' OR role_key = 'content_editor';
+
+UPDATE public.custom_roles 
+SET 
+    role_key = 'administrator',
+    name = 'Administrator',
+    description = 'Operational administration, forms handling, beneficiary records, and memberships',
+    permissions = '["leads_manage", "beneficiaries_manage", "members_manage", "jobs_manage"]'::jsonb,
+    color = '#059669',
+    category = 'System',
+    is_system = false,
+    can_manage_users = true,
+    can_manage_roles = false,
+    can_manage_security = true,
+    can_manage_content = true,
+    updated_at = NOW()
+WHERE role_name = 'Administrator' OR name = 'Administrator' OR role_key = 'administrator';
+
+UPDATE public.custom_roles 
+SET 
+    role_key = 'reviewer',
+    name = 'Reviewer',
+    description = 'Review incoming membership registrations, inquiries, job dossiers, and volunteer submissions',
+    permissions = '["leads_read", "applications_read", "members_read"]'::jsonb,
+    color = '#2563EB',
+    category = 'Operations',
+    is_system = false,
+    can_manage_users = false,
+    can_manage_roles = false,
+    can_manage_security = false,
+    can_manage_content = false,
+    updated_at = NOW()
+WHERE role_name = 'Reviewer' OR name = 'Reviewer' OR role_key = 'reviewer';
+
+-- Insert missing roles supplying all column aliases
+INSERT INTO public.custom_roles (role_key, role_name, name, description, permissions, color, category, is_system, can_manage_users, can_manage_roles, can_manage_security, can_manage_content, created_by)
+SELECT 'superadmin', 'Superadmin', 'Superadmin', 'Full system administration, user governance, backups, website publishing, and all privileges', '["all"]'::jsonb, '#074504', 'System', true, true, true, true, true, 'Superadmin'
+WHERE NOT EXISTS (SELECT 1 FROM public.custom_roles WHERE role_name = 'Superadmin' OR name = 'Superadmin' OR role_key = 'superadmin');
+
+INSERT INTO public.custom_roles (role_key, role_name, name, description, permissions, color, category, is_system, can_manage_users, can_manage_roles, can_manage_security, can_manage_content, created_by)
+SELECT 'content_editor', 'Content editor', 'Content editor', 'Manage and update website content: blog articles, media gallery, categories, tags, comments and social links', '["mod_articles:View", "mod_articles:Create", "mod_articles:Edit", "mod_articles:Publish", "mod_media:View", "mod_media:Create", "mod_media:Edit", "mod_media:Publish", "mod_categories:View", "mod_categories:Create", "mod_categories:Edit", "mod_comments:View", "mod_comments:Moderate"]'::jsonb, '#C0991B', 'Editorial', false, false, false, false, true, 'Superadmin'
+WHERE NOT EXISTS (SELECT 1 FROM public.custom_roles WHERE role_name = 'Content editor' OR name = 'Content editor' OR role_key = 'content_editor');
+
+INSERT INTO public.custom_roles (role_key, role_name, name, description, permissions, color, category, is_system, can_manage_users, can_manage_roles, can_manage_security, can_manage_content, created_by)
+SELECT 'administrator', 'Administrator', 'Administrator', 'Operational administration, forms handling, beneficiary records, and memberships', '["leads_manage", "beneficiaries_manage", "members_manage", "jobs_manage"]'::jsonb, '#059669', 'System', false, true, false, true, true, 'Superadmin'
+WHERE NOT EXISTS (SELECT 1 FROM public.custom_roles WHERE role_name = 'Administrator' OR name = 'Administrator' OR role_key = 'administrator');
+
+INSERT INTO public.custom_roles (role_key, role_name, name, description, permissions, color, category, is_system, can_manage_users, can_manage_roles, can_manage_security, can_manage_content, created_by)
+SELECT 'reviewer', 'Reviewer', 'Reviewer', 'Review incoming membership registrations, inquiries, job dossiers, and volunteer submissions', '["leads_read", "applications_read", "members_read"]'::jsonb, '#2563EB', 'Operations', false, false, false, false, false, 'Superadmin'
+WHERE NOT EXISTS (SELECT 1 FROM public.custom_roles WHERE role_name = 'Reviewer' OR name = 'Reviewer' OR role_key = 'reviewer');
 
 
 -- ------------------------------------------------------------------------------

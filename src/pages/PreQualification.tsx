@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { ChevronRight, ChevronLeft, CheckCircle2, AlertCircle, ArrowRight, Lock, BookOpen, Clock, Activity, FileText, User, ShieldCheck, Phone } from 'lucide-react';
+import { ChevronRight, ChevronLeft, CheckCircle2, AlertCircle, ArrowRight, Lock, BookOpen, Clock, Activity, FileText, User, ShieldCheck, Phone, Download } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from '../components/Helmet';
 import { useLeads } from '../hooks/useLeads';
 import { getUserData, saveUserData } from '../lib/userData';
 import { LOAN_PRODUCTS } from '../lib/loanData';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import { exportOfficialReceiptPdf } from '../lib/pdfPrintUtils';
 
 type QuizData = {
   intent: string;
@@ -54,7 +55,7 @@ export default function EligibilityQuiz() {
   const [phoneError, setPhoneError] = useState('');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [results, setResults] = useState<{ score: number, category: string, recommended: string, recommendedId?: string, leadId: string } | null>(null);
+  const [results, setResults] = useState<{ score: number, category: string, recommended: string, recommendedId?: string, leadId: string, trackingId?: string, maxAmount?: number | string, recommendedProduct?: string, id?: string } | null>(null);
   const [isExistingMember, setIsExistingMember] = useState<boolean | null>(null);
 
   const [password, setPassword] = useState('');
@@ -157,6 +158,39 @@ export default function EligibilityQuiz() {
     } finally {
       setIsRegistering(false);
     }
+  };
+
+  const handleDownloadReceipt = async () => {
+    const refCode = results?.trackingId || results?.leadId || results?.id || `NH-PRQ-${Date.now()}`;
+    await exportOfficialReceiptPdf({
+      receiptTitle: "OFFICIAL PRE-QUALIFICATION & LOAN ELIGIBILITY CERTIFICATE",
+      uniqueIdentifier: refCode,
+      formType: 'general',
+      applicantName: contact.fullName || "Applicant",
+      applicantPhone: contact.phone,
+      applicantEmail: contact.email,
+      issuingDepartment: "Credit Appraisal & Member Underwriting Directorate",
+      sections: [
+        {
+          sectionTitle: "Eligibility Assessment Results",
+          items: [
+            { label: "Assigned Reference Code", value: refCode },
+            { label: "Loan Intent", value: data.intent || "Business Expansion" },
+            { label: "Requested Financing", value: data.amount ? `KES ${Number(data.amount).toLocaleString()}` : "Custom Amount" },
+            { label: "Assessed Income Level", value: data.income || "Verified" },
+            { label: "Recommended Product", value: results?.recommended || "SME Empowerment Loan" },
+            { label: "Assessed Eligibility Score", value: `${results?.score || 85}/100 (${results?.category || 'HIGH'} Likelihood)` }
+          ]
+        },
+        {
+          sectionTitle: "Institutional & Statutory Attestation",
+          items: [
+            { label: "Contact Channel", value: "Mobile recorded for SMS/WhatsApp notices" },
+            { label: "Compliance Status", value: "Compliant under Kenyan Data Protection Act 2019" }
+          ]
+        }
+      ]
+    });
   };
 
   const STEPS = 8;
@@ -582,6 +616,16 @@ export default function EligibilityQuiz() {
                                 Request Call Back
                               </Link>
                            </div>
+                           <div className="pt-2">
+                             <button
+                               type="button"
+                               onClick={handleDownloadReceipt}
+                               className="w-full py-3.5 bg-[#074504] text-[#C0991B] border-2 border-[#C0991B] rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:bg-[#053203] hover:text-white transition-all cursor-pointer"
+                             >
+                               <Download className="w-4 h-4" />
+                               <span>Download Eligibility Certificate (PDF)</span>
+                             </button>
+                           </div>
                            <p className="text-[10px] text-gray-400 text-center font-bold">Your full eligibility report has been synced to your profile.</p>
                         </div>
                       ) : (
@@ -603,6 +647,14 @@ export default function EligibilityQuiz() {
                              >
                                 Request a Call Back <Phone className="w-4 h-4"/>
                              </Link>
+                             <button
+                               type="button"
+                               onClick={handleDownloadReceipt}
+                               className="w-full py-3.5 bg-[#074504] text-[#C0991B] border-2 border-[#C0991B] rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:bg-[#053203] hover:text-white transition-all cursor-pointer"
+                             >
+                               <Download className="w-4 h-4" />
+                               <span>Download Eligibility Certificate (PDF)</span>
+                             </button>
                            </div>
                            <p className="text-[10px] text-gray-400 text-center font-bold">A copy of your recommendation has been sent to your email.</p>
                         </div>

@@ -26,21 +26,25 @@ export default function VerificationModal({
 
   // Trigger OTP sending when modal opens
   const sendOtps = async () => {
-    if (!email && !phone) return;
+    if (!email) {
+      // If only phone was provided, proceed directly as phone OTP is globally removed
+      onVerified();
+      return;
+    }
     setSending(true);
     setError('');
     try {
       const response = await fetch('/api/otp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, phone }),
+        body: JSON.stringify({ email }),
       });
       const data = await response.json();
       if (!data.success) {
-        throw new Error(data.error || 'Failed to send verification codes.');
+        throw new Error(data.error || 'Failed to send verification code.');
       }
     } catch (err: any) {
-      setError(err.message || 'Error sending codes. Please check your network and try again.');
+      setError(err.message || 'Error sending code. Please check your network and try again.');
     } finally {
       setSending(false);
     }
@@ -67,12 +71,6 @@ export default function VerificationModal({
       return;
     }
 
-    if (phone && !phoneCode.trim()) {
-      setError('Please enter the 6-digit SMS verification code.');
-      setVerifying(false);
-      return;
-    }
-
     try {
       const response = await fetch('/api/otp/verify', {
         method: 'POST',
@@ -80,8 +78,6 @@ export default function VerificationModal({
         body: JSON.stringify({
           email,
           emailCode: emailCode.trim(),
-          phone,
-          phoneCode: phoneCode.trim(),
         }),
       });
       const data = await response.json();
@@ -177,7 +173,7 @@ export default function VerificationModal({
                     <div className="space-y-2 bg-[#074504]/5 border border-[#074504]/10 rounded-2xl p-4">
                       <div className="flex items-center gap-2 text-[#074504] font-black text-xs uppercase tracking-wider">
                         <Mail className="w-4 h-4 text-[#C0991B]" />
-                        <span>Email Code Sent</span>
+                        <span>Email Verification Code Sent</span>
                       </div>
                       <p className="text-[11px] text-gray-500 font-medium">
                         Verification code sent to <strong className="text-gray-700">{email}</strong>. Entering this code verifies ownership.
@@ -193,24 +189,16 @@ export default function VerificationModal({
                     </div>
                   )}
 
-                  {/* Phone verification field */}
+                  {/* Phone contact registered status */}
                   {phone && (
-                    <div className="space-y-2 bg-[#C0991B]/5 border border-[#C0991B]/20 rounded-2xl p-4">
-                      <div className="flex items-center gap-2 text-[#074504] font-black text-xs uppercase tracking-wider">
-                        <Phone className="w-4 h-4 text-[#074504]" />
-                        <span>SMS OTP Code Sent</span>
+                    <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 rounded-2xl p-3.5 text-xs text-emerald-900">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-[#074504]">
+                        <Phone className="w-4 h-4" />
                       </div>
-                      <p className="text-[11px] text-gray-500 font-medium">
-                        OTP message sent to <strong className="text-gray-700">{phone}</strong>. Verify it to guarantee lead quality.
-                      </p>
-                      <input
-                        type="text"
-                        maxLength={6}
-                        placeholder="e.g. 654321"
-                        value={phoneCode}
-                        onChange={(e) => setPhoneCode(e.target.value.replace(/\D/g, ''))}
-                        className="w-full text-center tracking-[0.5em] text-lg font-black bg-white border border-gray-200 rounded-xl py-2.5 px-4 focus:outline-none focus:border-[#074504] transition-all"
-                      />
+                      <div>
+                        <span className="font-bold text-gray-900 block">Mobile Phone Registered: {phone}</span>
+                        <span className="text-[10px] text-gray-500">Recorded for updates &amp; alerts (No phone OTP required)</span>
+                      </div>
                     </div>
                   )}
                 </div>

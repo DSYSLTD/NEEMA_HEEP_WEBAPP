@@ -44,9 +44,9 @@ export function useAuth() {
             displayName: 'Patrick Munene',
             userName: 'Patrick Munene',
             role: 'Superadmin',
-            department: 'Executive Administration',
+            department: 'Web Development',
             status: 'Active',
-            provider: sessionUser.app_metadata?.provider || 'email'
+            provider: sessionUser.app_metadata?.provider || 'credentials'
           };
         }
 
@@ -59,7 +59,7 @@ export function useAuth() {
             role: 'Content editor',
             department: 'CMS Editorial',
             status: 'Active',
-            provider: sessionUser.app_metadata?.provider || 'email'
+            provider: sessionUser.app_metadata?.provider || 'credentials'
           };
         }
 
@@ -103,9 +103,9 @@ export function useAuth() {
               verifiedUser.role === 'Site Administrator' || 
               verifiedUser.role === 'admin'
             );
-            setIsAuthor(verifiedUser.role === 'Author');
+            setIsAuthor(verifiedUser.role === 'Content editor' || verifiedUser.role === 'Author');
           } else {
-            // Unapproved user logged in via OAuth - sign out immediately
+            // Unapproved user logged in - sign out immediately
             await supabase.auth.signOut();
             setUser(null);
             setIsAdmin(false);
@@ -124,7 +124,7 @@ export function useAuth() {
               parsed.role === 'Site Administrator' ||
               parsed.role === 'admin'
             );
-            setIsAuthor(parsed.role === 'Author');
+            setIsAuthor(parsed.role === 'Content editor' || parsed.role === 'Author');
           }
         }
       } catch (err) {
@@ -149,7 +149,7 @@ export function useAuth() {
             verifiedUser.role === 'Site Administrator' ||
             verifiedUser.role === 'admin'
           );
-          setIsAuthor(verifiedUser.role === 'Author');
+          setIsAuthor(verifiedUser.role === 'Content editor' || verifiedUser.role === 'Author');
           localStorage.setItem('neema_supabase_staff_session', JSON.stringify(verifiedUser));
         } else {
           await supabase.auth.signOut();
@@ -307,7 +307,7 @@ export function useAuth() {
         verified.role === 'admin' ||
         verified.email.toLowerCase() === 'ptrckmunene@gmail.com'
       );
-      setIsAuthor(verified.role === 'Author');
+      setIsAuthor(verified.role === 'Content editor' || verified.role === 'Author');
       localStorage.setItem('neema_supabase_staff_session', JSON.stringify(verified));
       setLoading(false);
       return verified;

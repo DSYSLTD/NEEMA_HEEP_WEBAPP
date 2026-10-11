@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { UserPlus, CheckCircle2 } from 'lucide-react';
+import { UserPlus, CheckCircle2, Download } from 'lucide-react';
 import { useLeads } from '../hooks/useLeads';
+import { generateUniqueFormIdentifier } from '../lib/identifierUtils';
+import { exportOfficialReceiptPdf } from '../lib/pdfPrintUtils';
 
 export default function Registration() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [trackingId, setTrackingId] = useState('');
   const { submitLead } = useLeads();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -14,12 +18,16 @@ export default function Registration() {
     if (!fullName || !phone) return;
     setIsSubmitting(true);
     try {
+      const generatedCode = generateUniqueFormIdentifier('individual_registration');
+      setTrackingId(generatedCode);
+
       await submitLead({
         type: 'Registration',
         name: fullName,
         phone,
+        email,
         signupSource: 'Registration Page',
-        details: { fullName, phone }
+        details: { fullName, phone, email, trackingId: generatedCode }
       });
       setSubmitted(true);
     } catch (err) {
@@ -27,6 +35,36 @@ export default function Registration() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleDownloadReceipt = async () => {
+    await exportOfficialReceiptPdf({
+      receiptTitle: "OFFICIAL MEMBER PORTAL ACTIVATION RECEIPT",
+      uniqueIdentifier: trackingId,
+      formType: 'individual_registration',
+      applicantName: fullName,
+      applicantPhone: phone,
+      applicantEmail: email,
+      issuingDepartment: "Digital Services & Portal Administration",
+      sections: [
+        {
+          sectionTitle: "Member Activation Profile",
+          items: [
+            { label: "Account Name", value: fullName },
+            { label: "Mobile Contact", value: phone },
+            { label: "Email Address", value: email || "Not provided" },
+            { label: "Tracking Code", value: trackingId }
+          ]
+        },
+        {
+          sectionTitle: "Compliance & Security Attestation",
+          items: [
+            { label: "Verification Channel", value: "Mobile recorded for SMS/WhatsApp notices" },
+            { label: "Data Protection Act 2019", value: "Compliant & Consent Granted" }
+          ]
+        }
+      ]
+    });
   };
 
   return (
@@ -40,10 +78,22 @@ export default function Registration() {
       </div>
 
       {submitted ? (
-        <div className="p-6 bg-emerald-50 rounded-2xl text-center space-y-2">
+        <div className="p-6 bg-emerald-50 rounded-2xl text-center space-y-4">
           <CheckCircle2 className="w-8 h-8 text-[#074504] mx-auto" />
           <h3 className="font-bold text-gray-900 text-sm">Activation Requested</h3>
+          <div className="inline-block px-3 py-1.5 bg-[#074504]/5 border border-[#074504]/10 rounded-xl">
+            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">Activation Code:</span>
+            <span className="font-mono font-black text-[#074504] text-xs">{trackingId}</span>
+          </div>
           <p className="text-xs text-gray-600">Our customer team will verify your membership and send login credentials via SMS.</p>
+          <button
+            type="button"
+            onClick={handleDownloadReceipt}
+            className="w-full py-3 bg-[#074504] text-[#C0991B] border-2 border-[#C0991B] rounded-xl font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 shadow-sm hover:bg-[#053203] hover:text-white transition-all cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download Official Receipt (PDF)</span>
+          </button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -69,7 +119,17 @@ export default function Registration() {
               className="w-full px-3 py-2 text-xs border border-gray-300 rounded-xl"
             />
           </div>
-          <button type="submit" disabled={isSubmitting} className="w-full py-2.5 bg-[#074504] text-white font-bold text-xs rounded-xl hover:bg-[#053203] disabled:opacity-50">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">Email Address (Optional)</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="e.g. grace@example.com"
+              className="w-full px-3 py-2 text-xs border border-gray-300 rounded-xl"
+            />
+          </div>
+          <button type="submit" disabled={isSubmitting} className="w-full py-2.5 bg-[#074504] text-white font-bold text-xs rounded-xl hover:bg-[#053203] disabled:opacity-50 cursor-pointer">
             {isSubmitting ? 'Submitting...' : 'Submit Activation'}
           </button>
         </form>

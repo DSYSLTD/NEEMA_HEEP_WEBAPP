@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, AlertCircle, ArrowRight, ShieldCheck, Mail, Phone, User, ChevronRight, Smartphone } from 'lucide-react';
+import { CheckCircle2, AlertCircle, ArrowRight, ShieldCheck, Mail, Phone, User, ChevronRight, Smartphone, Download } from 'lucide-react';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { useLeads } from '../hooks/useLeads';
 import { getUserData, saveUserData } from '../lib/userData';
 import { leadService } from '../services/leadService';
 import { trackStepDrop, trackEvent } from '../services/trackingService';
+import { generateUniqueFormIdentifier } from '../lib/identifierUtils';
+import { exportOfficialReceiptPdf } from '../lib/pdfPrintUtils';
 import CaptchaField from './CaptchaField';
 
 interface Field {
@@ -111,6 +113,7 @@ export default function SmartLeadForm({
   const [stepValid, setStepValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submittedTrackingId, setSubmittedTrackingId] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Verification State
@@ -168,28 +171,6 @@ export default function SmartLeadForm({
     return formData.email || formData.emailAddress || '';
   };
 
-  const handleSendPhoneOtp = async () => {
-    const rawPhone = getPhoneValue();
-    const parsed = parsePhoneNumberFromString(rawPhone, 'KE');
-    const formattedPhone = parsed ? parsed.format('E.164') : rawPhone;
-
-    setSendingVerification(true);
-    setErrors(prev => ({ ...prev, phone: '' }));
-    try {
-      const res = await fetch('/api/otp/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: formattedPhone })
-      });
-      if (!res.ok) throw new Error('Could not send SMS code.');
-      setVerificationMode('phone');
-    } catch (err: any) {
-      setErrors(prev => ({ ...prev, phone: err.message || 'SMS Dispatch Error' }));
-    } finally {
-      setSendingVerification(false);
-    }
-  };
-
   const handleSendEmailOtp = async () => {
     const rawEmail = getEmailValue();
     setSendingVerification(true);
@@ -210,9 +191,6 @@ export default function SmartLeadForm({
   };
 
   const handleNext = async () => {
-    const currentFields = steps[currentStep];
-    const hasPhoneField = currentFields.find(f => f.type === 'tel');
-
     // Real-time API Sync immediately after Step 1 completion
     if (currentStep === 0) {
       leadService.syncPartialLead({
@@ -226,11 +204,7 @@ export default function SmartLeadForm({
 
     trackStepDrop(type, currentStep, `Step ${currentStep + 1}`);
 
-    if (hasPhoneField && !phoneVerified) {
-      await handleSendPhoneOtp();
-      return;
-    }
-
+    // Visitor enters both phone and email, but only email is verified via OTP
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -240,42 +214,6 @@ export default function SmartLeadForm({
       } else {
         handleSubmit();
       }
-    }
-  };
-
-  const handleVerifyPhone = async () => {
-    const rawPhone = getPhoneValue();
-    const parsed = parsePhoneNumberFromString(rawPhone, 'KE');
-    const formattedPhone = parsed ? parsed.format('E.164') : rawPhone;
-
-    setSendingVerification(true);
-    setErrors(prev => ({ ...prev, vCode: '' }));
-    try {
-      const res = await fetch('/api/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: formattedPhone, phoneCode: vCode })
-      });
-      if (!res.ok) throw new Error('Code incorrect or expired.');
-      
-      setPhoneVerified(true);
-      setVerificationMode('none');
-      setVCode('');
-
-      if (currentStep === steps.length - 1) {
-        const emailVal = getEmailValue();
-        if (emailVal && !emailVerified) {
-          await handleSendEmailOtp();
-        } else {
-          handleSubmit();
-        }
-      } else {
-        setCurrentStep(currentStep + 1);
-      }
-    } catch (err: any) {
-      setErrors(prev => ({ ...prev, vCode: err.message || 'Verification Failed.' }));
-    } finally {
-      setSendingVerification(false);
     }
   };
 
@@ -304,7 +242,7 @@ export default function SmartLeadForm({
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    await new Promise(r => setTimeout(r, 1200));
+    await new Promise(r => setTimeout(r, 1000));
     
     const updatedDetails = { ...formData };
     fields.forEach(field => {
@@ -322,16 +260,43 @@ export default function SmartLeadForm({
     const formattedPhone = phoneNumber ? phoneNumber.format('E.164') : phoneVal;
 
     const pageSource = typeof window !== 'undefined' ? `${title || type} Form on ${window.location.pathname}` : `${type} Form`;
+    const autoUniqueId = generateUniqueFormIdentifier(type);
+    setSubmittedTrackingId(autoUniqueId);
+
+    // Save to /api/applications/submit for structured application types
+    if (['partnership', 'volunteer', 'career', 'sponsorship'].some(t => type.toLowerCase().includes(t))) {
+      try {
+        await fetch('/api/applications/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: type.toLowerCase(),
+            payload: {
+              trackingId: autoUniqueId,
+              unique_identifier: autoUniqueId,
+              ...formData,
+              ...updatedDetails,
+              phone: formattedPhone,
+              created_at: new Date().toISOString()
+            }
+          })
+        });
+      } catch (err) {
+        console.warn("Direct application submission sync notice:", err);
+      }
+    }
 
     submitLead({
       type,
-      name: formData['name'] || formData['fullName'] || 'Anonymous',
+      name: formData['name'] || formData['fullName'] || formData['contactPerson'] || formData['orgName'] || 'Anonymous',
       email: formData['email'] || '',
       phone: formattedPhone,
       consentGiven: "Yes",
       signupSource: pageSource,
       details: {
         ...updatedDetails,
+        trackingId: autoUniqueId,
+        unique_identifier: autoUniqueId,
         consentGiven: "Yes",
         signupSource: pageSource,
         userAgent: navigator.userAgent
@@ -343,7 +308,7 @@ export default function SmartLeadForm({
       sessionStorage.removeItem(`neema_draft_${type}`);
     }
 
-    const finalName = formData['name'] || formData['fullName'];
+    const finalName = formData['name'] || formData['fullName'] || formData['contactPerson'] || formData['orgName'];
     const finalEmail = formData['email'];
     const finalPhone = formattedPhone;
     
@@ -358,6 +323,41 @@ export default function SmartLeadForm({
     setIsSubmitting(false);
     setIsSuccess(true);
     if (onSuccess) onSuccess();
+  };
+
+  const handleDownloadReceipt = async () => {
+    if (!submittedTrackingId) return;
+    try {
+      const applicantNameVal = formData['name'] || formData['fullName'] || formData['contactPerson'] || formData['orgName'] || 'Applicant';
+      const phoneVal = formData['phone'] || formData['phoneNumber'] || '';
+      await exportOfficialReceiptPdf({
+        receiptTitle: `OFFICIAL ${type.toUpperCase()} REQUEST RECEIPT`,
+        uniqueIdentifier: submittedTrackingId,
+        formType: type.toLowerCase().includes('part') ? 'partnership_request' : 'general',
+        applicantName: applicantNameVal,
+        applicantPhone: phoneVal,
+        applicantEmail: formData['email'] || '',
+        issuingDepartment: type.toLowerCase().includes('part') ? 'Strategic Alliances & Partnerships Directorate' : 'Customer Relations Directorate',
+        sections: [
+          {
+            sectionTitle: "Form Submission Details",
+            items: fields.map(f => ({
+              label: f.label || f.name,
+              value: String(formData[f.name] || 'N/A')
+            }))
+          },
+          {
+            sectionTitle: "Verification & Statutory Attestation",
+            items: [
+              { label: "Verification Status", value: "Email OTP confirmed • Phone recorded for SMS/WhatsApp notices" },
+              { label: "Data Protection Act 2019", value: "Compliant & Legal Consent Logged" }
+            ]
+          }
+        ]
+      });
+    } catch (err) {
+      console.error("Receipt generation error:", err);
+    }
   };
 
   const getIcon = (type: string) => {
@@ -379,54 +379,39 @@ export default function SmartLeadForm({
         <div className="w-20 h-20 bg-[#599200]/20 rounded-full flex items-center justify-center mx-auto mb-6 text-[#599200]">
           <CheckCircle2 className="w-10 h-10" />
         </div>
-        <h2 className="text-3xl font-black text-[#074504] mb-4 uppercase tracking-tighter">Verified & Submitted!</h2>
-        <p className="text-gray-600 font-medium leading-relaxed mb-8 max-w-sm mx-auto">
+        <h2 className="text-3xl font-black text-[#074504] mb-3 uppercase tracking-tighter">Verified & Submitted!</h2>
+        
+        {submittedTrackingId && (
+          <div className="inline-block px-4 py-2 bg-[#074504]/5 border border-[#074504]/10 rounded-2xl mb-4">
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+              Assigned Tracking Code
+            </p>
+            <p className="text-sm font-black font-mono text-[#074504] tracking-wider">
+              {submittedTrackingId}
+            </p>
+          </div>
+        )}
+
+        <p className="text-gray-600 font-medium leading-relaxed mb-6 max-w-sm mx-auto text-sm">
           {successMessage}
         </p>
-        <div className="flex flex-col gap-4">
-          <div className="bg-[#F4F7F6] p-4 rounded-xl text-xs font-bold text-[#074504] flex items-center gap-3">
+
+        <div className="flex flex-col gap-3 max-w-sm mx-auto">
+          {submittedTrackingId && (
+            <button
+              type="button"
+              onClick={handleDownloadReceipt}
+              className="w-full py-4 bg-[#074504] text-[#C0991B] border-2 border-[#C0991B] rounded-2xl font-black uppercase text-xs tracking-widest shadow-md hover:bg-[#053203] hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download Official Receipt (PDF)</span>
+            </button>
+          )}
+          <div className="bg-[#F4F7F6] p-4 rounded-xl text-xs font-bold text-[#074504] flex items-center justify-center gap-3">
             <ShieldCheck className="w-4 h-4 text-[#C0991B]" />
             Your request has been encrypted & verified.
           </div>
         </div>
-      </motion.div>
-    );
-  }
-
-  if (verificationMode === 'phone') {
-    return (
-      <motion.div 
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="space-y-8 py-6"
-      >
-        <div className="text-center">
-          <div className="w-16 h-16 bg-[#074504]/5 rounded-2xl flex items-center justify-center mx-auto mb-4 text-[#074504]">
-            <Smartphone className="w-8 h-8" />
-          </div>
-          <h2 className="text-2xl font-black text-[#074504] uppercase tracking-tighter mb-2">Verify Your Phone</h2>
-          <p className="text-gray-500 font-medium text-sm">We've sent a code to <span className="text-[#074504] font-bold">{formData.phone || formData.phoneNumber}</span></p>
-        </div>
-
-        <div className="space-y-4">
-          <input 
-            type="text"
-            maxLength={6}
-            value={vCode}
-            onChange={e => setVCode(e.target.value)}
-            placeholder="• • • • • •"
-            className="w-full bg-gray-50 border-2 border-gray-100 rounded-3xl py-6 text-center text-4xl font-black tracking-[0.3em] focus:border-[#599200] focus:bg-white outline-none transition-all"
-          />
-          {errors.vCode && <p className="text-center text-xs font-black text-red-500 uppercase tracking-widest">{errors.vCode}</p>}
-        </div>
-
-        <button 
-          onClick={handleVerifyPhone}
-          disabled={vCode.length !== 6 || sendingVerification}
-          className="w-full py-5 rounded-2xl bg-[#074504] text-white font-black uppercase text-xs tracking-widest shadow-xl disabled:opacity-50"
-        >
-          {sendingVerification ? 'Verifying...' : 'Verify Phone Number'}
-        </button>
       </motion.div>
     );
   }

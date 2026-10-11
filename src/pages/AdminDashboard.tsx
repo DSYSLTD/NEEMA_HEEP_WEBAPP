@@ -119,7 +119,7 @@ export default function AdminDashboard() {
     if (isReviewer && !['apps_jobs', 'apps_job_applications', 'apps_volunteer', 'apps_newsletter', 'lead_prequal', 'lead_callbacks', 'lead_contacts', 'beneficiary_entries', 'beneficiary_lists', 'member_individual', 'member_group', 'sponsor_requests', 'partner_requests', 'blog_comments'].includes(activeNav)) {
       setActiveNav('apps_job_applications');
     }
-    if (isContentEditor && !['blog_articles', 'blog_comments', 'blog_media', 'add_post', 'admin_social', 'admin_profiles'].includes(activeNav)) {
+    if (isContentEditor && !['blog_articles', 'blog_comments', 'blog_media', 'add_post', 'categories_tags', 'admin_social', 'admin_profiles'].includes(activeNav)) {
       setActiveNav('blog_articles');
     }
   }, [isReviewer, isContentEditor, activeNav]);

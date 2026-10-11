@@ -2543,7 +2543,7 @@ export default function VacanciesAdminModule({ className = '' }: { className?: s
               <div>
                 <label className="font-bold text-gray-600 block text-[10px] uppercase">Verification:</label>
                 <div className="p-2 bg-emerald-50 text-emerald-800 font-black rounded-xl text-[11px] flex items-center justify-center gap-1 border border-emerald-200">
-                  <ShieldCheck className="w-3 h-3" /> SMS & Email OTP Verified
+                  <ShieldCheck className="w-3 h-3" /> Email OTP Verified
                 </div>
               </div>
             </div>

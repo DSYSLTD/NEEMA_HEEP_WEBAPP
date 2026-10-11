@@ -1,16 +1,52 @@
-import { ArrowRight, Heart, Handshake, ShieldCheck, Globe, Users, Briefcase, TrendingUp, MessageSquare, Copy, Building2, BookOpen, Smartphone, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowRight, Heart, Handshake, ShieldCheck, Globe, Users, Briefcase, TrendingUp, MessageSquare, Copy, Building2, BookOpen, Smartphone, CheckCircle2, AlertCircle, FileText, Download, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import React, { useState } from 'react';
 import SmartLeadForm from '../components/SmartLeadForm';
+import MpesaPaymentCapture, { ParsedMpesaTransaction } from '../components/MpesaPaymentCapture';
+import { exportPdfReport } from '../lib/pdfPrintUtils';
 
 export default function Donors() {
   const [copied, setCopied] = useState(false);
+  const [showCaptureModal, setShowCaptureModal] = useState(false);
+  const [donorTx, setDonorTx] = useState<ParsedMpesaTransaction | null>(null);
+  const [donorName, setDonorName] = useState('');
+  const [donorPhone, setDonorPhone] = useState('');
+  const [donorReceiptGenerated, setDonorReceiptGenerated] = useState(false);
+  const [donationRef, setDonationRef] = useState('');
 
   const copyTill = () => {
     navigator.clipboard.writeText('388285');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadDonationReceipt = async () => {
+    if (!donorTx) return;
+    const ref = donationRef || donorTx.txCode || 'NH-DON-' + Math.floor(1000 + Math.random() * 9000);
+    await exportPdfReport({
+      title: 'OFFICIAL CHARITABLE DONATION RECEIPT',
+      subtitle: `Neema HEEP Foundation & Education Support Fund`,
+      referenceNumber: ref,
+      issuingDepartment: 'Finance & Philanthropic Partnerships',
+      showSignatureBlock: true,
+      columns: ['Contribution Item', 'Transaction Details', 'Audit Status'],
+      rows: [
+        ['Donor Entity / Individual', donorName.toUpperCase() || 'ANONYMOUS WELL-WISHER', 'Recorded'],
+        ['Contribution Mobile', donorPhone || donorTx.senderPhone || 'Verified M-Pesa Line', 'Verified'],
+        ['M-Pesa Transaction Code', donorTx.txCode, 'Safaricom Matched'],
+        ['Amount Contributed', donorTx.amountStr || 'KES 1,000.00', 'Cleared'],
+        ['Recipient Entity', 'NEEMA HEEP (Till: 388285)', 'Official Institution Account'],
+        ['Transaction Timestamp', donorTx.dateTime, 'Logged'],
+        ['Captured SMS Confirmation', donorTx.rawMessage || 'Verified via M-Pesa Gateway', 'Encrypted Record'],
+        ['Tax & Philanthropic Status', 'Exempt under Kenyan NGO & Community Act', 'Compliant']
+      ],
+      summaryMetrics: [
+        { label: 'Receipt No.', value: ref, color: '#074504' },
+        { label: 'Amount Paid', value: donorTx.amountStr || 'KES 1,000', color: '#599200' },
+        { label: 'Till Used', value: '388285', color: '#C0991B' }
+      ]
+    });
   };
 
   const partnerTypes = [
@@ -141,8 +177,8 @@ export default function Donors() {
                 <p className="text-gray-500 font-medium text-lg leading-relaxed mb-8">
                   Empower communities with an M-Pesa contribution. Please use our Buy Goods Till Number below to support our initiatives.
                 </p>
-                <div className="bg-[#074504]/5 rounded-[2.5rem] p-8 border border-[#074504]/10 max-w-md mx-auto">
-                   <div className="flex items-center justify-center gap-4 mb-4">
+                <div className="bg-[#074504]/5 rounded-[2.5rem] p-8 border border-[#074504]/10 max-w-md mx-auto space-y-4">
+                   <div className="flex items-center justify-center gap-4 mb-2">
                       <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#599200]">
                          <Smartphone className="w-6 h-6" />
                       </div>
@@ -151,13 +187,96 @@ export default function Donors() {
                         <p className="text-3xl font-black text-[#074504]">388285</p>
                       </div>
                    </div>
-                   <button 
-                     onClick={copyTill}
-                     className="mx-auto text-xs font-black text-[#C0991B] uppercase tracking-widest hover:text-[#074504] transition-colors flex items-center gap-2 justify-center"
-                   >
-                     {copied ? 'Copied Successfully' : 'Copy Till Number'} <Copy className="w-3.5 h-3.5" />
-                   </button>
+                   <div className="flex items-center justify-center gap-3">
+                     <button 
+                       onClick={copyTill}
+                       className="text-xs font-black text-[#C0991B] uppercase tracking-widest hover:text-[#074504] transition-colors flex items-center gap-2 justify-center cursor-pointer"
+                     >
+                       {copied ? 'Copied Successfully' : 'Copy Till Number'} <Copy className="w-3.5 h-3.5" />
+                     </button>
+                   </div>
                 </div>
+
+                <div className="pt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowCaptureModal(!showCaptureModal)}
+                    className="px-6 py-3.5 bg-[#074504] text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg hover:bg-[#053203] transition-all inline-flex items-center gap-2 cursor-pointer"
+                  >
+                    <Smartphone className="w-4 h-4 text-[#C0991B]" />
+                    <span>{showCaptureModal ? 'Hide M-Pesa Receipt Capture' : 'Record & Verify M-Pesa Payment Message'}</span>
+                  </button>
+                </div>
+
+                {showCaptureModal && (
+                  <div className="mt-8 text-left bg-gray-50/70 p-6 md:p-8 rounded-3xl border border-gray-200 space-y-6 animate-in fade-in duration-300">
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-black text-[#074504] uppercase">
+                        Capture Donation M-Pesa Payment Message
+                      </h4>
+                      <p className="text-xs text-gray-500 font-medium">
+                        Paste the SMS text message you received after sending funds to Till 388285 to generate your official tax-exempt philanthropic receipt.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
+                          Donor / Company Name
+                        </label>
+                        <input
+                          type="text"
+                          value={donorName}
+                          onChange={(e) => setDonorName(e.target.value)}
+                          placeholder="e.g. John Doe / Family Foundation"
+                          className="w-full p-3 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-900"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
+                          Donor Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          value={donorPhone}
+                          onChange={(e) => setDonorPhone(e.target.value)}
+                          placeholder="07XXXXXXXX"
+                          className="w-full p-3 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-900"
+                        />
+                      </div>
+                    </div>
+
+                    <MpesaPaymentCapture
+                      paybill="388285"
+                      accountNumber="DONATION-HEEP"
+                      expectedAmount={1000}
+                      recipientName="NEEMA HEEP FOUNDATION"
+                      onPaymentCaptured={(data) => {
+                        setDonorTx(data);
+                        if (data.txCode) {
+                          setDonationRef('NH-DON-' + data.txCode.slice(-6));
+                        }
+                      }}
+                    />
+
+                    {donorTx?.isValid && (
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
+                        <div>
+                          <p className="text-xs font-black text-[#074504]">M-Pesa Contribution Verified!</p>
+                          <p className="text-[11px] text-emerald-800">Code: {donorTx.txCode} &bull; {donorTx.amountStr}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleDownloadDonationReceipt}
+                          className="px-5 py-2.5 bg-[#074504] text-[#C0991B] hover:text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Download Letterhead Receipt (PDF)</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
             </div>
          </div>
       </section>

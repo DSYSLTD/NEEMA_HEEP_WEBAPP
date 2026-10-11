@@ -96,7 +96,7 @@ function registerStaffUser(aliases: string[], record: { password: string; fullNa
 
 // 1. Pre-register core accounts with environment overrides
 registerStaffUser(
-  [ADMIN_USERNAME, "ptrckmunene@gmail.com", "patrick munene", "ptrckmunene", "admin"],
+  [ADMIN_USERNAME, "ptrckmunene@gmail.com", "patrick munene", "ptrckmunene", "admin", "admin_neema1", "+254725789086", "+254 725 789 086", "0725789086", "725789086"],
   {
     password: adminPassword || "@super123#",
     fullName: process.env.ADMIN_FULL_NAME || "Patrick Munene",
@@ -106,11 +106,11 @@ registerStaffUser(
 );
 
 registerStaffUser(
-  ["muthonichar12@gmail.com", "charity muthoni", "muthonichar12"],
+  ["muthonichar12@gmail.com", "charity muthoni", "muthonichar12", "charity", "+254724389949", "+254 724 389 949", "0724389949", "724389949"],
   {
     password: "@Cham123#",
     fullName: "Charity Muthoni",
-    role: "Author",
+    role: "Content editor",
     email: "muthonichar12@gmail.com",
   }
 );
@@ -648,28 +648,42 @@ async function startServer() {
     }
   }
 
-  // POST /api/upload (Featured image upload endpoint)
+  // POST /api/upload (Universal bucket upload endpoint for images and documents)
   app.post("/api/upload", async (req: Request, res: Response) => {
     try {
-      const { fileBase64, filename, contentType } = req.body || {};
+      const { fileBase64, filename, contentType, bucket: requestedBucket } = req.body || {};
       if (!fileBase64) {
-        return res.status(400).json({ success: false, error: "Image data is required." });
+        return res.status(400).json({ success: false, error: "File data is required." });
       }
 
-      const cleanFilename = (filename || `image-${Date.now()}.webp`).replace(/[^a-zA-Z0-9._-]/g, "_");
-      const ext = cleanFilename.split(".").pop() || "webp";
-      const mime = contentType || (ext === "png" ? "image/png" : ext === "jpg" || ext === "jpeg" ? "image/jpeg" : "image/webp");
-      const buffer = Buffer.from(fileBase64.replace(/^data:image\/\w+;base64,/, ""), "base64");
+      const targetBucket = (requestedBucket || "documents").toLowerCase().replace(/[^a-z0-9_-]/g, "");
+      const cleanFilename = (filename || `upload-${Date.now()}`).replace(/[^a-zA-Z0-9._-]/g, "_");
+      const ext = cleanFilename.split(".").pop()?.toLowerCase() || "pdf";
+
+      // Detect MIME type
+      let mime = contentType;
+      if (!mime) {
+        if (ext === "png") mime = "image/png";
+        else if (ext === "jpg" || ext === "jpeg") mime = "image/jpeg";
+        else if (ext === "webp") mime = "image/webp";
+        else if (ext === "pdf") mime = "application/pdf";
+        else if (ext === "doc") mime = "application/msword";
+        else if (ext === "docx") mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        else mime = "application/octet-stream";
+      }
+
+      const rawBase64 = fileBase64.replace(/^data:[^;]+;base64,/, "");
+      const buffer = Buffer.from(rawBase64, "base64");
 
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, "0");
       const uniqueName = `${year}/${month}/${Date.now()}-${cleanFilename}`;
 
-      // 1. Try uploading to Supabase Storage bucket 'blog-images'
+      // 1. Try uploading to Supabase Storage bucket
       try {
         const { data: sbData, error: sbError } = await supabaseServer.storage
-          .from("blog-images")
+          .from(targetBucket)
           .upload(uniqueName, buffer, {
             contentType: mime,
             upsert: true
@@ -677,36 +691,38 @@ async function startServer() {
 
         if (!sbError && sbData?.path) {
           const { data: pubData } = supabaseServer.storage
-            .from("blog-images")
+            .from(targetBucket)
             .getPublicUrl(sbData.path);
 
           return res.json({
             success: true,
             url: pubData.publicUrl,
             path: sbData.path,
+            bucket: targetBucket,
             storage: "supabase"
           });
         }
       } catch (sbErr) {
-        console.warn("[Supabase Storage upload warning, falling back to local static storage]:", sbErr);
+        console.warn(`[Supabase Storage ${targetBucket} upload notice, saving to local static storage]:`, sbErr);
       }
 
-      // 2. Local storage fallback
-      const uploadDir = path.resolve(`public/uploads/blog/${year}/${month}`);
+      // 2. Local storage fallback in appropriate bucket directory
+      const uploadDir = path.resolve(`public/uploads/${targetBucket}/${year}/${month}`);
       fs.mkdirSync(uploadDir, { recursive: true });
       const localFilename = `${Date.now()}-${cleanFilename}`;
       const localFilePath = path.join(uploadDir, localFilename);
       fs.writeFileSync(localFilePath, buffer);
 
-      const localUrl = `/uploads/blog/${year}/${month}/${localFilename}`;
+      const localUrl = `/uploads/${targetBucket}/${year}/${month}/${localFilename}`;
       return res.json({
         success: true,
         url: localUrl,
-        path: `uploads/blog/${year}/${month}/${localFilename}`,
+        path: `uploads/${targetBucket}/${year}/${month}/${localFilename}`,
+        bucket: targetBucket,
         storage: "local"
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Image upload failed";
+      const msg = err instanceof Error ? err.message : "File upload failed";
       return res.status(500).json({ success: false, error: msg });
     }
   });
@@ -953,12 +969,326 @@ async function startServer() {
   // ------------------------------------------------------------------
   // BUSINESS APIS
   // ------------------------------------------------------------------
-  app.post("/api/eligibility/submit", (_req: Request, res: Response) => {
-    res.json({ success: true, message: "Eligibility request submitted.", id: `elig_${Date.now()}` });
+  app.post("/api/eligibility/submit", async (req: Request, res: Response) => {
+    try {
+      const { answers, contact } = req.body || {};
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const randomSerial = Math.floor(1000 + Math.random() * 9000);
+      const trackingId = `NH-PRQ-${year}${month}-${randomSerial}`;
+
+      const payload = {
+        id: trackingId,
+        tracking_id: trackingId,
+        reference_number: trackingId,
+        full_name: contact?.name || contact?.fullName || "Applicant",
+        email: contact?.email || "",
+        phone: contact?.phone || "",
+        answers: answers || {},
+        contact: contact || {},
+        status: "Qualified",
+        created_at: now.toISOString()
+      };
+
+      // 1. Save to local applications store under prequalification
+      const localApps = getLocalApplications();
+      if (!localApps["prequalification"]) localApps["prequalification"] = [];
+      localApps["prequalification"].unshift(payload);
+      saveLocalApplications(localApps);
+
+      // 2. Insert into Supabase prequalifications and leads tables
+      try {
+        await supabaseServer.from("prequalifications").insert([payload]);
+      } catch (err) {
+        console.warn("[prequalifications insert notice]:", err);
+      }
+      try {
+        await supabaseServer.from("leads").insert([{
+          form_type: "prequalification",
+          full_name: payload.full_name,
+          email: payload.email,
+          phone: payload.phone,
+          subject: `Prequalification (${trackingId})`,
+          message: `Eligibility Assessment: ${payload.phone}`,
+          source_page: "/pre-qualification",
+          status: "Qualified",
+          details: payload
+        }]);
+      } catch {}
+
+      return res.json({
+        success: true,
+        message: "Eligibility request submitted.",
+        id: trackingId,
+        leadId: trackingId,
+        trackingId: trackingId
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Submission error";
+      return res.status(500).json({ success: false, error: msg });
+    }
   });
 
   app.post("/api/eligibility/register", (_req: Request, res: Response) => {
     res.json({ success: true, message: "Registration submitted successfully.", id: `reg_${Date.now()}` });
+  });
+
+  // Persistent JSON file stores for registrations and applications
+  const REGISTRATIONS_FILE = path.resolve("data/registrations.json");
+  const APPLICATIONS_FILE = path.resolve("data/applications.json");
+
+  function getLocalRegistrations(): { individual: any[]; group: any[] } {
+    try {
+      if (fs.existsSync(REGISTRATIONS_FILE)) {
+        return JSON.parse(fs.readFileSync(REGISTRATIONS_FILE, "utf-8"));
+      }
+    } catch (e) {
+      console.warn("Notice reading registrations:", e);
+    }
+    return { individual: [], group: [] };
+  }
+
+  function saveLocalRegistrations(data: { individual: any[]; group: any[] }) {
+    try {
+      fs.mkdirSync(path.dirname(REGISTRATIONS_FILE), { recursive: true });
+      fs.writeFileSync(REGISTRATIONS_FILE, JSON.stringify(data, null, 2), "utf-8");
+    } catch (e) {
+      console.error("Notice saving registrations:", e);
+    }
+  }
+
+  function getLocalApplications(): Record<string, any[]> {
+    try {
+      if (fs.existsSync(APPLICATIONS_FILE)) {
+        return JSON.parse(fs.readFileSync(APPLICATIONS_FILE, "utf-8"));
+      }
+    } catch (e) {
+      console.warn("Notice reading applications:", e);
+    }
+    return { volunteer: [], sponsorship: [], partnership: [], job: [] };
+  }
+
+  function saveLocalApplications(data: Record<string, any[]>) {
+    try {
+      fs.mkdirSync(path.dirname(APPLICATIONS_FILE), { recursive: true });
+      fs.writeFileSync(APPLICATIONS_FILE, JSON.stringify(data, null, 2), "utf-8");
+    } catch (e) {
+      console.error("Notice saving applications:", e);
+    }
+  }
+
+  // POST /api/registrations/individual
+  app.post("/api/registrations/individual", async (req: Request, res: Response) => {
+    try {
+      const body = req.body || {};
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const randomSerial = Math.floor(1000 + Math.random() * 9000);
+      const trackingId = body.trackingId || body.referenceNumber || `NH-IND-${year}${month}-${randomSerial}`;
+
+      const payload = {
+        ...body,
+        id: body.id || trackingId,
+        tracking_id: trackingId,
+        registration_number: trackingId,
+        created_at: body.created_at || now.toISOString(),
+        status: body.status || "Submitted"
+      };
+
+      // 1. Save to local persistent store
+      const local = getLocalRegistrations();
+      local.individual.unshift(payload);
+      saveLocalRegistrations(local);
+
+      // 2. Insert into Supabase individual_member_registrations / leads
+      try {
+        await supabaseServer.from("individual_member_registrations").insert([payload]);
+      } catch (sbErr) {
+        console.warn("[individual_member_registrations insert note]:", sbErr);
+      }
+      try {
+        await supabaseServer.from("leads").insert([{
+          form_type: "individual_registration",
+          full_name: payload.full_name || `${payload.first_name || ''} ${payload.last_name || ''}`.trim() || "Anonymous",
+          email: payload.email || "",
+          phone: payload.phone || "",
+          subject: `Individual Registration (${trackingId})`,
+          message: `M-Pesa Ref: ${payload.payment_ref || 'Paid'} - Amount: KES ${payload.payment_amount || 2000}`,
+          source_page: "/join-us",
+          status: "Submitted",
+          details: payload
+        }]);
+      } catch {}
+
+      return res.json({ success: true, trackingId, data: payload });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Registration error";
+      return res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // POST /api/registrations/group
+  app.post("/api/registrations/group", async (req: Request, res: Response) => {
+    try {
+      const body = req.body || {};
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const randomSerial = Math.floor(1000 + Math.random() * 9000);
+      const trackingId = body.trackingId || body.referenceNumber || `NH-GRP-${year}${month}-${randomSerial}`;
+
+      const payload = {
+        ...body,
+        id: body.id || trackingId,
+        tracking_id: trackingId,
+        registration_number: trackingId,
+        created_at: body.created_at || now.toISOString(),
+        status: body.status || "Submitted"
+      };
+
+      // 1. Save to local persistent store
+      const local = getLocalRegistrations();
+      local.group.unshift(payload);
+      saveLocalRegistrations(local);
+
+      // 2. Insert into Supabase group_member_registrations / leads
+      try {
+        await supabaseServer.from("group_member_registrations").insert([payload]);
+      } catch (sbErr) {
+        console.warn("[group_member_registrations insert note]:", sbErr);
+      }
+      try {
+        await supabaseServer.from("leads").insert([{
+          form_type: "group_registration",
+          full_name: payload.representative_name || payload.group_name || "Group Representative",
+          email: payload.representative_email || payload.email || "",
+          phone: payload.representative_phone || payload.phone || "",
+          subject: `Group Registration: ${payload.group_name} (${trackingId})`,
+          message: `Members: ${payload.member_count || 1} - M-Pesa Ref: ${payload.payment_ref || 'Paid'}`,
+          source_page: "/join-us",
+          status: "Submitted",
+          details: payload
+        }]);
+      } catch {}
+
+      return res.json({ success: true, trackingId, data: payload });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Registration error";
+      return res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // POST /api/applications/submit (Unified application handler)
+  app.post("/api/applications/submit", async (req: Request, res: Response) => {
+    try {
+      const { type, payload } = req.body || {};
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const randomSerial = Math.floor(1000 + Math.random() * 9000);
+
+      const appType = String(type || "general").toLowerCase();
+      let prefix = "NH-REF";
+      let table = "leads";
+      let localKey = "general";
+
+      if (appType.includes("vol")) {
+        prefix = "NH-VOL";
+        table = "volunteer_applications";
+        localKey = "volunteer";
+      } else if (appType.includes("spo") || appType.includes("scholar")) {
+        prefix = "NH-SPO";
+        table = "sponsorship_requests";
+        localKey = "sponsorship";
+      } else if (appType.includes("part")) {
+        prefix = "NH-PTR";
+        table = "partnership_requests";
+        localKey = "partnership";
+      } else if (appType.includes("job") || appType.includes("career")) {
+        prefix = "NH-VAC";
+        table = "job_applications";
+        localKey = "job";
+      }
+
+      const trackingId = payload.trackingId || payload.tracking_id || `${prefix}-${year}${month}-${randomSerial}`;
+      const record = {
+        ...payload,
+        id: payload.id || trackingId,
+        tracking_id: trackingId,
+        reference_number: trackingId,
+        created_at: payload.created_at || now.toISOString(),
+        status: payload.status || "New"
+      };
+
+      // 1. Save to local persistent applications store
+      const localApps = getLocalApplications();
+      if (!localApps[localKey]) localApps[localKey] = [];
+      localApps[localKey].unshift(record);
+      saveLocalApplications(localApps);
+
+      // 2. Insert into appropriate Supabase table
+      try {
+        await supabaseServer.from(table).insert([record]);
+      } catch (err) {
+        console.warn(`[Supabase ${table} insert notice]:`, err);
+      }
+
+      return res.json({ success: true, trackingId, data: record });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Application submission error";
+      return res.status(500).json({ success: false, error: msg });
+    }
+  });
+
+  // GET /api/registrations (Admin retrieval)
+  app.get("/api/registrations", async (req: Request, res: Response) => {
+    try {
+      const local = getLocalRegistrations();
+      let sbIndividual: any[] = [];
+      let sbGroup: any[] = [];
+
+      try {
+        const { data: ind } = await supabaseServer.from("individual_member_registrations").select("*");
+        if (ind) sbIndividual = ind;
+      } catch {}
+      try {
+        const { data: grp } = await supabaseServer.from("group_member_registrations").select("*");
+        if (grp) sbGroup = grp;
+      } catch {}
+
+      // Merge avoiding duplicates by id or tracking_id
+      const indMap = new Map();
+      [...local.individual, ...sbIndividual].forEach(item => {
+        const key = item.tracking_id || item.id;
+        if (key && !indMap.has(key)) indMap.set(key, item);
+      });
+
+      const grpMap = new Map();
+      [...local.group, ...sbGroup].forEach(item => {
+        const key = item.tracking_id || item.id;
+        if (key && !grpMap.has(key)) grpMap.set(key, item);
+      });
+
+      return res.json({
+        success: true,
+        individual: Array.from(indMap.values()),
+        group: Array.from(grpMap.values())
+      });
+    } catch (err: unknown) {
+      return res.status(500).json({ success: false, error: "Failed to fetch registrations" });
+    }
+  });
+
+  // GET /api/applications (Admin retrieval)
+  app.get("/api/applications", async (req: Request, res: Response) => {
+    try {
+      const local = getLocalApplications();
+      return res.json({ success: true, applications: local });
+    } catch {
+      return res.status(500).json({ success: false, error: "Failed to fetch applications" });
+    }
   });
 
   app.post("/api/leads/submit", async (req: Request, res: Response) => {

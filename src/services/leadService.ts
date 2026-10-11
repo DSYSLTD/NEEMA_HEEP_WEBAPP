@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { generateUniqueFormIdentifier } from '../lib/identifierUtils';
 
 export type LeadType = 
   | 'Registration' 
@@ -186,9 +187,14 @@ class LeadService {
   public async submitLead(leadData: Omit<Lead, 'id' | 'status' | 'timestamp'> & { customTable?: string }) {
     const targetTable = leadData.customTable || FORM_TABLE_MAP[leadData.type] || 'contact_messages';
     const details = leadData.details || {};
+    const autoUniqueId = details.trackingId || details.tracking_id || details.referenceNumber || generateUniqueFormIdentifier(leadData.type);
     
     // Construct schema-specific payload for the dedicated target table
     let payload: Record<string, any> = {
+      id: autoUniqueId,
+      tracking_id: autoUniqueId,
+      reference_number: autoUniqueId,
+      unique_identifier: autoUniqueId,
       status: 'New',
       created_at: new Date().toISOString()
     };
@@ -361,12 +367,12 @@ class LeadService {
 
       // Add to local state
       const newLead: Lead = {
-        id: data?.id || 'temp-' + Date.now(),
+        id: data?.id || autoUniqueId,
         type: leadData.type,
         name: leadData.name,
         email: leadData.email,
         phone: leadData.phone,
-        details: leadData.details,
+        details: { ...leadData.details, trackingId: autoUniqueId, unique_identifier: autoUniqueId },
         status: 'New',
         timestamp: Date.now()
       };
@@ -376,7 +382,7 @@ class LeadService {
       return newLead;
     } catch (error) {
       console.error(`Error submitting lead to Supabase (${targetTable}): `, error);
-      return { id: 'temp-' + Date.now(), ...leadData, status: 'New', timestamp: Date.now() };
+      return { id: autoUniqueId, ...leadData, status: 'New', timestamp: Date.now() };
     }
   }
 

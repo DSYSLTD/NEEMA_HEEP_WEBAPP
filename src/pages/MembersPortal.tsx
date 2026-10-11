@@ -213,75 +213,6 @@ export default function MembersPortal() {
                 Log in to access the <span className="font-black text-[#C0991B]">CMS Admin & Editorial Dashboard</span>.
               </p>
             </div>
-
-            {/* CMS Authorized Access Banner */}
-            <div className="bg-[#074504]/5 p-4 rounded-2xl border border-[#074504]/10 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <ShieldCheck className="w-5 h-5 text-[#074504] shrink-0" />
-                <div className="text-left">
-                  <p className="text-[11px] font-black text-[#074504] uppercase tracking-wider">
-                    Authorized CMS Staff Access
-                  </p>
-                  <p className="text-[10px] text-gray-500 font-medium">
-                    Credentials authentication for Patrick Munene & Charity Muthoni
-                  </p>
-                </div>
-              </div>
-              <span className="text-[9px] font-black uppercase tracking-wider text-[#C0991B] bg-amber-50 border border-[#C0991B]/30 px-2 py-0.5 rounded-full">
-                Protected
-              </span>
-            </div>
-
-            {/* Quick Switcher for Authorized Users */}
-            <div className="grid grid-cols-2 gap-2 text-left">
-              <button
-                type="button"
-                onClick={() => {
-                  setUsername('ptrckmunene@gmail.com');
-                  setPassword('@super123#');
-                  setError(null);
-                }}
-                className="p-3 rounded-2xl border border-gray-200 bg-gray-50/70 hover:bg-emerald-50 hover:border-emerald-300 transition-all cursor-pointer group text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-[#074504] text-white flex items-center justify-center text-[10px] font-black">
-                    PM
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-gray-900 leading-none group-hover:text-[#074504]">
-                      Patrick Munene
-                    </p>
-                    <p className="text-[9px] font-bold text-[#C0991B] uppercase tracking-wider mt-0.5">
-                      Superadmin
-                    </p>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setUsername('muthonichar12@gmail.com');
-                  setPassword('@Cham123#');
-                  setError(null);
-                }}
-                className="p-3 rounded-2xl border border-gray-200 bg-gray-50/70 hover:bg-emerald-50 hover:border-emerald-300 transition-all cursor-pointer group text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-[#C0991B] text-white flex items-center justify-center text-[10px] font-black">
-                    CM
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-gray-900 leading-none group-hover:text-[#074504]">
-                      Charity Muthoni
-                    </p>
-                    <p className="text-[9px] font-bold text-[#074504] uppercase tracking-wider mt-0.5">
-                      Content Editor
-                    </p>
-                  </div>
-                </div>
-              </button>
-            </div>
             
             <div className="space-y-4">
               <div className="relative">
@@ -290,10 +221,12 @@ export default function MembersPortal() {
                 </span>
                 <input
                   type="text"
-                  placeholder="Email or Username (e.g. ptrckmunene@gmail.com)"
+                  placeholder="Email or Username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   disabled={isAuthenticating}
+                  required
+                  autoComplete="username"
                   className="w-full bg-gray-50 border border-gray-200 pl-14 pr-6 py-5 rounded-3xl font-bold text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#074504]/20 focus:bg-white transition-all placeholder:text-gray-400"
                 />
               </div>
@@ -305,10 +238,12 @@ export default function MembersPortal() {
                   </span>
                   <input
                     type={showPassword ? "text" : "password"}
-                    placeholder="Security Password"
+                    placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isAuthenticating}
+                    required
+                    autoComplete="current-password"
                     className="w-full bg-gray-50 border border-gray-200 pl-14 pr-14 py-5 rounded-3xl font-bold text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#074504]/20 focus:bg-white transition-all placeholder:text-gray-400"
                   />
                   <button
@@ -407,7 +342,7 @@ export default function MembersPortal() {
                 </span>
                 <input
                   type={deliveryMethod === 'email' ? 'email' : 'tel'}
-                  placeholder={deliveryMethod === 'email' ? 'e.g. ptrckmunene@gmail.com' : 'e.g. 0712345678'}
+                  placeholder={deliveryMethod === 'email' ? 'e.g. staff@neemaheep.org' : 'e.g. 0700123456'}
                   value={forgotIdentifier}
                   onChange={(e) => setForgotIdentifier(e.target.value)}
                   disabled={isSubmittingForgot}

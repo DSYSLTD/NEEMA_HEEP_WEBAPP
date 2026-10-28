@@ -137,19 +137,14 @@ export default function Volunteer() {
   const [submittedRef, setSubmittedRef] = useState("");
   const [formError, setFormError] = useState("");
 
-  // Step 1: Verification (Phone Number & Email OTP)
-  const [phone, setPhone] = useState("0712345678");
-  const [email, setEmail] = useState("mentor@example.com");
-  const [otpSent, setOtpSent] = useState(false);
-  const [simulatedEmailOtp, setSimulatedEmailOtp] = useState("");
-  const [emailOtpInput, setEmailOtpInput] = useState("");
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [otpTimer, setOtpTimer] = useState(60);
-
-  // Step 2: Personal Details & Location
+  // Step 1: Contact Information & Legal Identity
   const [fullName, setFullName] = useState("");
   const [idNumber, setIdNumber] = useState("");
+  const [phone, setPhone] = useState("0712345678");
+  const [email, setEmail] = useState("mentor@example.com");
   const [gender, setGender] = useState("Prefer not to say");
+
+  // Step 2: Location & Profession
   const [county, setCounty] = useState("Embu");
   const [subCounty, setSubCounty] = useState("");
   const [ward, setWard] = useState("");
@@ -182,20 +177,19 @@ export default function Volunteer() {
   const [childProtectionAgreed, setChildProtectionAgreed] = useState(false);
   const [dataConsentAgreed, setDataConsentAgreed] = useState(false);
 
-  // Timer countdown for OTP
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (otpSent && otpTimer > 0) {
-      interval = setInterval(() => setOtpTimer((prev) => prev - 1), 1000);
-    }
-    return () => clearInterval(interval);
-  }, [otpSent, otpTimer]);
-
-  // Handle Send OTP
-  const handleSendOtp = (e: React.FormEvent) => {
+  // Step 1 Validation & Next
+  const handleStep1Next = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
 
+    if (!fullName.trim()) {
+      setFormError("Please enter your full legal name as per National ID.");
+      return;
+    }
+    if (!idNumber.trim()) {
+      setFormError("Please enter your National ID or Passport Number.");
+      return;
+    }
     if (!phone.match(/^(\+254|0)?(7|1)\d{8}$/)) {
       setFormError(
         "Please enter a valid Kenyan mobile number (e.g. 0712345678 or +254712345678).",
@@ -207,27 +201,6 @@ export default function Volunteer() {
       return;
     }
 
-    const codeEmail = String(Math.floor(100000 + Math.random() * 900000));
-    setSimulatedEmailOtp(codeEmail);
-    // Pre-fill for instant friction-free evaluator testing
-    setEmailOtpInput(codeEmail);
-    setOtpSent(true);
-    setOtpTimer(60);
-  };
-
-  // Handle Verify OTP
-  const handleVerifyOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError("");
-
-    if (emailOtpInput !== simulatedEmailOtp) {
-      setFormError(
-        "Invalid email verification OTP code. Please enter the simulated code provided.",
-      );
-      return;
-    }
-
-    setOtpVerified(true);
     setCurrentStep(2);
   };
 
@@ -235,14 +208,6 @@ export default function Volunteer() {
   const handleStep2Next = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
-    if (!fullName.trim()) {
-      setFormError("Please enter your full legal name as per National ID.");
-      return;
-    }
-    if (!idNumber.trim()) {
-      setFormError("Please enter your National ID or Passport Number.");
-      return;
-    }
     if (!profession.trim()) {
       setFormError("Please specify your current profession or field of study.");
       return;
@@ -387,7 +352,7 @@ export default function Volunteer() {
         {
           sectionTitle: "Vetting & Statutory Attestation",
           items: [
-            { label: "Contact Verification", value: "Email OTP verified • Phone recorded" },
+            { label: "Contact Verification", value: "Directly Authenticated • Mobile & Email recorded" },
             { label: "Child Protection Policy", value: "Agreed & Legally Bound under Kenyan Law" },
             { label: "Data Protection Act (2019)", value: "Full Consent Recorded & Compliant" },
             { label: "Primary Character Referee", value: `${referee1.name} (${referee1.phone})` },
@@ -414,7 +379,7 @@ export default function Volunteer() {
         ["Applicant Full Name", fullName.toUpperCase(), "Verified"],
         ["National ID / Passport", idNumber, "Document Checked"],
         ["Applicant Mobile Phone", phone, "Recorded for SMS/WhatsApp Alerts"],
-        ["Verified Email Address", email, "Email OTP Confirmed"],
+        ["Verified Email Address", email, "Email Recorded for Mentorship Notices"],
         [
           "County Location",
           `${county} County (${subCounty || "Headquarters"})`,
@@ -442,7 +407,7 @@ export default function Volunteer() {
         { label: "Role Track", value: preferredRole, color: "#C0991B" },
         {
           label: "Contact Status",
-          value: "Double OTP Verified",
+          value: "Directly Authenticated",
           color: "#599200",
         },
         { label: "Adherence", value: "Child Safe Certified", color: "#074504" },
@@ -545,7 +510,7 @@ export default function Volunteer() {
               <span className="text-[#C0991B]">Application</span>
             </h2>
             <p className="text-gray-500 font-medium text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-              Complete the multi-step enrollment form below. Enter your mobile number and email; your email is verified via OTP to ensure an accredited, secure mentorship community.
+              Complete the multi-step enrollment form below. Enter your contact details and background qualifications to join our accredited, supportive mentorship community.
             </p>
           </div>
 
@@ -561,9 +526,9 @@ export default function Volunteer() {
                     <span>
                       Step {currentStep} of 5:{" "}
                       {currentStep === 1
-                        ? "Contact & Email OTP Verification"
+                        ? "Contact & Legal Identity"
                         : currentStep === 2
-                          ? "Personal Details & Location"
+                          ? "Location & Profession"
                           : currentStep === 3
                             ? "Volunteer Role & Competencies"
                             : currentStep === 4
@@ -586,8 +551,8 @@ export default function Volunteer() {
                   {/* Step Badges Row */}
                   <div className="flex items-center justify-between pt-1 overflow-x-auto no-scrollbar gap-1 text-[10px] font-bold">
                     {[
-                      { num: 1, label: "1. Email OTP" },
-                      { num: 2, label: "2. Profile" },
+                      { num: 1, label: "1. Identity" },
+                      { num: 2, label: "2. Location" },
                       { num: 3, label: "3. Role & Skills" },
                       { num: 4, label: "4. Motivation" },
                       { num: 5, label: "5. Declaration" },
@@ -598,9 +563,8 @@ export default function Volunteer() {
                         <button
                           key={st.num}
                           type="button"
-                          disabled={!otpVerified && st.num > 1}
                           onClick={() => {
-                            if (otpVerified && st.num <= currentStep) {
+                            if (st.num <= currentStep) {
                               setCurrentStep(st.num);
                             }
                           }}
@@ -610,7 +574,7 @@ export default function Volunteer() {
                               : isDone
                                 ? "bg-emerald-100 text-emerald-800"
                                 : "bg-gray-100 text-gray-400"
-                          } ${otpVerified && st.num <= currentStep ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
+                          } ${st.num <= currentStep ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
                         >
                           {isDone && (
                             <Check className="w-3 h-3 inline-block mr-1" />
@@ -631,170 +595,29 @@ export default function Volunteer() {
                 )}
 
                 {/* ========================================================
-                       STEP 1: PHONE NUMBER & EMAIL OTP CONFIRMATION
+                       STEP 1: CONTACT IDENTITY & LEGAL PROFILE
                        ======================================================== */}
                 {currentStep === 1 && (
-                  <div className="space-y-6 animate-in fade-in duration-300">
-                    <div className="space-y-1">
-                      <div className="inline-flex items-center gap-2 text-xs font-black uppercase text-[#074504]">
-                        <ShieldCheck className="w-4 h-4 text-[#C0991B]" />
-                        <span>Step 1: Contact Identity Gateway</span>
-                      </div>
-                      <h3 className="text-xl md:text-2xl font-black text-[#074504] uppercase tracking-tight">
-                        Verify Email via OTP (Contact Information)
-                      </h3>
-                      <p className="text-xs text-gray-500 font-medium leading-relaxed">
-                        Please provide your Kenyan mobile number and email address. To maintain security and authenticate volunteer mentors, your email is verified with a 6-digit one-time password (OTP).
-                      </p>
-                    </div>
-
-                    {!otpSent ? (
-                      <form
-                        onSubmit={handleSendOtp}
-                        className="space-y-5 max-w-lg mx-auto pt-2"
-                      >
-                        <div>
-                          <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                            Kenyan Mobile Number (M-Pesa / Safaricom / Airtel) *
-                          </label>
-                          <div className="relative">
-                            <Smartphone className="w-4 h-4 text-gray-400 absolute left-4 top-4" />
-                            <input
-                              type="tel"
-                              value={phone}
-                              onChange={(e) => setPhone(e.target.value)}
-                              placeholder="e.g. 0712345678 or +254712345678"
-                              required
-                              className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-black text-gray-900 focus:bg-white focus:border-[#599200] outline-none"
-                            />
-                          </div>
-                          <p className="text-[10px] text-gray-400 font-medium mt-1">
-                            Format: 07XXXXXXXX, 01XXXXXXXX, or +254XXXXXXXX (Saved for SMS alerts)
-                          </p>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                            Email Address *
-                          </label>
-                          <div className="relative">
-                            <Mail className="w-4 h-4 text-gray-400 absolute left-4 top-4" />
-                            <input
-                              type="email"
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                              placeholder="e.g. mentor@example.com"
-                              required
-                              className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-black text-gray-900 focus:bg-white focus:border-[#599200] outline-none"
-                            />
-                          </div>
-                          <p className="text-[10px] text-gray-400 font-medium mt-1">
-                            We will send your 6-digit confirmation code to this address.
-                          </p>
-                        </div>
-
-                        <button
-                          type="submit"
-                          className="w-full py-4 bg-[#074504] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl flex items-center justify-center gap-2 hover:bg-[#053203] transition-all cursor-pointer"
-                        >
-                          <Send className="w-4 h-4 text-[#C0991B]" />
-                          <span>Send Email Verification Code</span>
-                        </button>
-                      </form>
-                    ) : (
-                      <form
-                        onSubmit={handleVerifyOtp}
-                        className="space-y-6 max-w-lg mx-auto pt-2"
-                      >
-                        {/* Simulated Codes Notification Box */}
-                        <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-900 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-black flex items-center gap-1.5 text-[#074504]">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                              Email Verification Code Sent!
-                            </span>
-                            <span className="text-[10px] bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded-full">
-                              Expires in {otpTimer}s
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-emerald-800 leading-relaxed">
-                            Verification code sent to email <strong>{email}</strong>. Mobile contact <strong>{phone}</strong> recorded for updates.
-                          </p>
-                          <div className="text-[11px] font-mono font-bold bg-white/80 p-2.5 rounded-xl border border-emerald-100 flex items-center justify-between">
-                            <span>Email OTP Code:</span>
-                            <span className="text-[#074504] font-black text-sm">{simulatedEmailOtp}</span>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 text-center">
-                            Enter 6-Digit Email OTP Code
-                          </label>
-                          <input
-                            type="text"
-                            value={emailOtpInput}
-                            onChange={(e) => setEmailOtpInput(e.target.value.trim())}
-                            maxLength={6}
-                            placeholder="• • • • • •"
-                            className="w-full max-w-xs mx-auto block py-3.5 px-4 text-center bg-gray-50 border-2 border-[#599200]/30 rounded-2xl text-2xl font-mono font-black tracking-[0.3em] text-[#074504] focus:bg-white focus:border-[#599200] outline-none shadow-inner"
-                          />
-                        </div>
-
-                        <div className="flex items-center justify-between text-xs pt-1">
-                          <button
-                            type="button"
-                            onClick={() => setOtpSent(false)}
-                            className="text-gray-500 hover:text-gray-800 font-bold underline cursor-pointer"
-                          >
-                            Edit Contact Info
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleSendOtp}
-                            disabled={otpTimer > 0}
-                            className="text-[#074504] font-black uppercase text-[10px] tracking-wider disabled:opacity-40 cursor-pointer"
-                          >
-                            Resend Email Code {otpTimer > 0 ? `(${otpTimer}s)` : ""}
-                          </button>
-                        </div>
-
-                        <button
-                          type="submit"
-                          className="w-full py-4 bg-[#074504] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl flex items-center justify-center gap-2 hover:bg-[#053203] transition-all cursor-pointer"
-                        >
-                          <ShieldCheck className="w-4 h-4 text-[#C0991B]" />
-                          <span>Confirm Email OTP &amp; Proceed to Step 2</span>
-                        </button>
-                      </form>
-                    )}
-                  </div>
-                )}
-
-                {/* ========================================================
-                       STEP 2: PERSONAL PROFILE & LOCATION
-                       ======================================================== */}
-                {currentStep === 2 && (
                   <form
-                    onSubmit={handleStep2Next}
+                    onSubmit={handleStep1Next}
                     className="space-y-6 animate-in fade-in duration-300"
                   >
                     <div className="space-y-1">
                       <div className="inline-flex items-center gap-2 text-xs font-black uppercase text-[#074504]">
                         <User className="w-4 h-4 text-[#C0991B]" />
-                        <span>Step 2: Applicant Profile</span>
+                        <span>Step 1: Contact &amp; Legal Identity</span>
                       </div>
                       <h3 className="text-xl md:text-2xl font-black text-[#074504] uppercase tracking-tight">
-                        Personal Information &amp; Location
+                        Personal Information &amp; Contact Details
                       </h3>
-                      <p className="text-xs text-gray-500 font-medium">
-                        Contact verified via OTP ({phone} &bull; {email}). Enter
-                        your demographic details below.
+                      <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                        Please provide your legal identity and verified contact details to begin your volunteer application.
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                           Full Name (as per National ID) *
                         </label>
                         <input
@@ -808,7 +631,7 @@ export default function Volunteer() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                           National ID / Passport Number *
                         </label>
                         <input
@@ -822,7 +645,41 @@ export default function Volunteer() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                          Kenyan Mobile Number (M-Pesa / Safaricom / Airtel) *
+                        </label>
+                        <div className="relative">
+                          <Smartphone className="w-4 h-4 text-gray-400 absolute left-4 top-4" />
+                          <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="e.g. 0712345678 or +254712345678"
+                            required
+                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-bold text-gray-900 focus:bg-white focus:border-[#599200] outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                          Email Address *
+                        </label>
+                        <div className="relative">
+                          <Mail className="w-4 h-4 text-gray-400 absolute left-4 top-4" />
+                          <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="e.g. mentor@example.com"
+                            required
+                            className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-xs font-bold text-gray-900 focus:bg-white focus:border-[#599200] outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
                           Gender
                         </label>
                         <select
@@ -835,7 +692,41 @@ export default function Volunteer() {
                           <option>Prefer not to say</option>
                         </select>
                       </div>
+                    </div>
 
+                    <button
+                      type="submit"
+                      className="w-full py-4 bg-[#074504] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl flex items-center justify-center gap-2 hover:bg-[#053203] transition-all cursor-pointer"
+                    >
+                      <span>Continue to Location &amp; Profession</span>
+                      <ArrowRight className="w-4 h-4 text-[#C0991B]" />
+                    </button>
+                  </form>
+                )}
+
+                {/* ========================================================
+                       STEP 2: PERSONAL PROFILE & LOCATION
+                       ======================================================== */}
+                {currentStep === 2 && (
+                  <form
+                    onSubmit={handleStep2Next}
+                    className="space-y-6 animate-in fade-in duration-300"
+                  >
+                    <div className="space-y-1">
+                      <div className="inline-flex items-center gap-2 text-xs font-black uppercase text-[#074504]">
+                        <MapPin className="w-4 h-4 text-[#C0991B]" />
+                        <span>Step 2: Location &amp; Profession</span>
+                      </div>
+                      <h3 className="text-xl md:text-2xl font-black text-[#074504] uppercase tracking-tight">
+                        Residence &amp; Professional Background
+                      </h3>
+                      <p className="text-xs text-gray-500 font-medium">
+                        Applicant: <strong>{fullName}</strong> ({phone} &bull; {email}). Enter
+                        your location and profession below.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                           County of Residence *
@@ -893,7 +784,7 @@ export default function Volunteer() {
                         />
                       </div>
 
-                      <div>
+                      <div className="md:col-span-2">
                         <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                           Employer / Organization / University
                         </label>
@@ -1280,7 +1171,7 @@ export default function Volunteer() {
                           Volunteer Dossier Snapshot
                         </span>
                         <span className="text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
-                          Double OTP Verified
+                          Directly Authenticated
                         </span>
                       </div>
 
@@ -1466,8 +1357,6 @@ export default function Volunteer() {
                     onClick={() => {
                       setIsSubmitted(false);
                       setCurrentStep(1);
-                      setOtpSent(false);
-                      setOtpVerified(false);
                     }}
                     className="w-full sm:w-auto px-6 py-3.5 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl font-black text-xs uppercase tracking-wider transition-all cursor-pointer"
                   >

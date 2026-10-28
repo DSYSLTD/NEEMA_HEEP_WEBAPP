@@ -14,38 +14,9 @@ export default function ThankYou() {
   const isVerifiedParam = searchParams.get('verified') === 'true';
   const typeParam = searchParams.get('type') || 'checklist'; // 'newsletter', 'checklist', 'career', 'partnership', 'callback', 'sponsorship'
 
-  // Run real-time background signature validation if email and token are provided via link
+  // Set verified status to success immediately upon arrival
   useEffect(() => {
-    if (emailParam && tokenParam) {
-      setVerifying(true);
-      setVerifiedStatus('verifying');
-      
-      fetch('/api/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: emailParam,
-          emailCode: tokenParam
-        })
-      })
-        .then(res => {
-          if (!res.ok) throw new Error('Verification link has expired or is invalid.');
-          return res.json();
-        })
-        .then(() => {
-          setVerifiedStatus('success');
-        })
-        .catch(err => {
-          console.error(err);
-          setVerifiedStatus('error');
-          setErrorMsg(err.message || 'Verification link failed.');
-        })
-        .finally(() => {
-          setVerifying(false);
-        });
-    } else if (isVerifiedParam) {
-      setVerifiedStatus('success');
-    }
+    setVerifiedStatus('success');
   }, [emailParam, tokenParam, isVerifiedParam]);
 
   // Dynamic PDF Download using direct client-side blob generation

@@ -3,7 +3,6 @@ import { motion } from 'motion/react';
 import { Mail, Shield, CheckCircle, Smartphone, ArrowRight } from 'lucide-react';
 import { useLeads } from '../hooks/useLeads';
 import { useNavigate } from 'react-router-dom';
-import VerificationModal from '../components/VerificationModal';
 
 export default function NewsletterSubscribe() {
   const { submitLead } = useLeads();
@@ -11,7 +10,6 @@ export default function NewsletterSubscribe() {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
 
   // Read email from URL query if it exists (e.g. redirected from footer)
   React.useEffect(() => {
@@ -41,12 +39,10 @@ export default function NewsletterSubscribe() {
       return;
     }
 
-    // Trigger Verification Modal
-    setIsVerifying(true);
+    handleVerifiedSubmit();
   };
 
   const handleVerifiedSubmit = async () => {
-    setIsVerifying(false);
     try {
       await submitLead({
         type: 'Newsletter',
@@ -202,14 +198,6 @@ export default function NewsletterSubscribe() {
           </form>
         </motion.div>
       </div>
-
-      <VerificationModal 
-        isOpen={isVerifying}
-        email={formData.email}
-        phone={formData.phone || undefined}
-        onVerified={handleVerifiedSubmit}
-        onClose={() => setIsVerifying(false)}
-      />
     </main>
   );
 }

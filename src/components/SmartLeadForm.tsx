@@ -116,14 +116,6 @@ export default function SmartLeadForm({
   const [submittedTrackingId, setSubmittedTrackingId] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Verification State
-  const [verificationMode, setVerificationMode] = useState<'none' | 'phone' | 'email'>('none');
-  const [phoneVerified, setPhoneVerified] = useState(false);
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [sendingVerification, setSendingVerification] = useState(false);
-  const [vCode, setVCode] = useState('');
-  const [vEmailCode, setVEmailCode] = useState('');
-
   // Group fields into steps (max 2 per step for mobile)
   const steps: Field[][] = [];
   for (let i = 0; i < fields.length; i += 2) {
@@ -147,7 +139,6 @@ export default function SmartLeadForm({
   };
 
   useEffect(() => {
-    if (verificationMode !== 'none') return;
     const currentFields = steps[currentStep] || [];
     const isStepFieldsValid = currentFields.every(f => {
       const val = formData[f.name] || '';
@@ -161,7 +152,7 @@ export default function SmartLeadForm({
     } else {
       setStepValid(isStepFieldsValid);
     }
-  }, [formData, currentStep, errors, verificationMode, consent, captchaVerified]);
+  }, [formData, currentStep, errors, consent, captchaVerified]);
 
   const getPhoneValue = () => {
     return formData.phone || formData.mobile || formData.phoneNumber || formData['mobileNumber'] || '';
@@ -169,25 +160,6 @@ export default function SmartLeadForm({
 
   const getEmailValue = () => {
     return formData.email || formData.emailAddress || '';
-  };
-
-  const handleSendEmailOtp = async () => {
-    const rawEmail = getEmailValue();
-    setSendingVerification(true);
-    setErrors(prev => ({ ...prev, email: '' }));
-    try {
-      const res = await fetch('/api/otp/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: rawEmail })
-      });
-      if (!res.ok) throw new Error('Could not send email validation.');
-      setVerificationMode('email');
-    } catch (err: any) {
-      setErrors(prev => ({ ...prev, email: err.message || 'Email Dispatch Error' }));
-    } finally {
-      setSendingVerification(false);
-    }
   };
 
   const handleNext = async () => {
@@ -204,39 +176,10 @@ export default function SmartLeadForm({
 
     trackStepDrop(type, currentStep, `Step ${currentStep + 1}`);
 
-    // Visitor enters both phone and email, but only email is verified via OTP
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      const emailVal = getEmailValue();
-      if (emailVal && !emailVerified) {
-        await handleSendEmailOtp();
-      } else {
-        handleSubmit();
-      }
-    }
-  };
-
-  const handleVerifyEmail = async () => {
-    const rawEmail = getEmailValue();
-    setSendingVerification(true);
-    setErrors(prev => ({ ...prev, vEmailCode: '' }));
-    try {
-      const res = await fetch('/api/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: rawEmail, emailCode: vEmailCode })
-      });
-      if (!res.ok) throw new Error('Verification Code incorrect or expired.');
-
-      setEmailVerified(true);
-      setVerificationMode('none');
-      setVEmailCode('');
       handleSubmit();
-    } catch (err: any) {
-      setErrors(prev => ({ ...prev, vEmailCode: err.message || 'Verification Failed.' }));
-    } finally {
-      setSendingVerification(false);
     }
   };
 
@@ -349,7 +292,7 @@ export default function SmartLeadForm({
           {
             sectionTitle: "Verification & Statutory Attestation",
             items: [
-              { label: "Verification Status", value: "Email OTP confirmed • Phone recorded for SMS/WhatsApp notices" },
+              { label: "Verification Status", value: "Directly Confirmed • Contact recorded for official updates" },
               { label: "Data Protection Act 2019", value: "Compliant & Legal Consent Logged" }
             ]
           }
@@ -412,44 +355,6 @@ export default function SmartLeadForm({
             Your request has been encrypted & verified.
           </div>
         </div>
-      </motion.div>
-    );
-  }
-
-  if (verificationMode === 'email') {
-    return (
-      <motion.div 
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="space-y-6 py-6"
-      >
-        <div className="text-center">
-          <div className="w-16 h-16 bg-[#C0991B]/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-[#C0991B]">
-            <Mail className="w-8 h-8" />
-          </div>
-          <h2 className="text-2xl font-black text-[#074504] uppercase tracking-tighter mb-2">Confirm Your Email</h2>
-          <p className="text-gray-500 font-medium text-sm">We've sent a 6-digit confirmation code to <br/><span className="text-[#074504] font-bold">{formData.email}</span></p>
-        </div>
-
-        <div className="space-y-4">
-          <input 
-            type="text"
-            placeholder="Enter 6-digit code"
-            maxLength={6}
-            value={vEmailCode}
-            onChange={e => setVEmailCode(e.target.value)}
-            className="w-full bg-gray-50 border-2 border-gray-100 rounded-3xl py-4 text-center text-xl font-black tracking-widest focus:border-[#C0991B] focus:bg-white outline-none transition-all"
-          />
-          {errors.vEmailCode && <p className="text-center text-xs font-black text-red-500 uppercase tracking-widest">{errors.vEmailCode}</p>}
-        </div>
-
-        <button 
-          onClick={handleVerifyEmail}
-          disabled={vEmailCode.length !== 6 || sendingVerification}
-          className="w-full py-5 rounded-2xl bg-[#C0991B] text-[#074504] font-black uppercase text-xs tracking-widest shadow-xl flex items-center justify-center gap-3 disabled:opacity-50"
-        >
-          {sendingVerification ? 'Verifying...' : 'Submit Verification Code'} <ArrowRight className="w-4 h-4" />
-        </button>
       </motion.div>
     );
   }

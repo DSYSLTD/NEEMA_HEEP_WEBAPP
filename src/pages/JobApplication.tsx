@@ -71,15 +71,6 @@ export default function JobApplication() {
   const vacancyIdFromUrl = queryParams.get('vacancyId') || location.state?.vacancyId;
   const selectedVacancy = vacancies.find(v => v.id === vacancyIdFromUrl) || vacancies[0];
 
-  // Verification Gateway state
-  const [verificationDone, setVerificationDone] = useState(false);
-  const [initPhone, setInitPhone] = useState('0712345678');
-  const [initEmail, setInitEmail] = useState('applicant@example.com');
-  const [otpSent, setOtpSent] = useState(false);
-  const [emailOtpInput, setEmailOtpInput] = useState('');
-  const [otpError, setOtpError] = useState('');
-  const [simulatedEmailCode, setSimulatedEmailCode] = useState('');
-
   // Multi-Step Form state (Steps 1 to 7)
   const [currentStep, setCurrentStep] = useState(1);
 
@@ -92,8 +83,8 @@ export default function JobApplication() {
     nationalIdDocName: '',
     kraPin: '',
     kraPinCertName: '',
-    phone: '',
-    email: '',
+    phone: '0712345678',
+    email: 'applicant@example.com',
     county: 'Nyeri',
     subCounty: '',
     ward: ''
@@ -133,41 +124,6 @@ export default function JobApplication() {
   const [docChecklistAck, setDocChecklistAck] = useState(false);
   const [showChecklistModal, setShowChecklistModal] = useState(false);
 
-  // Send Email OTP (Phone number captured without requiring phone OTP)
-  const handleSendOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    setOtpError('');
-    if (!initPhone.match(/^(\+254|0)?(7|1)\d{8}$/)) {
-      setOtpError('Please enter a valid Kenyan phone number (e.g., 0712345678 or 0112345678).');
-      return;
-    }
-    if (!initEmail.includes('@') || !initEmail.includes('.')) {
-      setOtpError('Please enter a valid email address.');
-      return;
-    }
-
-    const codeEmail = String(Math.floor(100000 + Math.random() * 900000));
-    setSimulatedEmailCode(codeEmail);
-    setEmailOtpInput(codeEmail); // Auto-fill for friction-free UX
-    setOtpSent(true);
-  };
-
-  // Verify Email OTP
-  const handleVerifyOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (emailOtpInput !== simulatedEmailCode) {
-      setOtpError('Invalid email OTP verification code entered.');
-      return;
-    }
-
-    setIdentity(prev => ({
-      ...prev,
-      phone: initPhone,
-      email: initEmail
-    }));
-    setVerificationDone(true);
-  };
-
   // Handle Step 1 Next Validation
   const validateStep1 = () => {
     if (!identity.surname.trim() || !identity.firstName.trim()) {
@@ -180,6 +136,14 @@ export default function JobApplication() {
     }
     if (!identity.kraPin.toUpperCase().match(/^[A-Z]\d{9}[A-Z]$/)) {
       setFormError('Invalid KRA PIN format (e.g. A012345678B).');
+      return false;
+    }
+    if (!identity.phone.match(/^(\+254|0)?(7|1)\d{8}$/)) {
+      setFormError('Please enter a valid Kenyan phone number (e.g., 0712345678 or +254712345678).');
+      return false;
+    }
+    if (!identity.email.includes('@') || !identity.email.includes('.')) {
+      setFormError('Please enter a valid email address.');
       return false;
     }
     setFormError('');
@@ -301,7 +265,7 @@ export default function JobApplication() {
               { label: "National ID / Passport", value: identity.nationalId },
               { label: "Curriculum Vitae (CV)", value: cvFile ? `${cvFile.fileName} (Stored in job-applications bucket)` : "Attached" },
               { label: "Total References Logged", value: `${references.length} verified references` },
-              { label: "Verification Status", value: "Email OTP verified • Mobile contact logged" },
+              { label: "Verification Status", value: "Directly Authenticated • Mobile & Email recorded" },
               { label: "Statutory Compliance", value: "Compliant under Kenyan Data Protection Act 2019" }
             ]
           }
@@ -400,147 +364,20 @@ export default function JobApplication() {
               </Link>
             </div>
           </motion.div>
-        ) : !verificationDone ? (
-          
-          /* GATEWAY: PRE-APPLICATION NOTICE & OTP VERIFICATION PORTAL */
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
+        ) : (
+          <div className="space-y-6">
             {/* MANDATORY PRE-APPLICATION DOCUMENT & UPLOAD NOTICE */}
             <UploadRequirementsNotice
               formType="job_application"
               title="Pre-Application Document & Upload Checklist"
-              subtitle="Before commencing Step 1, please ensure the following credentials and files are saved and accessible on your device to prevent application session timeout."
+              subtitle="Please ensure the following credentials and files are saved and accessible on your device for smooth submission."
               documents={JOB_REQUIRED_DOCUMENTS}
               acknowledged={docChecklistAck}
               setAcknowledged={setDocChecklistAck}
             />
 
-            <div className="bg-white p-6 sm:p-10 rounded-3xl border border-gray-200 shadow-xl space-y-6">
-              <div className="border-b border-gray-100 pb-4 space-y-1">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-[#C0991B]" />
-                  <span className="text-xs font-black text-[#074504] uppercase tracking-wider">
-                    Applicant Identity Gateway
-                  </span>
-                </div>
-                <h2 className="text-xl font-black text-gray-900 uppercase">
-                  Step 0: Contact Details &amp; Email Verification
-                </h2>
-                <p className="text-xs text-gray-500 font-medium">
-                  Enter your mobile number and email address. Under the Data Protection Act (2019), your email address is authenticated via a 6-digit OTP code before proceeding to Step 1.
-                </p>
-              </div>
-
-            {otpError && (
-              <div className="p-3 bg-red-50 text-red-800 text-xs font-bold rounded-xl border border-red-200 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                <span>{otpError}</span>
-              </div>
-            )}
-
-            {!otpSent ? (
-              <form onSubmit={handleSendOtp} className="space-y-4 max-w-md mx-auto py-2">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700">Mobile Phone Number (Safaricom / Airtel) *</label>
-                  <div className="relative">
-                    <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
-                    <input 
-                      type="text" 
-                      value={initPhone}
-                      onChange={e => setInitPhone(e.target.value)}
-                      placeholder="e.g. 0712345678 or +254712345678"
-                      required
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:ring-2 focus:ring-[#074504] focus:outline-none"
-                    />
-                  </div>
-                  <span className="text-[10px] text-gray-400 font-medium">Valid formats: 07XXXXXXXX, 01XXXXXXXX, +2547XXXXXXXX (Saved for SMS notifications)</span>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700">Email Address *</label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
-                    <input 
-                      type="email" 
-                      value={initEmail}
-                      onChange={e => setInitEmail(e.target.value)}
-                      placeholder="e.g. applicant@example.com"
-                      required
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:ring-2 focus:ring-[#074504] focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3.5 bg-[#074504] text-[#C0991B] font-black text-xs uppercase rounded-xl shadow-lg hover:bg-[#053203] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Send Email Verification Code</span>
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyOtp} className="space-y-4 max-w-md mx-auto py-2">
-                <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 space-y-1">
-                  <span className="font-black flex items-center gap-1">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Email Code Dispatched!
-                  </span>
-                  <p className="text-[11px] text-emerald-800">
-                    Verification code sent to <strong>{initEmail}</strong>. Mobile contact <strong>{initPhone}</strong> saved for candidate SMS updates.
-                  </p>
-                  <div className="bg-white/80 p-2 rounded-lg border border-emerald-100 flex items-center justify-between text-xs font-mono font-bold">
-                    <span>Email OTP Code:</span>
-                    <span className="text-[#074504] font-black">{simulatedEmailCode}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700 text-center block">Enter 6-Digit Email OTP Code</label>
-                  <input 
-                    type="text" 
-                    value={emailOtpInput}
-                    onChange={e => setEmailOtpInput(e.target.value.trim())}
-                    maxLength={6}
-                    placeholder="• • • • • •"
-                    className="w-full p-3.5 text-center bg-gray-50 border-2 border-[#C0991B]/40 rounded-xl text-xl font-mono font-black tracking-[0.25em] text-gray-900 focus:outline-none focus:border-[#074504]"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between text-[11px] pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setOtpSent(false)}
-                    className="text-gray-500 hover:text-gray-800 underline font-semibold"
-                  >
-                    Edit Contact Info
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSendOtp}
-                    className="text-[#074504] font-black uppercase text-[10px]"
-                  >
-                    Resend Code
-                  </button>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3.5 bg-[#074504] text-white font-black text-xs uppercase rounded-xl shadow-lg hover:bg-[#053203] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <ShieldCheck className="w-4 h-4 text-[#C0991B]" />
-                  <span>Verify Email &amp; Begin Application</span>
-                </button>
-              </form>
-            )}
-            </div>
-          </motion.div>
-        ) : (
-
-          /* MULTI-STEP APPLICATION FORM (STEPS 1 TO 7) */
-          <div className="bg-white p-6 sm:p-10 rounded-3xl border border-gray-200 shadow-xl space-y-8">
+            {/* MULTI-STEP APPLICATION FORM (STEPS 1 TO 7) */}
+            <div className="bg-white p-6 sm:p-10 rounded-3xl border border-gray-200 shadow-xl space-y-8">
             {/* Step Wizard Progress Bar */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-black uppercase text-[#074504]">
@@ -668,26 +505,37 @@ export default function JobApplication() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Verified Mobile Phone</label>
-                    <input 
-                      type="text" 
-                      value={identity.phone}
-                      disabled
-                      className="w-full p-2.5 bg-gray-200 border border-gray-300 rounded-xl text-xs font-mono font-bold text-gray-600 cursor-not-allowed"
-                    />
+                    <label className="text-xs font-bold text-gray-700">Mobile Phone Number (Safaricom / Airtel) *</label>
+                    <div className="relative">
+                      <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
+                      <input 
+                        type="tel" 
+                        value={identity.phone}
+                        onChange={e => setIdentity(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="e.g. 0712345678 or +254712345678"
+                        required
+                        className="w-full pl-10 pr-3 p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold text-gray-900 focus:bg-white focus:border-[#074504] outline-none"
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Verified Email Address</label>
-                    <input 
-                      type="text" 
-                      value={identity.email}
-                      disabled
-                      className="w-full p-2.5 bg-gray-200 border border-gray-300 rounded-xl text-xs font-bold text-gray-600 cursor-not-allowed"
-                    />
+                    <label className="text-xs font-bold text-gray-700">Email Address *</label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
+                      <input 
+                        type="email" 
+                        value={identity.email}
+                        onChange={e => setIdentity(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="e.g. applicant@example.com"
+                        required
+                        className="w-full pl-10 pr-3 p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:bg-white focus:border-[#074504] outline-none"
+                      />
+                    </div>
                   </div>
+                </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:col-span-2">
                     <div className="space-y-1">
@@ -746,7 +594,6 @@ export default function JobApplication() {
                       )}
                     </div>
                   </div>
-                </div>
 
                 <div className="flex justify-end pt-4">
                   <button
@@ -1348,7 +1195,8 @@ export default function JobApplication() {
               </form>
             )}
           </div>
-        )}
+        </div>
+      )}
       </div>
     </div>
   );

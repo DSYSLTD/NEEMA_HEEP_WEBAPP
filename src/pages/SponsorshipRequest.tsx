@@ -5,7 +5,6 @@ import {
   FileText, UploadCloud, Check, User, Info, AlertCircle, FileCheck2, Gift, Send, GraduationCap, Download
 } from 'lucide-react';
 import { leadService } from '../services/leadService';
-import VerificationModal from '../components/VerificationModal';
 import { generateUniqueFormIdentifier } from '../lib/identifierUtils';
 import { exportOfficialReceiptPdf } from '../lib/pdfPrintUtils';
 import { uploadFileToBucket } from '../lib/storageUtils';
@@ -68,7 +67,6 @@ export default function SponsorshipRequest() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [submissionId, setSubmissionId] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
   
   // Form State
   const [form, setForm] = useState({
@@ -255,11 +253,10 @@ export default function SponsorshipRequest() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep(4)) return;
-    setIsVerifying(true);
+    await handleVerifiedSubmit();
   };
 
   const handleVerifiedSubmit = async () => {
-    setIsVerifying(false);
     setIsSubmitting(true);
     
     try {
@@ -1005,14 +1002,6 @@ export default function SponsorshipRequest() {
           </AnimatePresence>
         </div>
       </div>
-
-      <VerificationModal 
-        isOpen={isVerifying}
-        email={form.email}
-        phone={form.phone}
-        onVerified={handleVerifiedSubmit}
-        onClose={() => setIsVerifying(false)}
-      />
     </main>
   );
 }

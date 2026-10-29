@@ -3,6 +3,7 @@ import { UserPlus, CheckCircle2, Download } from 'lucide-react';
 import { useLeads } from '../hooks/useLeads';
 import { generateUniqueFormIdentifier } from '../lib/identifierUtils';
 import { exportOfficialReceiptPdf } from '../lib/pdfPrintUtils';
+import { supabase } from '../lib/supabase';
 
 export default function Registration() {
   const [fullName, setFullName] = useState('');
@@ -21,13 +22,48 @@ export default function Registration() {
       const generatedCode = generateUniqueFormIdentifier('individual_registration');
       setTrackingId(generatedCode);
 
+      const regPayload = {
+        id: generatedCode,
+        tracking_id: generatedCode,
+        trackingId: generatedCode,
+        registration_number: generatedCode,
+        full_name: fullName,
+        phone,
+        email: email || '',
+        payment_amount: 2000,
+        payment_ref: 'ACTIVATION_PENDING',
+        status: 'Submitted',
+        signup_source: 'Registration Page (Portal Activation)',
+        details: { fullName, phone, email, trackingId: generatedCode },
+        created_at: new Date().toISOString()
+      };
+
+      // 1. Persist directly to Supabase table
+      try {
+        await supabase.from('individual_registrations').insert([regPayload]);
+      } catch (sbErr) {
+        console.warn('Supabase direct insert note:', sbErr);
+      }
+
+      // 2. Persist to server registrations endpoint
+      try {
+        await fetch('/api/registrations/individual', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(regPayload)
+        });
+      } catch (apiErr) {
+        console.warn('Server sync note:', apiErr);
+      }
+
+      // 3. Persist to leadService
       await submitLead({
         type: 'Registration',
         name: fullName,
         phone,
         email,
         signupSource: 'Registration Page',
-        details: { fullName, phone, email, trackingId: generatedCode }
+        details: regPayload
       });
       setSubmitted(true);
     } catch (err) {

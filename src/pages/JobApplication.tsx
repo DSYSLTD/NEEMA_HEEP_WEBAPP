@@ -14,6 +14,7 @@ import {
 import { COUNTY_DATA } from '../lib/countyData';
 import { exportOfficialReceiptPdf } from '../lib/pdfPrintUtils';
 import { uploadFileToBucket } from '../lib/storageUtils';
+import { supabase } from '../lib/supabase';
 import UploadRequirementsNotice, { RequiredDocumentItem } from '../components/UploadRequirementsNotice';
 
 const JOB_REQUIRED_DOCUMENTS: RequiredDocumentItem[] = [
@@ -112,7 +113,25 @@ export default function JobApplication() {
   ]);
 
   // Step 6: CV Upload
-  const [cvFile, setCvFile] = useState<{ fileName: string; fileSize: string } | null>(null);
+  const [cvFile, setCvFile] = useState<{ file?: File; fileName: string; fileSize: string; url?: string } | null>(null);
+  const cvInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleCvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      if (file.size > 15 * 1024 * 1024) {
+        setFormError('File size exceeds 15MB limit.');
+        return;
+      }
+      setCvFile({
+        file,
+        fileName: file.name,
+        fileSize: `${sizeMb} MB`
+      });
+      setFormError('');
+    }
+  };
 
   // Step 7: Declaration
   const [certifiedTrue, setCertifiedTrue] = useState(false);
@@ -176,12 +195,21 @@ export default function JobApplication() {
     }
 
     // 1. Upload CV to job-applications bucket
-    let cvUrl = '';
-    try {
-      const up = await uploadFileToBucket(cvFile.fileName, 'job-applications', `cv_${identity.nationalId || Date.now()}_${cvFile.fileName}`);
-      cvUrl = up.url;
-    } catch (err) {
-      console.warn("Notice uploading CV to job-applications bucket:", err);
+    let cvUrl = cvFile.url || '';
+    if (!cvUrl && cvFile.file) {
+      try {
+        const up = await uploadFileToBucket(cvFile.file, 'job-applications', `cv_${identity.nationalId || Date.now()}_${cvFile.fileName}`);
+        cvUrl = up.url;
+      } catch (err) {
+        console.warn("Notice uploading CV to job-applications bucket:", err);
+      }
+    } else if (!cvUrl && cvFile.fileName) {
+      try {
+        const up = await uploadFileToBucket(cvFile.fileName, 'job-applications', `cv_${identity.nationalId || Date.now()}_${cvFile.fileName}`);
+        cvUrl = up.url;
+      } catch (err) {
+        console.warn("Notice uploading CV:", err);
+      }
     }
 
     const created = submitJobApplication({
@@ -195,35 +223,55 @@ export default function JobApplication() {
       employment: employmentList,
       memberships: membershipList,
       references,
-      cv: cvFile,
+      cv: { fileName: cvFile.fileName, fileSize: cvFile.fileSize },
       declaration: {
         certifiedTrue,
         dataConsent
       }
     });
 
-    // 2. Persist to server /api/applications/submit
+    const jobPayload = {
+      id: created.appNumber,
+      tracking_id: created.appNumber,
+      unique_identifier: created.appNumber,
+      reference_number: created.appNumber,
+      job_id: selectedVacancy?.id || 'vac-gen',
+      job_title: selectedVacancy?.title || 'General Application',
+      applicant_name: `${identity.firstName} ${identity.surname}`.trim(),
+      full_name: `${identity.firstName} ${identity.surname}`.trim(),
+      email: identity.email,
+      phone: identity.phone,
+      resume_url: cvUrl,
+      cover_letter: `Application for ${selectedVacancy?.title || 'General Vacancy'}`,
+      status: 'Submitted',
+      details: {
+        identity,
+        education: educationList,
+        employment: employmentList,
+        memberships: membershipList,
+        references,
+        cvUrl,
+        cvFileName: cvFile.fileName,
+        trackingId: created.appNumber
+      },
+      created_at: new Date().toISOString()
+    };
+
+    // 2. Direct Supabase insert into job_applications table
+    try {
+      await supabase.from('job_applications').insert([jobPayload]);
+    } catch (sbErr) {
+      console.warn("Direct job_applications insert notice:", sbErr);
+    }
+
+    // 3. Persist to server /api/applications/submit
     try {
       await fetch('/api/applications/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'job',
-          payload: {
-            trackingId: created.appNumber,
-            unique_identifier: created.appNumber,
-            reference_number: created.appNumber,
-            vacancy_id: selectedVacancy?.id || 'vac-gen',
-            vacancy_title: selectedVacancy?.title || 'General Application',
-            full_name: `${identity.firstName} ${identity.surname}`.trim(),
-            email: identity.email,
-            phone: identity.phone,
-            id_number: identity.nationalId,
-            county: identity.county,
-            cv_url: cvUrl,
-            status: 'New',
-            created_at: new Date().toISOString()
-          }
+          payload: jobPayload
         })
       });
     } catch (apiErr) {
@@ -1094,9 +1142,16 @@ export default function JobApplication() {
                   )}
 
                   <div>
+                    <input
+                      type="file"
+                      ref={cvInputRef}
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleCvFileChange}
+                      className="hidden"
+                    />
                     <button
                       type="button"
-                      onClick={() => setCvFile({ fileName: `CV_${identity.surname}_${identity.firstName}.pdf`, fileSize: '1.4 MB' })}
+                      onClick={() => cvInputRef.current?.click()}
                       className="px-5 py-2.5 bg-[#074504] text-[#C0991B] font-bold text-xs uppercase rounded-xl shadow-xs cursor-pointer hover:bg-[#053203]"
                     >
                       {cvFile ? 'Change CV File' : 'Select PDF File'}

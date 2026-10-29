@@ -682,12 +682,24 @@ async function startServer() {
 
       // 1. Try uploading to Supabase Storage bucket
       try {
-        const { data: sbData, error: sbError } = await supabaseServer.storage
+        let { data: sbData, error: sbError } = await supabaseServer.storage
           .from(targetBucket)
           .upload(uniqueName, buffer, {
             contentType: mime,
             upsert: true
           });
+
+        if (sbError && (sbError.message?.toLowerCase().includes("not found") || (sbError as any).statusCode === "404" || (sbError as any).status === 404)) {
+          // Attempt automatic bucket creation with public access
+          try {
+            await supabaseServer.storage.createBucket(targetBucket, { public: true });
+            const retry = await supabaseServer.storage
+              .from(targetBucket)
+              .upload(uniqueName, buffer, { contentType: mime, upsert: true });
+            sbData = retry.data;
+            sbError = retry.error;
+          } catch {}
+        }
 
         if (!sbError && sbData?.path) {
           const { data: pubData } = supabaseServer.storage
@@ -1102,12 +1114,15 @@ async function startServer() {
       local.individual.unshift(payload);
       saveLocalRegistrations(local);
 
-      // 2. Insert into Supabase individual_member_registrations / leads
+      // 2. Insert into Supabase individual_registrations / individual_member_registrations / leads
+      try {
+        await supabaseServer.from("individual_registrations").insert([payload]);
+      } catch (sbErr) {
+        console.warn("[individual_registrations insert note]:", sbErr);
+      }
       try {
         await supabaseServer.from("individual_member_registrations").insert([payload]);
-      } catch (sbErr) {
-        console.warn("[individual_member_registrations insert note]:", sbErr);
-      }
+      } catch {}
       try {
         await supabaseServer.from("leads").insert([{
           form_type: "individual_registration",
@@ -1153,12 +1168,15 @@ async function startServer() {
       local.group.unshift(payload);
       saveLocalRegistrations(local);
 
-      // 2. Insert into Supabase group_member_registrations / leads
+      // 2. Insert into Supabase group_registrations / group_member_registrations / leads
+      try {
+        await supabaseServer.from("group_registrations").insert([payload]);
+      } catch (sbErr) {
+        console.warn("[group_registrations insert note]:", sbErr);
+      }
       try {
         await supabaseServer.from("group_member_registrations").insert([payload]);
-      } catch (sbErr) {
-        console.warn("[group_member_registrations insert note]:", sbErr);
-      }
+      } catch {}
       try {
         await supabaseServer.from("leads").insert([{
           form_type: "group_registration",
@@ -1234,6 +1252,21 @@ async function startServer() {
       } catch (err) {
         console.warn(`[Supabase ${table} insert notice]:`, err);
       }
+
+      // 3. Also record into master leads ledger
+      try {
+        await supabaseServer.from("leads").insert([{
+          form_type: localKey,
+          full_name: record.full_name || record.applicant_name || record.contact_person || record.name || "Applicant",
+          email: record.email || "",
+          phone: record.phone || "",
+          subject: `${table.replace(/_/g, ' ')} (${trackingId})`,
+          message: record.motivation || record.proposal_summary || record.cover_letter || `Submission: ${trackingId}`,
+          source_page: `/${table.replace(/_/g, '-')}`,
+          status: record.status || "New",
+          details: record
+        }]);
+      } catch {}
 
       return res.json({ success: true, trackingId, data: record });
     } catch (err: unknown) {

@@ -67,27 +67,69 @@ export const ApplicationsSubscriptionsModule: React.FC<ApplicationsSubscriptions
     setLoading(true);
     try {
       if (submodule === 'job_applications') {
-        const { data, error } = await supabase
-          .from('job_applications')
-          .select('*')
-          .order('created_at', { ascending: false });
+        const appMap = new Map<string, any>();
+        try {
+          const { data } = await supabase
+            .from('job_applications')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (data && Array.isArray(data)) {
+            data.forEach(item => {
+              const k = item.id || item.tracking_id || item.reference_number;
+              if (k) appMap.set(k, item);
+            });
+          }
+        } catch {}
 
-        if (!error && data) {
-          setJobApps(data);
-        } else {
-          setJobApps([]);
-        }
+        try {
+          const res = await fetch('/api/applications');
+          if (res.ok) {
+            const json = await res.json();
+            if (json.applications?.job && Array.isArray(json.applications.job)) {
+              json.applications.job.forEach((item: any) => {
+                const k = item.id || item.tracking_id || item.reference_number;
+                if (k && !appMap.has(k)) appMap.set(k, item);
+              });
+            }
+          }
+        } catch {}
+
+        const list = Array.from(appMap.values()).sort((a, b) => {
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+        });
+        setJobApps(list);
       } else if (submodule === 'volunteer_applications') {
-        const { data, error } = await supabase
-          .from('volunteer_applications')
-          .select('*')
-          .order('created_at', { ascending: false });
+        const volMap = new Map<string, any>();
+        try {
+          const { data } = await supabase
+            .from('volunteer_applications')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (data && Array.isArray(data)) {
+            data.forEach(item => {
+              const k = item.id || item.tracking_id || item.reference_number;
+              if (k) volMap.set(k, item);
+            });
+          }
+        } catch {}
 
-        if (!error && data) {
-          setVolunteers(data);
-        } else {
-          setVolunteers([]);
-        }
+        try {
+          const res = await fetch('/api/applications');
+          if (res.ok) {
+            const json = await res.json();
+            if (json.applications?.volunteer && Array.isArray(json.applications.volunteer)) {
+              json.applications.volunteer.forEach((item: any) => {
+                const k = item.id || item.tracking_id || item.reference_number;
+                if (k && !volMap.has(k)) volMap.set(k, item);
+              });
+            }
+          }
+        } catch {}
+
+        const list = Array.from(volMap.values()).sort((a, b) => {
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+        });
+        setVolunteers(list);
       } else if (submodule === 'newsletter') {
         const { data, error } = await supabase
           .from('newsletter_subscriptions')
@@ -202,21 +244,25 @@ export const ApplicationsSubscriptionsModule: React.FC<ApplicationsSubscriptions
         ];
       case 'job_applications':
         return [
+          { key: 'tracking_id', label: 'Tracking Code' },
           { key: 'applicant_name', label: 'Candidate Name' },
           { key: 'email', label: 'Email' },
           { key: 'phone', label: 'Phone' },
           { key: 'job_title', label: 'Applied Job' },
           { key: 'department', label: 'Department' },
+          { key: 'resume_url', label: 'CV Storage Link' },
           { key: 'status', label: 'Status' },
           { key: 'created_at', label: 'Applied Date', type: 'date' }
         ];
       case 'volunteer_applications':
         return [
+          { key: 'tracking_id', label: 'Tracking Code' },
           { key: 'full_name', label: 'Full Name' },
           { key: 'email', label: 'Email' },
           { key: 'phone', label: 'Phone' },
           { key: 'county', label: 'County' },
-          { key: 'area_of_interest', label: 'Area of Interest' },
+          { key: 'role', label: 'Volunteer Role / Track' },
+          { key: 'profession', label: 'Profession' },
           { key: 'availability', label: 'Availability' },
           { key: 'status', label: 'Status' },
           { key: 'created_at', label: 'Submitted Date', type: 'date' }
@@ -224,9 +270,11 @@ export const ApplicationsSubscriptionsModule: React.FC<ApplicationsSubscriptions
       case 'newsletter':
         return [
           { key: 'email', label: 'Subscriber Email' },
+          { key: 'frequency', label: 'Digest Frequency' },
+          { key: 'interests', label: 'Topics' },
           { key: 'status', label: 'Subscription Status' },
           { key: 'source', label: 'Acquisition Source' },
-          { key: 'subscribedAt', label: 'Subscribed Date', type: 'date' }
+          { key: 'date', label: 'Subscribed Date', type: 'date' }
         ];
       default:
         return [];
@@ -800,15 +848,33 @@ export const ApplicationsSubscriptionsModule: React.FC<ApplicationsSubscriptions
               {selectedItem.type === 'job_app' && (
                 <>
                   <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-xl font-medium">
-                    <div><span className="text-gray-400 font-bold block text-[10px] uppercase">Candidate</span> {selectedItem.applicant_name}</div>
+                    <div><span className="text-gray-400 font-bold block text-[10px] uppercase">Candidate Name</span> {selectedItem.applicant_name || selectedItem.full_name}</div>
                     <div><span className="text-gray-400 font-bold block text-[10px] uppercase">Job Applied</span> {selectedItem.job_title}</div>
                     <div><span className="text-gray-400 font-bold block text-[10px] uppercase">Phone</span> {selectedItem.phone}</div>
                     <div><span className="text-gray-400 font-bold block text-[10px] uppercase">Email</span> {selectedItem.email}</div>
                   </div>
-                  <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
-                    <span className="text-amber-800 font-bold block text-[10px] uppercase">Qualifications</span>
-                    <p className="text-gray-800 font-semibold">{selectedItem.education_level || 'B.Sc. Degree'}</p>
-                    <p className="text-gray-600 mt-1">{selectedItem.years_experience || '3+ Years relevant industry experience'}</p>
+                  <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-xl font-medium">
+                    <div><span className="text-gray-400 font-bold block text-[10px] uppercase">Tracking Reference</span> <span className="font-mono font-bold text-[#074504]">{selectedItem.tracking_id || selectedItem.id}</span></div>
+                    <div><span className="text-gray-400 font-bold block text-[10px] uppercase">Applied Date</span> {new Date(selectedItem.created_at || Date.now()).toLocaleDateString()}</div>
+                  </div>
+
+                  {/* Stored Bucket CV Link */}
+                  <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 space-y-2">
+                    <span className="text-emerald-900 font-black block text-[10px] uppercase">Curriculum Vitae (job-applications bucket)</span>
+                    {(selectedItem.resume_url || selectedItem.cv_url || selectedItem.details?.cvUrl) ? (
+                      <a
+                        href={selectedItem.resume_url || selectedItem.cv_url || selectedItem.details?.cvUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-emerald-400 text-[#074504] hover:bg-[#074504] hover:text-white rounded-xl font-bold text-xs transition-all shadow-2xs"
+                      >
+                        <FileText className="w-4 h-4 text-[#C0991B]" />
+                        <span>Download Candidate CV (PDF)</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      <span className="text-gray-400 italic text-xs">No CV file attached.</span>
+                    )}
                   </div>
                 </>
               )}
@@ -817,13 +883,19 @@ export const ApplicationsSubscriptionsModule: React.FC<ApplicationsSubscriptions
                 <>
                   <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-xl font-medium">
                     <div><span className="text-gray-400 font-bold block text-[10px] uppercase">Volunteer Name</span> {selectedItem.full_name}</div>
-                    <div><span className="text-gray-400 font-bold block text-[10px] uppercase">County</span> {selectedItem.county}</div>
+                    <div><span className="text-gray-400 font-bold block text-[10px] uppercase">County Location</span> {selectedItem.county}</div>
                     <div><span className="text-gray-400 font-bold block text-[10px] uppercase">Phone</span> {selectedItem.phone}</div>
-                    <div><span className="text-gray-400 font-bold block text-[10px] uppercase">Availability</span> {selectedItem.availability}</div>
+                    <div><span className="text-gray-400 font-bold block text-[10px] uppercase">Email</span> {selectedItem.email}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 p-3 bg-emerald-50/60 rounded-xl border border-emerald-200">
+                    <div><span className="text-emerald-800 font-bold block text-[10px] uppercase">Volunteer Track</span> <strong className="text-[#074504]">{selectedItem.role || selectedItem.preferred_role || selectedItem.area_of_interest || 'Mentorship'}</strong></div>
+                    <div><span className="text-emerald-800 font-bold block text-[10px] uppercase">Profession</span> {selectedItem.profession || selectedItem.details?.profession || 'General'}</div>
+                    <div><span className="text-emerald-800 font-bold block text-[10px] uppercase">Availability</span> {selectedItem.availability}</div>
+                    <div><span className="text-emerald-800 font-bold block text-[10px] uppercase">Tracking Code</span> <span className="font-mono font-bold text-[#074504]">{selectedItem.tracking_id || selectedItem.id}</span></div>
                   </div>
                   <div>
                     <span className="text-gray-400 font-bold block text-[10px] uppercase mb-1">Motivation &amp; Community Passion</span>
-                    <p className="text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-xl">{selectedItem.motivation}</p>
+                    <p className="text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-xl">{selectedItem.motivation || selectedItem.details?.motivation || 'Passionate community advocate and youth mentor.'}</p>
                   </div>
                 </>
               )}

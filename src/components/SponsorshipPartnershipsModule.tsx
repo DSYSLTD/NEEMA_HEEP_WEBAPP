@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { 
   HeartHandshake, Handshake, Search, Filter, Download, 
   FileSpreadsheet, Printer, CheckCircle2, Clock, Eye, RefreshCw, 
-  Building2, MapPin, DollarSign, X, Check, ShieldCheck
+  Building2, MapPin, DollarSign, X, Check, ShieldCheck, ExternalLink, FileText
 } from 'lucide-react';
 import { downloadExcel, downloadCSV, ColumnDef } from '../lib/excelReportExport';
 import ReportModal from './ReportModal';
@@ -34,29 +34,41 @@ export const SponsorshipPartnershipsModule: React.FC<SponsorshipPartnershipsModu
   const fetchData = async () => {
     setLoading(true);
     try {
-      if (submodule === 'sponsorship') {
-        const { data, error } = await supabase
-          .from('sponsorship_requests')
-          .select('*')
-          .order('created_at', { ascending: false });
+      let sbItems: any[] = [];
+      const table = submodule === 'sponsorship' ? 'sponsorship_requests' : 'partnership_requests';
+      const { data, error } = await supabase
+        .from(table)
+        .select('*')
+        .order('created_at', { ascending: false });
 
-        if (!error && data) {
-          setItems(data);
-        } else {
-          setItems([]);
-        }
-      } else {
-        const { data, error } = await supabase
-          .from('partnership_requests')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (!error && data) {
-          setItems(data);
-        } else {
-          setItems([]);
-        }
+      if (!error && Array.isArray(data)) {
+        sbItems = data;
       }
+
+      // Merge with server-side /api/applications
+      let apiItems: any[] = [];
+      try {
+        const res = await fetch('/api/applications');
+        if (res.ok) {
+          const json = await res.json();
+          const targetKey = submodule === 'sponsorship' ? 'sponsorship' : 'partnership';
+          if (json && Array.isArray(json[targetKey])) {
+            apiItems = json[targetKey];
+          }
+        }
+      } catch (e) {
+        // network warning ignored
+      }
+
+      const mergedMap = new Map<string, any>();
+      [...sbItems, ...apiItems].forEach(item => {
+        const id = item.id || item.tracking_id || `${item.phone}-${item.created_at}`;
+        if (!mergedMap.has(id)) {
+          mergedMap.set(id, item);
+        }
+      });
+
+      setItems(Array.from(mergedMap.values()));
     } catch (err) {
       console.warn("Notice loading sponsorship/partnerships data:", err);
       setItems([]);
@@ -100,6 +112,7 @@ export const SponsorshipPartnershipsModule: React.FC<SponsorshipPartnershipsModu
   const columns: ColumnDef[] = useMemo(() => {
     if (submodule === 'sponsorship') {
       return [
+        { key: 'tracking_id', label: 'Tracking Ref' },
         { key: 'applicant_name', label: 'Applicant / Guardian' },
         { key: 'student_name', label: 'Student / Beneficiary' },
         { key: 'school_name', label: 'School / Institution' },
@@ -107,17 +120,20 @@ export const SponsorshipPartnershipsModule: React.FC<SponsorshipPartnershipsModu
         { key: 'sponsorship_amount', label: 'Amount (Kshs)' },
         { key: 'social_status', label: 'Vulnerability Category' },
         { key: 'phone', label: 'Contact Phone' },
+        { key: 'document_url', label: 'Supporting Doc URL' },
         { key: 'status', label: 'Review Status' },
         { key: 'created_at', label: 'Request Date' }
       ];
     } else {
       return [
+        { key: 'tracking_id', label: 'Tracking Ref' },
         { key: 'organization_name', label: 'Partner Organization' },
         { key: 'contact_person', label: 'Contact Person' },
         { key: 'partnership_type', label: 'Partnership Category' },
         { key: 'county', label: 'County' },
         { key: 'phone', label: 'Phone' },
         { key: 'email', label: 'Email' },
+        { key: 'proposal_url', label: 'Proposal Document URL' },
         { key: 'scope', label: 'Proposed Scope' },
         { key: 'status', label: 'Status' },
         { key: 'created_at', label: 'Submission Date' }
@@ -348,7 +364,14 @@ export const SponsorshipPartnershipsModule: React.FC<SponsorshipPartnershipsModu
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-gray-200">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <div>
-                <span className="text-[10px] font-black uppercase text-[#074504]">{submoduleTitle} Dossier</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase text-[#074504]">{submoduleTitle} Dossier</span>
+                  {selectedItem.tracking_id && (
+                    <span className="text-[9px] font-mono bg-emerald-100 text-[#074504] px-1.5 py-0.5 rounded font-bold">
+                      {selectedItem.tracking_id}
+                    </span>
+                  )}
+                </div>
                 <h3 className="text-base font-black text-gray-900">
                   {submodule === 'sponsorship' ? selectedItem.applicant_name : selectedItem.organization_name}
                 </h3>
@@ -382,6 +405,21 @@ export const SponsorshipPartnershipsModule: React.FC<SponsorshipPartnershipsModu
                       <p className="text-gray-700 leading-relaxed mt-0.5">{selectedItem.justification}</p>
                     </div>
                   )}
+                  {selectedItem.document_url && (
+                    <div className="pt-2 border-t border-emerald-200">
+                      <strong className="text-emerald-800 text-[10px] uppercase block mb-1">Supporting Document</strong>
+                      <a
+                        href={selectedItem.document_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-emerald-300 rounded-lg text-xs font-bold text-[#074504] hover:bg-emerald-50 transition shadow-sm"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-[#074504]" />
+                        <span>View Document ({selectedItem.document_url.split('/').pop()?.slice(0, 24)}...)</span>
+                        <ExternalLink className="w-3 h-3 text-gray-400" />
+                      </a>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-200 space-y-2">
@@ -395,11 +433,29 @@ export const SponsorshipPartnershipsModule: React.FC<SponsorshipPartnershipsModu
                       <p className="text-gray-700 leading-relaxed mt-0.5">{selectedItem.scope}</p>
                     </div>
                   )}
+                  {(selectedItem.proposal_url || selectedItem.document_url) && (
+                    <div className="pt-2 border-t border-emerald-200">
+                      <strong className="text-emerald-800 text-[10px] uppercase block mb-1">Proposal Document</strong>
+                      <a
+                        href={selectedItem.proposal_url || selectedItem.document_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-emerald-300 rounded-lg text-xs font-bold text-[#074504] hover:bg-emerald-50 transition shadow-sm"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-[#074504]" />
+                        <span>View Proposal Document</span>
+                        <ExternalLink className="w-3 h-3 text-gray-400" />
+                      </a>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            <div className="pt-3 border-t border-gray-100 flex items-center justify-end">
+            <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
+              <span className="text-[10px] text-gray-400">
+                Created: {new Date(selectedItem.created_at).toLocaleDateString()}
+              </span>
               <button
                 onClick={() => setSelectedItem(null)}
                 className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-bold text-gray-700"

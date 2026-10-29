@@ -3,7 +3,8 @@ import { supabase } from '../lib/supabase';
 import { 
   Users, UserCheck, Search, Filter, Download, 
   FileSpreadsheet, Printer, CheckCircle2, Clock, Eye, RefreshCw, 
-  Building2, MapPin, DollarSign, X, Check, ShieldCheck
+  Building2, MapPin, DollarSign, X, Check, ShieldCheck,
+  ExternalLink, FileText, Image as ImageIcon, CreditCard
 } from 'lucide-react';
 import { downloadExcel, downloadCSV, ColumnDef } from '../lib/excelReportExport';
 import ReportModal from './ReportModal';
@@ -34,29 +35,99 @@ export const MembershipRegistrationsModule: React.FC<MembershipRegistrationsModu
   const fetchData = async () => {
     setLoading(true);
     try {
+      const mergedMap = new Map<string, any>();
+
       if (submodule === 'individual') {
-        const { data, error } = await supabase
-          .from('individual_registrations')
-          .select('*')
-          .order('created_at', { ascending: false });
+        // 1. Primary Supabase individual_registrations
+        try {
+          const { data } = await supabase
+            .from('individual_registrations')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (data && Array.isArray(data)) {
+            data.forEach(item => {
+              const k = item.id || item.tracking_id || item.registration_number;
+              if (k) mergedMap.set(k, item);
+            });
+          }
+        } catch {}
 
-        if (!error && data) {
-          setItems(data);
-        } else {
-          setItems([]);
-        }
+        // 2. Fallback table individual_member_registrations
+        try {
+          const { data } = await supabase
+            .from('individual_member_registrations')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (data && Array.isArray(data)) {
+            data.forEach(item => {
+              const k = item.id || item.tracking_id || item.registration_number;
+              if (k && !mergedMap.has(k)) mergedMap.set(k, item);
+            });
+          }
+        } catch {}
+
+        // 3. Fallback server endpoint /api/registrations
+        try {
+          const res = await fetch('/api/registrations');
+          if (res.ok) {
+            const json = await res.json();
+            if (json.individual && Array.isArray(json.individual)) {
+              json.individual.forEach((item: any) => {
+                const k = item.id || item.tracking_id || item.registration_number;
+                if (k && !mergedMap.has(k)) mergedMap.set(k, item);
+              });
+            }
+          }
+        } catch {}
       } else {
-        const { data, error } = await supabase
-          .from('group_registrations')
-          .select('*')
-          .order('created_at', { ascending: false });
+        // 1. Primary Supabase group_registrations
+        try {
+          const { data } = await supabase
+            .from('group_registrations')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (data && Array.isArray(data)) {
+            data.forEach(item => {
+              const k = item.id || item.tracking_id || item.registration_number;
+              if (k) mergedMap.set(k, item);
+            });
+          }
+        } catch {}
 
-        if (!error && data) {
-          setItems(data);
-        } else {
-          setItems([]);
-        }
+        // 2. Fallback table group_member_registrations
+        try {
+          const { data } = await supabase
+            .from('group_member_registrations')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (data && Array.isArray(data)) {
+            data.forEach(item => {
+              const k = item.id || item.tracking_id || item.registration_number;
+              if (k && !mergedMap.has(k)) mergedMap.set(k, item);
+            });
+          }
+        } catch {}
+
+        // 3. Fallback server endpoint /api/registrations
+        try {
+          const res = await fetch('/api/registrations');
+          if (res.ok) {
+            const json = await res.json();
+            if (json.group && Array.isArray(json.group)) {
+              json.group.forEach((item: any) => {
+                const k = item.id || item.tracking_id || item.registration_number;
+                if (k && !mergedMap.has(k)) mergedMap.set(k, item);
+              });
+            }
+          }
+        } catch {}
       }
+
+      const list = Array.from(mergedMap.values()).sort((a, b) => {
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      });
+
+      setItems(list);
     } catch (err) {
       console.warn("Notice loading membership records:", err);
       setItems([]);
@@ -99,23 +170,27 @@ export const MembershipRegistrationsModule: React.FC<MembershipRegistrationsModu
   const columns: ColumnDef[] = useMemo(() => {
     if (submodule === 'individual') {
       return [
+        { key: 'tracking_id', label: 'Tracking Code' },
         { key: 'full_name', label: 'Full Member Name' },
         { key: 'phone', label: 'Phone Number' },
         { key: 'id_number', label: 'National ID' },
         { key: 'gender', label: 'Gender' },
         { key: 'county', label: 'County' },
         { key: 'occupation', label: 'Occupation / Business' },
-        { key: 'registration_fee', label: 'Fee Paid (Kshs)' },
+        { key: 'payment_ref', label: 'M-Pesa Ref' },
+        { key: 'payment_amount', label: 'Fee Paid (Kshs)' },
         { key: 'status', label: 'Membership Status' },
         { key: 'created_at', label: 'Registered Date' }
       ];
     } else {
       return [
+        { key: 'tracking_id', label: 'Tracking Code' },
         { key: 'group_name', label: 'Registered Group Name' },
         { key: 'group_type', label: 'Group Category' },
         { key: 'registration_certificate_no', label: 'Cert / Reg No' },
         { key: 'member_count', label: 'Active Members' },
-        { key: 'total_registration_fee', label: 'Group Fee (Kshs)' },
+        { key: 'payment_ref', label: 'M-Pesa Ref' },
+        { key: 'payment_amount', label: 'Total Fee (Kshs)' },
         { key: 'county', label: 'County' },
         { key: 'representative_name', label: 'Official / Contact' },
         { key: 'representative_phone', label: 'Phone' },
@@ -357,41 +432,128 @@ export const MembershipRegistrationsModule: React.FC<MembershipRegistrationsModu
 
             <div className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-xl border border-gray-200">
+                <div><strong className="text-gray-500 text-[10px] uppercase block">Tracking Reference</strong> <span className="font-mono font-bold text-[#074504]">{selectedItem.tracking_id || selectedItem.id}</span></div>
                 <div><strong className="text-gray-500 text-[10px] uppercase block">Location</strong> {selectedItem.county} {selectedItem.sub_county ? `• ${selectedItem.sub_county}` : ''}</div>
-                <div><strong className="text-gray-500 text-[10px] uppercase block">Status</strong> {selectedItem.status || 'Paid'}</div>
                 <div><strong className="text-gray-500 text-[10px] uppercase block">Phone</strong> {submodule === 'individual' ? selectedItem.phone : selectedItem.representative_phone}</div>
                 <div><strong className="text-gray-500 text-[10px] uppercase block">Registration Date</strong> {new Date(selectedItem.created_at || Date.now()).toLocaleDateString()}</div>
               </div>
 
+              {/* Payment Details */}
+              <div className="bg-amber-50/60 p-3 rounded-xl border border-amber-200">
+                <div className="flex items-center gap-1.5 text-[#074504] font-black text-[10px] uppercase mb-1">
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Payment &amp; M-Pesa Verification</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-[10px] text-gray-500 font-bold block uppercase">M-Pesa Ref</span>
+                    <span className="font-mono font-bold text-gray-900">{selectedItem.payment_ref || 'Paid'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-500 font-bold block uppercase">Amount Paid</span>
+                    <span className="font-black text-[#074504]">KES {selectedItem.payment_amount || (submodule === 'individual' ? 2000 : (selectedItem.member_count || 1) * 600)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-500 font-bold block uppercase">Payment Status</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">{selectedItem.payment_status || 'Paid'}</span>
+                  </div>
+                </div>
+              </div>
+
               {submodule === 'individual' ? (
-                <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-200 grid grid-cols-2 gap-2">
-                  <div><strong className="text-emerald-800 text-[10px] uppercase block">National ID</strong> {selectedItem.id_number || '—'}</div>
-                  <div><strong className="text-emerald-800 text-[10px] uppercase block">Registration Fee</strong> <span className="font-black text-[#074504]">{selectedItem.registration_fee || 'Kshs 2,000'}</span></div>
-                  <div><strong className="text-emerald-800 text-[10px] uppercase block">Gender</strong> {selectedItem.gender || '—'}</div>
-                  <div><strong className="text-emerald-800 text-[10px] uppercase block">Occupation</strong> {selectedItem.occupation || '—'}</div>
-                </div>
+                <>
+                  <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-200 grid grid-cols-2 gap-2">
+                    <div><strong className="text-emerald-800 text-[10px] uppercase block">National ID</strong> {selectedItem.id_number || '—'}</div>
+                    <div><strong className="text-emerald-800 text-[10px] uppercase block">KRA PIN</strong> {selectedItem.kra_pin || '—'}</div>
+                    <div><strong className="text-emerald-800 text-[10px] uppercase block">Gender</strong> {selectedItem.gender || '—'}</div>
+                    <div><strong className="text-emerald-800 text-[10px] uppercase block">Occupation</strong> {selectedItem.occupation || selectedItem.physical_address || '—'}</div>
+                  </div>
+
+                  {/* Stored Bucket Documents */}
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
+                    <span className="text-[10px] font-black uppercase text-gray-600 block">Uploaded Identification &amp; Photos (Storage Buckets)</span>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedItem.passport_photo && (
+                        <a
+                          href={selectedItem.passport_photo}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 bg-white border border-gray-300 hover:border-[#074504] text-[#074504] rounded-lg font-bold text-[11px] flex items-center gap-1 shadow-2xs"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5 text-[#C0991B]" />
+                          <span>Passport Photo (member-photos)</span>
+                          <ExternalLink className="w-3 h-3 text-gray-400" />
+                        </a>
+                      )}
+                      {selectedItem.id_photo_front && (
+                        <a
+                          href={selectedItem.id_photo_front}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 bg-white border border-gray-300 hover:border-[#074504] text-[#074504] rounded-lg font-bold text-[11px] flex items-center gap-1 shadow-2xs"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-[#C0991B]" />
+                          <span>ID Card Front (member-documents)</span>
+                          <ExternalLink className="w-3 h-3 text-gray-400" />
+                        </a>
+                      )}
+                      {selectedItem.id_photo_back && (
+                        <a
+                          href={selectedItem.id_photo_back}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 bg-white border border-gray-300 hover:border-[#074504] text-[#074504] rounded-lg font-bold text-[11px] flex items-center gap-1 shadow-2xs"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-[#C0991B]" />
+                          <span>ID Card Back (member-documents)</span>
+                          <ExternalLink className="w-3 h-3 text-gray-400" />
+                        </a>
+                      )}
+                      {!selectedItem.passport_photo && !selectedItem.id_photo_front && !selectedItem.id_photo_back && (
+                        <span className="text-gray-400 italic text-[11px]">No uploaded documents attached to this profile.</span>
+                      )}
+                    </div>
+                  </div>
+                </>
               ) : (
-                <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-200 space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><strong className="text-emerald-800 text-[10px] uppercase block">Cert / Reg No</strong> {selectedItem.registration_certificate_no || '—'}</div>
-                    <div><strong className="text-emerald-800 text-[10px] uppercase block">Total Members</strong> {selectedItem.member_count} Members</div>
+                <>
+                  <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-200 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><strong className="text-emerald-800 text-[10px] uppercase block">Cert / Reg No</strong> {selectedItem.registration_certificate_no || '—'}</div>
+                      <div><strong className="text-emerald-800 text-[10px] uppercase block">Total Members</strong> {selectedItem.member_count} Members</div>
+                    </div>
+                    <div>
+                      <strong className="text-emerald-800 text-[10px] uppercase block">Group Official</strong>
+                      <span>{selectedItem.representative_name} ({selectedItem.representative_phone})</span>
+                    </div>
                   </div>
-                  <div>
-                    <strong className="text-emerald-800 text-[10px] uppercase block">Group Official</strong>
-                    <span>{selectedItem.representative_name} ({selectedItem.representative_phone})</span>
+
+                  {/* Stored Bucket Certificate */}
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
+                    <span className="text-[10px] font-black uppercase text-gray-600 block">Registration Certificate (group-documents bucket)</span>
+                    {selectedItem.registration_certificate_doc ? (
+                      <a
+                        href={selectedItem.registration_certificate_doc}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex px-3 py-1.5 bg-white border border-gray-300 hover:border-[#074504] text-[#074504] rounded-lg font-bold text-[11px] items-center gap-1 shadow-2xs"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-[#C0991B]" />
+                        <span>View Official Certificate Document</span>
+                        <ExternalLink className="w-3 h-3 text-gray-400" />
+                      </a>
+                    ) : (
+                      <span className="text-gray-400 italic text-[11px]">Certificate submitted directly in physical branch office.</span>
+                    )}
                   </div>
-                  <div>
-                    <strong className="text-emerald-800 text-[10px] uppercase block">Total Group Fee (Kshs 600 / member)</strong>
-                    <span className="font-black text-[#074504] text-sm">{selectedItem.total_registration_fee || `Kshs ${Number(selectedItem.member_count || 0) * 600}`}</span>
-                  </div>
-                </div>
+                </>
               )}
             </div>
 
             <div className="pt-3 border-t border-gray-100 flex items-center justify-end">
               <button
                 onClick={() => setSelectedItem(null)}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-bold text-gray-700"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-bold text-gray-700 cursor-pointer"
               >
                 Close
               </button>

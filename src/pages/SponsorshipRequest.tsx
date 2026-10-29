@@ -8,6 +8,7 @@ import { leadService } from '../services/leadService';
 import { generateUniqueFormIdentifier } from '../lib/identifierUtils';
 import { exportOfficialReceiptPdf } from '../lib/pdfPrintUtils';
 import { uploadFileToBucket } from '../lib/storageUtils';
+import { supabase } from '../lib/supabase';
 
 const SCHOLARSHIP_PROGRAM = {
   id: 'education',
@@ -87,7 +88,7 @@ export default function SponsorshipRequest() {
     
     // Step 3
     justification: '',
-    uploadedFiles: [] as { name: string; size: string; type: string }[],
+    uploadedFiles: [] as { name: string; size: string; type: string; url?: string; bucket?: string }[],
     
     // Step 4
     consentApproved: false,
@@ -287,7 +288,31 @@ export default function SponsorshipRequest() {
         created_at: new Date().toISOString()
       };
 
-      // 1. Submit to server /api/applications/submit to persist to table and local store
+      // 1. Direct Supabase insertion into sponsorship_requests table
+      try {
+        await supabase.from('sponsorship_requests').insert([{
+          id: uniqueTrackingId,
+          tracking_id: uniqueTrackingId,
+          unique_identifier: uniqueTrackingId,
+          reference_number: uniqueTrackingId,
+          organization_name: form.fullName,
+          contact_person: form.fullName,
+          full_name: form.fullName,
+          email: form.email,
+          phone: form.phone,
+          county: form.county,
+          program_name: form.programStream || 'Arise & Shine Education Support',
+          beneficiary_focus: form.sponsorshipKind,
+          proposal_document_url: form.uploadedFiles[0]?.url || '',
+          status: 'Pending',
+          details: appPayload,
+          created_at: new Date().toISOString()
+        }]);
+      } catch (sbErr) {
+        console.warn("Direct sponsorship_requests insert notice:", sbErr);
+      }
+
+      // 2. Submit to server /api/applications/submit to persist to table and local store
       try {
         await fetch('/api/applications/submit', {
           method: 'POST',

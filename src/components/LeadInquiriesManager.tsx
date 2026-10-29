@@ -65,19 +65,151 @@ export const LeadInquiriesManager: React.FC<LeadInquiriesManagerProps> = ({
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Query single source of truth: public.leads
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .in('form_type', formTypeFilter)
-        .order('created_at', { ascending: false });
+      let dedicatedItems: LeadRecord[] = [];
+      let leadsItems: LeadRecord[] = [];
 
-      if (error) {
-        console.warn(`[LeadInquiriesManager] Error querying public.leads:`, error.message);
-        setItems([]);
+      // 1. Fetch from specialized table
+      if (submodule === 'prequalifications') {
+        try {
+          const { data: pqData } = await supabase
+            .from('prequalifications')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (pqData && Array.isArray(pqData)) {
+            dedicatedItems = pqData.map((row: any) => ({
+              id: row.id || row.tracking_id,
+              form_type: 'prequalification',
+              full_name: row.full_name || row.name || 'Applicant',
+              email: row.email,
+              phone: row.phone,
+              subject: row.recommended_product || row.business_type || 'Loan Pre-Qualification',
+              message: `Requested: ${row.requested_amount || 'N/A'} • Score: ${row.prequalification_score || 85}/100 • Turnover: ${row.monthly_turnover || 'N/A'}`,
+              status: row.status || 'New',
+              source_page: row.signup_source || '/pre-qualification',
+              details: {
+                ...row.details,
+                loan_product: row.recommended_product,
+                requested_amount: row.requested_amount,
+                monthly_turnover: row.monthly_turnover,
+                business_type: row.business_type,
+                years_in_business: row.years_in_business,
+                prequalification_score: row.prequalification_score,
+                county: row.county,
+                answers: row.answers || row.details?.answers
+              },
+              created_at: row.created_at || new Date().toISOString()
+            }));
+          }
+        } catch (pqErr) {
+          console.warn("prequalifications fetch note:", pqErr);
+        }
+      } else if (submodule === 'callbacks') {
+        try {
+          const { data: cbData } = await supabase
+            .from('callback_requests')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (cbData && Array.isArray(cbData)) {
+            dedicatedItems = cbData.map((row: any) => ({
+              id: row.id || row.tracking_id,
+              form_type: 'callback',
+              full_name: row.name || 'Anonymous',
+              email: row.email,
+              phone: row.phone,
+              subject: row.interest || 'Phone Callback Request',
+              message: `Preferred Window: ${row.preferred_time || 'Morning (8am - 12pm)'}${row.notes ? ` • Note: ${row.notes}` : ''}`,
+              status: row.status || 'New',
+              source_page: '/request-callback',
+              details: {
+                ...row.details,
+                preferred_time: row.preferred_time,
+                interest: row.interest,
+                notes: row.notes
+              },
+              created_at: row.created_at || new Date().toISOString()
+            }));
+          }
+        } catch (cbErr) {
+          console.warn("callback_requests fetch note:", cbErr);
+        }
       } else {
-        setItems(data || []);
+        try {
+          const { data: ctData } = await supabase
+            .from('contact_messages')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (ctData && Array.isArray(ctData)) {
+            dedicatedItems = ctData.map((row: any) => ({
+              id: row.id || row.tracking_id,
+              form_type: 'contact',
+              full_name: row.name || 'Anonymous',
+              email: row.email,
+              phone: row.phone,
+              subject: row.subject || row.interest || 'Customer Inquiry',
+              message: row.message || '',
+              status: row.status || 'New',
+              source_page: '/contact-us',
+              details: {
+                ...row.details,
+                urgency: row.urgency,
+                interest: row.interest,
+                notes: row.notes
+              },
+              created_at: row.created_at || new Date().toISOString()
+            }));
+          }
+        } catch (ctErr) {
+          console.warn("contact_messages fetch note:", ctErr);
+        }
       }
+
+      // 2. Fetch from master leads table
+      try {
+        const { data: leadsData } = await supabase
+          .from('leads')
+          .select('*')
+          .in('form_type', formTypeFilter)
+          .order('created_at', { ascending: false });
+
+        if (leadsData && Array.isArray(leadsData)) {
+          leadsItems = leadsData.map((row: any) => ({
+            id: row.id,
+            form_type: row.form_type,
+            full_name: row.full_name || row.name || 'Anonymous',
+            email: row.email,
+            phone: row.phone,
+            subject: row.subject,
+            message: row.message,
+            status: row.status || 'New',
+            source_page: row.source_page,
+            details: row.details,
+            created_at: row.created_at
+          }));
+        }
+      } catch (lErr) {
+        console.warn('Leads query notice:', lErr);
+      }
+
+      // 3. Merge avoiding duplicates by id
+      const map = new Map<string, LeadRecord>();
+      [...dedicatedItems, ...leadsItems].forEach(item => {
+        const key = item.id || `${item.phone}_${item.created_at}`;
+        if (!map.has(key)) {
+          map.set(key, item);
+        } else {
+          const existing = map.get(key)!;
+          map.set(key, { ...existing, ...item, details: { ...existing.details, ...item.details } });
+        }
+      });
+
+      const merged = Array.from(map.values()).sort((a, b) => {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
+      setItems(merged);
     } catch (err: any) {
       console.warn("Lead fetch exception:", err.message);
       setItems([]);
@@ -90,14 +222,14 @@ export const LeadInquiriesManager: React.FC<LeadInquiriesManagerProps> = ({
     fetchData();
   }, [submodule, formTypeFilter]);
 
-  // Handle status update persistent in public.leads
+  // Handle status update persistent in both leads and specialized tables
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     try {
       const current = items.find(i => i.id === id);
       const updatedDetails = { ...(current?.details || {}), status: newStatus };
 
-      // Update both status and details->status for complete compatibility
-      const { error } = await supabase
+      // Update both status and details->status for complete compatibility in leads
+      await supabase
         .from('leads')
         .update({ 
           status: newStatus,
@@ -106,15 +238,13 @@ export const LeadInquiriesManager: React.FC<LeadInquiriesManagerProps> = ({
         })
         .eq('id', id);
 
-      if (error) {
-        // Fallback update details only if status column is pending migration
-        await supabase
-          .from('leads')
-          .update({ 
-            details: updatedDetails,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', id);
+      // Also update dedicated table
+      if (submodule === 'prequalifications') {
+        supabase.from('prequalifications').update({ status: newStatus }).eq('id', id).then(() => {});
+      } else if (submodule === 'callbacks') {
+        supabase.from('callback_requests').update({ status: newStatus }).eq('id', id).then(() => {});
+      } else {
+        supabase.from('contact_messages').update({ status: newStatus }).eq('id', id).then(() => {});
       }
 
       setItems(prev => prev.map(item => item.id === id ? { ...item, status: newStatus, details: updatedDetails } : item));

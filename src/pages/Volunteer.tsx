@@ -32,6 +32,7 @@ import { leadService } from "../services/leadService";
 import { KENYA_COUNTIES, COUNTY_DATA } from "../lib/countyData";
 import { exportPdfReport, exportOfficialReceiptPdf } from "../lib/pdfPrintUtils";
 import { generateUniqueFormIdentifier } from "../lib/identifierUtils";
+import { supabase } from "../lib/supabase";
 
 interface StatItemProps {
   value: string;
@@ -292,7 +293,30 @@ export default function Volunteer() {
         submitted_at: new Date().toISOString(),
       };
 
-      // 1. Submit to applications endpoint
+      // 1. Direct Supabase insertion into volunteer_applications
+      try {
+        await supabase.from('volunteer_applications').insert([{
+          id: trackingId,
+          tracking_id: trackingId,
+          unique_identifier: trackingId,
+          reference_number: trackingId,
+          full_name: fullName,
+          email,
+          phone,
+          profession,
+          role: preferredRole,
+          availability,
+          motivation,
+          county,
+          status: 'New',
+          details: volPayload,
+          created_at: new Date().toISOString()
+        }]);
+      } catch (sbErr) {
+        console.warn("Direct volunteer_applications insert notice:", sbErr);
+      }
+
+      // 2. Submit to applications endpoint
       try {
         await fetch('/api/applications/submit', {
           method: 'POST',
@@ -306,7 +330,7 @@ export default function Volunteer() {
         console.warn("Application submit sync notice:", e);
       }
 
-      // 2. Submit to leadService
+      // 3. Submit to leadService
       await leadService.submitLead({
         type: "Volunteer",
         name: fullName,

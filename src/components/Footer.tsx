@@ -8,7 +8,6 @@ const quickLinks = [
   { label: "About Us", path: "/about-us" },
   { label: "Products", path: "/loans" },
   { label: "Contact Us", path: "/contact" },
-  { label: "Site Map", path: "/sitemap" },
 ];
 
 const programsMap = [
@@ -53,7 +52,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-[#074504] text-white font-sans w-full flex flex-col overflow-hidden relative">
+    <footer id="site-footer" className="bg-[#074504] text-white font-sans w-full flex flex-col overflow-hidden relative">
       {/* Decorative Background */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-[#599200]/10 to-transparent rounded-full blur-[100px] -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
 
@@ -234,20 +233,43 @@ export default function Footer() {
 
       {/* Bottom Legal Bar */}
       <div className="bg-[#0c3d00] border-t border-white/20 relative z-10 text-white/60">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-6 flex flex-col md:flex-row justify-between items-center text-xs font-medium gap-6">
-          <div className="flex flex-wrap justify-center md:justify-start gap-x-6 gap-y-3 text-white/80 items-center">
-            <Link to="/privacy-policy" className="text-white hover:text-[#C0991B] transition-colors">Privacy Policy</Link>
-            <span className="text-white/20">•</span>
-            <Link to="/terms-conditions" className="text-white hover:text-[#C0991B] transition-colors">Terms & Conditions</Link>
-            <span className="text-white/20">•</span>
-            <Link to="/regulatory-disclosures" className="text-white hover:text-[#C0991B] transition-colors">Regulatory Disclosures</Link>
-            <span className="text-white/20">•</span>
-            <Link to="/sitemap" className="text-white hover:text-[#C0991B] transition-colors">Site Map</Link>
-          </div>
-
-          <div className="text-white/60 uppercase tracking-widest text-center md:text-right font-semibold text-[11px]">
-            &copy; {new Date().getFullYear()} NEEMA HEEP MICRO FINANCE <span className="mx-2 hidden sm:inline">|</span> All Rights Reserved
-          </div>
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-6 flex flex-wrap justify-center items-center gap-x-4 sm:gap-x-5 gap-y-3 text-xs font-medium text-center">
+          <Link to="/privacy-policy" className="text-white hover:text-[#C0991B] transition-colors">
+            Privacy Policy
+          </Link>
+          <span className="text-white/20 select-none">•</span>
+          <Link to="/terms-conditions" className="text-white hover:text-[#C0991B] transition-colors">
+            Terms & Conditions
+          </Link>
+          <span className="text-white/20 select-none">•</span>
+          <Link to="/regulatory-disclosures" className="text-white hover:text-[#C0991B] transition-colors">
+            Regulatory Disclosures
+          </Link>
+          <span className="text-white/20 select-none">•</span>
+          <span className="text-white/70 uppercase tracking-wider font-semibold text-[11px]">
+            &copy; {new Date().getFullYear()} NEEMA HEEP MICRO FINANCE <span className="mx-1.5 opacity-60">|</span> All Rights Reserved
+          </span>
+          <span className="text-white/20 select-none">•</span>
+          <span className="text-white/80 text-[11px] font-normal normal-case tracking-normal">
+            Website developed by{" "}
+            <a
+              href="https://www.dsysl.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#C0991B] hover:text-[#d4aa22] hover:underline font-semibold transition-colors"
+            >
+              Dimensional Systems Limited
+            </a>{" "}
+            <span className="mx-1 text-white/40">|</span>{" "}
+            <a
+              href="https://patrickmunene.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#C0991B] hover:text-[#d4aa22] hover:underline font-semibold transition-colors"
+            >
+              Patrick Munene
+            </a>
+          </span>
         </div>
       </div>
     </footer>
